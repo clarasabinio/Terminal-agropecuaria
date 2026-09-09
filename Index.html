@@ -1,0 +1,3845 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Terminal Kiosco Agropecuaria</title>
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --corp-navy: #0f2744;
+      --corp-navy-light: #1e3a8a;
+      --agro-green: #065f46;
+      --agro-green-light: #059669;
+      --border-light: #e2e8f0;
+      --border-medium: #cbd5e1;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #0b1522;
+      color: var(--text-main);
+      user-select: none;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* Sistema de Fondos Fotográficos Rotativos de Campo */
+    .agro-bg-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .agro-bg-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 2.2s cubic-bezier(0.4, 0, 0.2, 1), transform 10s ease-out;
+      transform: scale(1.02);
+      will-change: opacity, transform;
+    }
+
+    .agro-bg-layer.active {
+      opacity: 1;
+      transform: scale(1.0);
+    }
+
+    .agro-bg-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(11, 21, 34, 0.40) 0%, rgba(11, 21, 34, 0.72) 100%);
+      backdrop-filter: blur(1.5px);
+    }
+
+    /* Widget de Indicador y Control del Fondo Fotográfico */
+    .bg-photo-widget {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.35rem 0.75rem;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: var(--radius-full);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(8px);
+      font-size: 0.75rem;
+    }
+
+    .bg-photo-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bg-photo-title {
+      font-weight: 700;
+      color: var(--corp-navy);
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bg-photo-timer {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.72rem;
+      color: #166534;
+      background: #dcfce7;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .bg-photo-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .btn-bg-nav {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.15rem 0.3rem;
+      border-radius: 4px;
+      transition: background 0.15s ease, transform 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.75;
+    }
+
+    .btn-bg-nav:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.08);
+      transform: scale(1.1);
+    }
+
+    .allow-select {
+      user-select: text;
+    }
+
+    /* Barra Superior de Cotizaciones en Vivo en Dos Renglones Separados */
+    .market-top-bar {
+      background: #06111e;
+      color: #f1f5f9;
+      font-size: 0.76rem;
+      position: sticky;
+      top: 0;
+      z-index: 110;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .market-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      height: 35px;
+      gap: 1rem;
+    }
+
+    .market-row-cbot {
+      background: linear-gradient(90deg, #071322 0%, #0b1f38 60%, #0e2746 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .market-row-dolar {
+      background: linear-gradient(90deg, #06171e 0%, #082229 60%, #0b2d31 100%);
+    }
+
+    .market-row-items {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    .market-row-items::-webkit-scrollbar {
+      display: none;
+    }
+
+    .market-section-title {
+      font-size: 0.69rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .market-section-title.bna-title {
+      background: rgba(74, 222, 128, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.25);
+    }
+
+    .pulse-dot-cbot, .pulse-dot-bna {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .pulse-dot-cbot { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+    .pulse-dot-bna { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+
+    .market-ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.2rem 0.55rem;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+    .market-ticker-item:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .crop-icon { font-size: 0.85rem; }
+    .crop-name { font-weight: 600; color: #cbd5e1; }
+    .crop-price { font-weight: 700; color: #38bdf8; }
+    .crop-unit { font-size: 0.68rem; color: #94a3b8; }
+
+    .crop-trend {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+    }
+    .crop-trend.up { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .crop-trend.down { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    .market-ticker-item.highlight-bna {
+      background: rgba(34, 197, 94, 0.14);
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+    .bna-label { font-weight: 600; color: #cbd5e1; font-size: 0.72rem; }
+    .bna-val { font-weight: 800; color: #4ade80; font-size: 0.82rem; }
+
+    .market-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .market-live-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #4ade80;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      padding: 0.18rem 0.5rem;
+      border-radius: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .live-blink-circle {
+      width: 6px;
+      height: 6px;
+      background: #4ade80;
+      border-radius: 50%;
+      animation: livePulse 1.8s infinite;
+    }
+    @keyframes livePulse {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    .market-date-badge {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.18rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    .btn-market-icon {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #f1f5f9;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      padding: 0.2rem 0.45rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+    .btn-market-icon:hover {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-rate-chip {
+      background: #ffffff;
+      border: 1px solid #86efac;
+      color: #166534;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.18rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: all 0.15s ease;
+    }
+    .btn-rate-chip:hover {
+      background: #dcfce7;
+      border-color: #22c55e;
+      transform: translateY(-1px);
+    }
+    .btn-rate-chip span {
+      font-weight: 700;
+      color: #0f2744;
+    }
+
+    @media (max-width: 900px) {
+      .hide-mobile { display: none !important; }
+      .market-row { padding: 0 0.75rem; }
+    }
+
+    .kiosk-header {
+      height: 74px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      position: sticky;
+      top: 71px;
+      z-index: 100;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--corp-navy), var(--agro-green));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: white;
+    }
+
+    .brand-titles h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--corp-navy);
+    }
+
+    .brand-titles p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .header-status-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .badge-role {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .badge-guest {
+      background: #f1f5f9;
+      color: var(--corp-navy);
+      border: 1px solid var(--border-medium);
+    }
+
+    .badge-guest .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #0ea5e9;
+      border-radius: 50%;
+    }
+
+    .badge-admin {
+      display: none;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    body.admin-mode .badge-guest {
+      display: none;
+    }
+
+    body.admin-mode .badge-admin {
+      display: flex;
+    }
+
+    .live-clock-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      border-left: 1px solid var(--border-light);
+      padding-left: 1rem;
+    }
+
+    .live-time {
+      font-size: 1.05rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: var(--corp-navy);
+    }
+
+    .live-date {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .btn-auth-toggle {
+      padding: 0.5rem 1rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--corp-navy);
+    }
+
+    .btn-auth-toggle.is-admin {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .admin-action-bar {
+      display: none;
+      background: #0f172a;
+      color: white;
+      padding: 0.75rem 2rem;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    body.admin-mode .admin-action-bar {
+      display: flex;
+    }
+
+    .admin-bar-tag {
+      background: #ef4444;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      margin-right: 0.5rem;
+    }
+
+    .btn-admin-action {
+      padding: 0.45rem 0.9rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: white;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-admin-primary {
+      background: #10b981;
+      border-color: #059669;
+    }
+
+    .kiosk-nav-tabs {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+      padding: 0 2rem;
+      display: flex;
+      gap: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .nav-tab-btn {
+      padding: 1rem 0.5rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .nav-tab-btn.active {
+      color: var(--agro-green);
+      border-bottom-color: var(--agro-green);
+    }
+
+    .nav-tab-count {
+      background: #f1f5f9;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+    }
+
+    .kiosk-main-content {
+      padding: 1.75rem 2rem 3rem 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .tab-view {
+      display: none;
+    }
+
+    .tab-view.active {
+      display: block;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 4px 16px rgba(11, 21, 34, 0.08);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(11, 21, 34, 0.12);
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .metric-card.card-primary::before {
+      background: var(--corp-navy-light);
+    }
+
+    .metric-card.card-green::before {
+      background: var(--agro-green-light);
+    }
+
+    .metric-card.card-amber::before {
+      background: #d97706;
+    }
+
+    .metric-card.card-purple::before {
+      background: #7c3aed;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.3rem;
+    }
+
+    .metric-subtext {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background: #f1f5f9;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #10b981;
+      border-radius: var(--radius-full);
+    }
+
+    .toolbar-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 16px rgba(11, 21, 34, 0.07);
+    }
+
+    .toolbar-main-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box-wrapper {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box-icon {
+      position: absolute;
+      left: 1rem;
+      color: var(--text-muted);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.65rem 1rem 0.65rem 2.6rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      outline: none;
+    }
+
+    .filter-select-group {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-select {
+      padding: 0.6rem 0.8rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .btn-sheet-export {
+      padding: 0.6rem 1rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .contracts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .contract-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(11, 21, 34, 0.09);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .contract-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(11, 21, 34, 0.15);
+    }
+
+    .contract-card-header {
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--bg-subtle);
+    }
+
+    .contract-establishment {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--corp-navy);
+    }
+
+    .contract-code-tag {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .status-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .status-badge.status-paid {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.status-partial {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.status-pending {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .invoice-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .invoice-badge.received {
+      background: #ecfdf5;
+      color: #065f46;
+      border-color: #a7f3d0;
+    }
+
+    .invoice-badge.pending {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #ffedd5;
+    }
+
+    .contract-expiration-bar {
+      padding: 0.55rem 1.25rem;
+      background: #f8fafc;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .exp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      border: 1px solid transparent;
+      line-height: 1.2;
+    }
+
+    .exp-badge.exp-expired {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+
+    .exp-badge.exp-critical {
+      background: #fff1f2;
+      color: #be123c;
+      border-color: #fda4af;
+      animation: pulse-border 2s infinite;
+    }
+
+    .exp-badge.exp-warning {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+
+    .exp-badge.exp-soon {
+      background: #e0f2fe;
+      color: #0369a1;
+      border-color: #bae6fd;
+    }
+
+    .exp-badge.exp-valid {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .contract-card.card-alert-expired {
+      border-left: 6px solid #ef4444;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+    }
+
+    .contract-card.card-alert-warning {
+      border-left: 6px solid #f59e0b;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+    }
+
+    .contract-card.card-alert-critical {
+      border-left: 6px solid #e11d48;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.12);
+    }
+
+    .expiration-alert-banner {
+      background: linear-gradient(135deg, #fff1f2 0%, #fffbeb 100%);
+      border: 1px solid #fecdd3;
+      border-left: 6px solid #e11d48;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .expiration-alert-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #9f1239;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .expiration-alert-desc {
+      font-size: 0.82rem;
+      color: #881337;
+      margin-top: 0.2rem;
+    }
+
+    .btn-alert-filter {
+      padding: 0.45rem 0.9rem;
+      background: #e11d48;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .btn-alert-filter:hover {
+      background: #be123c;
+    }
+
+    .btn-card-edit {
+      background: #fef3c7 !important;
+      border-color: #fde047 !important;
+      color: #92400e !important;
+    }
+
+    .btn-card-edit:hover {
+      background: #fde047 !important;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(225, 29, 72, 0);
+      }
+    }
+
+    .contract-card-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      flex: 1;
+    }
+
+    .contract-kg-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      background: #fafaf9;
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+    }
+
+    .kg-stat-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .kg-stat-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .kg-stat-val.paid {
+      color: var(--agro-green);
+    }
+
+    .contract-finance-box {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      border: 1px solid #e2e8f0;
+    }
+
+    .contract-card-footer {
+      padding: 0.75rem 1.25rem;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-card-view {
+      padding: 0.4rem 0.8rem;
+      background: white;
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--corp-navy);
+    }
+
+    .btn-card-view:hover {
+      background: var(--corp-navy);
+      color: white;
+    }
+
+    .btn-card-delete {
+      display: none;
+      padding: 0.4rem 0.7rem;
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #dc2626;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 0.4rem;
+    }
+
+    body.admin-mode .btn-card-delete {
+      display: inline-block;
+    }
+
+    .btn-card-delete:hover {
+      background: #dc2626;
+      color: white;
+    }
+
+    .sheet-viewer-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sheet-table-scroll {
+      max-height: 550px;
+      overflow: auto;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 16px rgba(11, 21, 34, 0.08);
+      background: white;
+    }
+
+    .sheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: white;
+    }
+
+    .sheet-table th {
+      background: var(--bg-subtle);
+      position: sticky;
+      top: 0;
+      padding: 0.75rem;
+      font-weight: 700;
+      text-align: left;
+      border-bottom: 2px solid var(--border-medium);
+    }
+
+    .sheet-subtab-btn {
+      padding: 0.5rem 1rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: var(--corp-navy);
+      transition: all 0.2s ease;
+    }
+
+    .sheet-subtab-btn.active {
+      background: var(--corp-navy);
+      color: white;
+      border-color: var(--corp-navy);
+    }
+
+    .movements-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      background: white;
+      margin-top: 0.75rem;
+    }
+
+    .movements-table th {
+      background: #1e3a8a;
+      color: white;
+      padding: 0.6rem 0.75rem;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .movements-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .movements-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .badge-mov-tipo {
+      display: inline-block;
+      padding: 0.18rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .badge-mov-alta { background: #dbeafe; color: #1e40af; }
+    .badge-mov-pago { background: #d1fae5; color: #065f46; }
+    .badge-mov-mod { background: #fef3c7; color: #92400e; }
+    .badge-mov-fact { background: #e0e7ff; color: #3730a3; }
+
+    .btn-voucher-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 0.25rem 0.55rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-voucher-link:hover {
+      background: #dbeafe;
+      color: #1e40af;
+      border-color: #93c5fd;
+    }
+
+    .badge-medio-pago {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-container {
+      background: white;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-container.modal-xl {
+      max-width: 980px;
+    }
+
+    .modal-container.modal-sm {
+      max-width: 460px;
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title-group h2 {
+      font-size: 1.1rem;
+      color: var(--corp-navy);
+    }
+
+    .modal-title-group p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group-full {
+      grid-column: span 2;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-main);
+      text-transform: uppercase;
+    }
+
+    .form-input,
+    .form-select {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .btn-primary {
+      padding: 0.6rem 1.2rem;
+      background: var(--corp-navy);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      padding: 0.6rem 1.2rem;
+      background: white;
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 2000;
+    }
+
+    .toast {
+      background: var(--corp-navy);
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Contenedor de Fondos Fotográficos Rotativos de Campo y Cultivos -->
+  <div class="agro-bg-container" id="agro-bg-container" aria-hidden="true">
+    <div class="agro-bg-layer active" id="agro-bg-layer-1"></div>
+    <div class="agro-bg-layer" id="agro-bg-layer-2"></div>
+    <div class="agro-bg-overlay"></div>
+  </div>
+
+  <!-- Barra Superior de Cotizaciones en Vivo: Mercado de Chicago & Dólar Banco Nación en Dos Renglones -->
+  <div class="market-top-bar" id="market-top-bar">
+    
+    <!-- Renglón 1: Mercado de Chicago (CBOT) -->
+    <div class="market-row market-row-cbot">
+      <div class="market-row-items">
+        <span class="market-section-title">
+          <span class="pulse-dot-cbot"></span> 📈 MERCADO DE CHICAGO (CBOT)
+        </span>
+        
+        <div class="market-ticker-item" onclick="openPaymentModalWithCrop('Soja')" title="Clic para liquidar con Soja">
+          <span class="crop-icon">🌾</span>
+          <span class="crop-name">Soja:</span>
+          <span class="crop-price" id="top-chicago-soja">USD 382.50</span>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-trend up" id="trend-soja">+1.2%</span>
+        </div>
+
+        <div class="market-ticker-item" onclick="openPaymentModalWithCrop('Maíz')" title="Clic para liquidar con Maíz">
+          <span class="crop-icon">🌽</span>
+          <span class="crop-name">Maíz:</span>
+          <span class="crop-price" id="top-chicago-maiz">USD 176.40</span>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-trend up" id="trend-maiz">+0.5%</span>
+        </div>
+
+        <div class="market-ticker-item" onclick="openPaymentModalWithCrop('Trigo')" title="Clic para liquidar con Trigo">
+          <span class="crop-icon">🌾</span>
+          <span class="crop-name">Trigo:</span>
+          <span class="crop-price" id="top-chicago-trigo">USD 215.00</span>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-trend down" id="trend-trigo">-0.3%</span>
+        </div>
+
+        <div class="market-ticker-item" onclick="openPaymentModalWithCrop('Girasol')" title="Clic para liquidar con Girasol">
+          <span class="crop-icon">🌻</span>
+          <span class="crop-name">Girasol:</span>
+          <span class="crop-price" id="top-chicago-girasol">USD 310.00</span>
+          <span class="crop-unit">/Tn</span>
+        </div>
+      </div>
+
+      <div style="font-size:0.7rem; color:#94a3b8; display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+        <span style="background:rgba(56,189,248,0.12); color:#38bdf8; padding:0.15rem 0.45rem; border-radius:4px; font-weight:700;">CBOT FUTUROS</span>
+        <span class="hide-mobile" style="color:#64748b;">• Precios para fijación de contratos agrícolas</span>
+      </div>
+    </div>
+
+    <!-- Renglón 2: Dólar Banco Nación (BNA) -->
+    <div class="market-row market-row-dolar">
+      <div class="market-row-items">
+        <span class="market-section-title bna-title">
+          <span class="pulse-dot-bna"></span> 💵 DÓLAR BANCO NACIÓN (BNA)
+        </span>
+
+        <div class="market-ticker-item highlight-bna" title="Dólar Oficial Billete Vendedor Banco Nación">
+          <span class="bna-label">Venta BNA:</span>
+          <strong class="bna-val" id="top-bna-venta">$1.535,00</strong>
+        </div>
+
+        <div class="market-ticker-item" title="Dólar Mayorista / Divisa Banco Nación (Liquidación)">
+          <span class="bna-label">Mayorista / Divisa:</span>
+          <strong class="bna-val" id="top-bna-mayorista">$1.514,00</strong>
+        </div>
+
+        <div class="market-ticker-item" title="Dólar Oficial Billete Comprador Banco Nación">
+          <span class="bna-label">Compra BNA:</span>
+          <strong class="bna-val" id="top-bna-compra">$1.485,00</strong>
+        </div>
+      </div>
+
+      <!-- Acciones y Estado en Vivo -->
+      <div class="market-actions">
+        <span class="market-live-tag" id="market-live-tag" title="Sincronizado con cotizaciones oficiales de hoy">
+          <span class="live-blink-circle"></span> EN VIVO • BNA
+        </span>
+        <span class="market-date-badge" id="market-date-badge">Hoy</span>
+        <button type="button" class="btn-market-icon" id="btn-refresh-market" title="Actualizar cotizaciones del día">🔄</button>
+        <button type="button" class="btn-market-icon" id="btn-config-market" title="Ajustar cotizaciones manualmente">⚙️</button>
+      </div>
+    </div>
+
+  </div>
+
+  <header class="kiosk-header">
+    <div class="brand-section">
+      <div class="brand-logo">🌾</div>
+      <div class="brand-titles">
+        <h1>TERMINAL AGROPECUARIA DE CONSULTA</h1>
+        <p>Gestión de Contratos de Arrendamiento y Liquidación de Granos</p>
+      </div>
+    </div>
+    <div class="header-status-group">
+      <div class="badge-role badge-guest">
+        <span class="status-dot"></span>
+        <span>MODO INVITADO • SOLO LECTURA</span>
+      </div>
+      <div class="badge-role badge-admin">
+        <span>👑 ADMINISTRADOR • CONTROL TOTAL</span>
+      </div>
+      <!-- Widget de Fondo Fotográfico de Campo -->
+      <div class="bg-photo-widget" id="bg-photo-widget" title="Fotos de campo y cultivos en rotación automática cada 5 minutos">
+        <div class="bg-photo-info">
+          <span class="bg-photo-title" id="bg-photo-title">🌾 Campo de Soja</span>
+          <span class="bg-photo-timer" id="bg-photo-timer" title="Tiempo restante para el próximo cambio automático">⏱️ 5:00</span>
+        </div>
+        <div class="bg-photo-nav">
+          <button type="button" class="btn-bg-nav" id="btn-bg-prev" title="Foto anterior" onclick="prevBackground()">⏮️</button>
+          <button type="button" class="btn-bg-nav" id="btn-bg-next" title="Siguiente foto" onclick="nextBackground()">⏭️</button>
+        </div>
+      </div>
+      <div class="live-clock-card">
+        <div class="live-time" id="live-time">--:--:--</div>
+        <div class="live-date" id="live-date">Cargando...</div>
+      </div>
+      <button class="btn-auth-toggle" id="btn-auth-toggle">
+        <span id="auth-btn-icon">🔐</span>
+        <span id="auth-btn-text">Acceso Administrador</span>
+      </button>
+      <button class="icon-btn" id="btn-refresh" title="Refrescar">🔄</button>
+      <button class="icon-btn" id="btn-fullscreen" title="Pantalla Completa">⛶</button>
+    </div>
+  </header>
+
+  <div class="admin-action-bar" id="admin-action-bar">
+    <div>
+      <span class="admin-bar-tag">MODO GESTIÓN ACTIVO</span>
+      <span>Puede crear contratos, registrar entregas en Kg, tildar facturas y sincronizar.</span>
+    </div>
+    <div>
+      <button class="btn-admin-action btn-admin-primary" id="admin-btn-new-contract">➕ Nuevo Contrato</button>
+      <button class="btn-admin-action" id="admin-btn-record-payment">📦 Registrar Entrega / Kg</button>
+    </div>
+  </div>
+
+  <nav class="kiosk-nav-tabs">
+    <button class="nav-tab-btn active" data-tab="tab-contracts">
+      📋 Contratos de Alquiler Agrícola <span class="nav-tab-count" id="tab-contracts-count">0</span>
+    </button>
+    <button class="nav-tab-btn" data-tab="tab-sheet-viewer">
+      📊 Planilla de Cálculo Consolidada (Sheet)
+    </button>
+  </nav>
+
+  <main class="kiosk-main-content">
+    <div class="tab-view active" id="tab-contracts">
+      <section class="metrics-grid">
+        <div class="metric-card card-primary">
+          <div class="metric-header"><span class="metric-title">Superficie Total en Explotación</span>
+            <div>🚜</div>
+          </div>
+          <div class="metric-value" id="kpi-total-ha">0 Ha</div>
+          <div class="metric-subtext"><strong id="kpi-total-contracts">0 contratos</strong></div>
+        </div>
+        <div class="metric-card card-amber">
+          <div class="metric-header"><span class="metric-title">Total Kg a Pagar</span>
+            <div>🌾</div>
+          </div>
+          <div class="metric-value" id="kpi-total-kg-pactados">0 Kg</div>
+          <div class="metric-subtext">Valorizado: <strong id="kpi-total-usd-pactados">$0 USD</strong></div>
+        </div>
+        <div class="metric-card card-green">
+          <div class="metric-header"><span class="metric-title">Total Kg Pagados</span>
+            <div>✅</div>
+          </div>
+          <div class="metric-value" id="kpi-total-kg-pagados">0 Kg</div>
+          <div class="metric-subtext">Pagado: <strong id="kpi-total-usd-pagados">$0 USD</strong> (<span
+              id="kpi-percentage-paid">0%</span>)</div>
+          <div class="progress-container">
+            <div class="progress-fill" id="kpi-progress-bar" style="width: 0%;"></div>
+          </div>
+        </div>
+        <div class="metric-card card-purple">
+          <div class="metric-header"><span class="metric-title">Saldo Pendiente a Pagar</span>
+            <div>⏳</div>
+          </div>
+          <div class="metric-value" id="kpi-total-saldo-kg">0 Kg</div>
+          <div class="metric-subtext">Saldo en dinero: <strong id="kpi-total-usd-saldo" style="color:#b45309;">$0
+              USD</strong></div>
+        </div>
+      </section>
+
+      <!-- Banner de Alerta de Vencimiento de Contratos -->
+      <div id="expiration-alert-banner" class="expiration-alert-banner" style="display:none;">
+        <div>
+          <div class="expiration-alert-title" id="alert-banner-title">🚨 ALERTA DE VENCIMIENTO DE CONTRATOS</div>
+          <div class="expiration-alert-desc" id="alert-banner-desc">Hay contratos próximos a vencer o vencidos que requieren atención.</div>
+        </div>
+        <button type="button" class="btn-alert-filter" id="btn-alert-filter" onclick="filterByUrgentExpiration()">Ver Contratos Próximos</button>
+      </div>
+
+      <section class="toolbar-card">
+        <div class="toolbar-main-row">
+          <div class="search-box-wrapper">
+            <span class="search-box-icon">🔍</span>
+            <input type="text" id="search-contracts" class="search-input"
+              placeholder="Buscar por campo, arrendador, zona...">
+          </div>
+          <div class="filter-select-group">
+            <select id="filter-campaign-select" class="filter-select" title="Filtrar por Campaña">
+              <option value="all">📅 Todas las Campañas</option>
+            </select>
+            <select id="filter-crop-select" class="filter-select">
+              <option value="all">🌾 Todos los Cultivos</option>
+              <option value="Soja">Soja</option>
+              <option value="Maíz">Maíz</option>
+              <option value="Trigo">Trigo</option>
+              <option value="Girasol">Girasol</option>
+            </select>
+            <select id="filter-invoice-select" class="filter-select">
+              <option value="all">🧾 Todas las Facturas</option>
+              <option value="SI">✅ Factura Recibida</option>
+              <option value="NO">⏳ Factura Pendiente</option>
+            </select>
+            <select id="filter-expiration-select" class="filter-select" title="Filtrar por Estado de Vencimiento">
+              <option value="all">📅 Todos los Vencimientos</option>
+              <option value="urgente">🚨 Por Vencer (&lt; 30 días)</option>
+              <option value="critico">🔴 Crítico (&lt; 15 días)</option>
+              <option value="proximo">⚠️ Próximos (30 a 60 días)</option>
+              <option value="vigente">🟢 Vigentes (&gt; 60 días)</option>
+              <option value="vencido">❌ Vencidos</option>
+            </select>
+            <button class="btn-sheet-export" id="btn-export-sheet">📊 Descargar CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="contracts-container"></section>
+    </div>
+
+    <div class="tab-view" id="tab-sheet-viewer">
+      <div class="sheet-viewer-container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem; background:white; padding:1rem 1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-light); box-shadow:var(--shadow-sm);">
+          <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
+            <span style="font-weight:700; font-size:0.82rem; color:var(--corp-navy);">📑 NAVEGAR SOLAPAS:</span>
+            <button class="sheet-subtab-btn active" id="btn-subtab-master" onclick="switchSheetSubtab('master')">📊 Master Consolidada</button>
+            <select id="sheet-subtab-contract-select" class="filter-select" onchange="switchSheetSubtab(this.value)" title="Elegir solapa por contrato">
+              <option value="">📂 Solapa Individual por Contrato...</option>
+            </select>
+          </div>
+          <button class="btn-sheet-export" id="btn-export-active-sheet" onclick="exportActiveSheetTab()">📥 Descargar esta Solapa (CSV)</button>
+        </div>
+        <div class="sheet-table-scroll allow-select" id="consolidated-sheet-container"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="modal-contract-detail">
+    <div class="modal-container modal-xl">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 id="detail-contract-title">Ficha Técnica</h2>
+          <p id="detail-contract-subtitle">Detalle agronómico y financiero</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-contract-detail')">✕</button>
+      </div>
+      <div class="modal-body" id="detail-contract-body"></div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn-secondary btn-card-edit" id="btn-detail-edit-contract" style="font-weight:700;">✏️ Modificar este Contrato</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-contract-detail')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-contract-form">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2 id="modal-contract-form-title">➕ Cargar / Modificar Contrato Agrícola</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-contract-form')">✕</button>
+      </div>
+      <form id="contract-form" onsubmit="return false;">
+        <div class="modal-body">
+          <input type="hidden" id="form-row-index">
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Establecimiento / Campo *</label><input type="text"
+                id="form-establecimiento" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Código</label><input type="text" id="form-codigo"
+                class="form-input" placeholder="Ej: AGRO-2025-01"></div>
+            <div class="form-group"><label class="form-label">Fecha de Modificación / Carga *</label><input type="date"
+                id="form-fecha" class="form-input" required></div>
+            <div class="form-group">
+              <label class="form-label">Fecha de Vigencia / Vencimiento *</label>
+              <input type="date" id="form-fecha-vencimiento" class="form-input" required>
+              <div id="form-vencimiento-hint" style="font-size:0.75rem; margin-top:0.3rem; font-weight:600; color:var(--text-muted);">
+                Indique hasta cuándo está vigente
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Campaña *</label><input type="text" id="form-campana"
+                class="form-input" list="campanas-list" value="2024/2025" required>
+              <datalist id="campanas-list">
+                <option value="2023/2024">
+                <option value="2024/2025">
+                <option value="2025/2026">
+                <option value="2026/2027">
+              </datalist>
+            </div>
+            <div class="form-group"><label class="form-label">Arrendador (Dueño) *</label><input type="text"
+                id="form-arrendador" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Arrendatario *</label><input type="text"
+                id="form-arrendatario" class="form-input" value="Administración Rural" required></div>
+            <div class="form-group-full"><label class="form-label">Ubicación *</label><input type="text" id="form-ubicacion"
+                class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Hectáreas *</label><input type="number" step="0.1"
+                id="form-ha" class="form-input" required></div>
+            <div class="form-group">
+              <label class="form-label">Cultivo *</label>
+              <select id="form-cultivo" class="form-select">
+                <option value="Soja">Soja</option>
+                <option value="Maíz">Maíz</option>
+                <option value="Trigo">Trigo</option>
+                <option value="Girasol">Girasol</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Quintales / Ha *</label><input type="number" step="0.1"
+                id="form-qq-ha" class="form-input" value="12.0" required></div>
+            <div class="form-group"><label class="form-label">Precio Referencia (USD / Tonelada) *</label><input
+                type="number" step="1" id="form-precio-tn" class="form-input" value="290" required></div>
+            <div class="form-group-full"
+              style="background:#f8fafc; padding:0.75rem; border-radius:6px; border:1px solid #e2e8f0;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--corp-navy); margin-bottom:0.25rem;">Cálculo
+                Estimado:</div>
+              <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                <span>Kilos a Pagar: <strong id="calc-kilos">0 Kg</strong></span>
+                <span>Monto Total: <strong id="calc-usd" style="color:var(--agro-green);">$0 USD</strong></span>
+              </div>
+            </div>
+            <div class="form-group-full" style="display:flex; align-items:center; gap:0.5rem; margin-top:0.25rem;">
+              <input type="checkbox" id="form-factura" style="width:18px; height:18px; cursor:pointer;">
+              <label for="form-factura" style="font-size:0.85rem; font-weight:600; cursor:pointer;">¿Factura
+                Recibida?</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-contract-form')">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btn-save-contract">Guardar en Google Sheet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-payment-form">
+    <div class="modal-container modal-md" style="max-width: 650px;">
+      <div class="modal-header">
+        <h2>🌾 Liquidación de Venta y Pago de Alquiler</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-payment-form')">✕</button>
+      </div>
+      <form id="payment-form" onsubmit="return false;">
+        <div class="modal-body" style="display:flex; flex-direction:column; gap:1rem;">
+          
+          <div class="form-grid">
+            <div class="form-group-full">
+              <label class="form-label">Seleccionar Contrato *</label>
+              <select id="payment-contract-select" class="form-select" required></select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Fecha de Venta Realizada / Fijación *</label>
+              <input type="date" id="payment-fecha" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Kilos Netos a Liquidar *</label>
+              <input type="number" id="payment-kg" class="form-input" placeholder="Ej: 30000" required min="1">
+            </div>
+          </div>
+
+          <div id="payment-limit-info"
+            style="background:#fef3c7; border:1px solid #fde68a; padding:0.6rem 0.85rem; border-radius:6px; font-size:0.8rem; color:#92400e;">
+            Saldo pendiente de fijar/entregar: <strong id="payment-max-kg">0 Kg</strong>
+          </div>
+          <span id="payment-validation-msg"
+            style="font-size:0.75rem; color:#dc2626; font-weight:600; display:none;"></span>
+
+          <!-- Tarjeta Fijación Mercado de Chicago y Conversión a Pesos -->
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.9rem;">
+            <div style="font-size:0.8rem; font-weight:700; color:#166534; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
+              📈 Fijación de Precio (Mercado de Chicago) y Conversión
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Precio Chicago (USD / Tonelada) *</label>
+                <input type="number" step="0.1" id="payment-precio-chicago" class="form-input" value="382.5" required>
+                <div style="display:flex; align-items:center; gap:0.25rem; margin-top:0.35rem; flex-wrap:wrap;">
+                  <span style="font-size:0.68rem; color:#166534; font-weight:700;">Tomar Chicago:</span>
+                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('soja')">🌾 Soja <span id="chip-rate-soja">$382.5</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('maiz')">🌽 Maíz <span id="chip-rate-maiz">$176.4</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('trigo')">🌾 Trigo <span id="chip-rate-trigo">$215.0</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('girasol')">🌻 Girasol <span id="chip-rate-girasol">$310.0</span></button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tipo de Cambio Dólar a Pesos (ARS) *</label>
+                <input type="number" step="0.5" id="payment-tipo-cambio" class="form-input" value="1535" required>
+                <div style="display:flex; align-items:center; gap:0.25rem; margin-top:0.35rem; flex-wrap:wrap;">
+                  <span style="font-size:0.68rem; color:#166534; font-weight:700;">Tomar BNA:</span>
+                  <button type="button" class="btn-rate-chip" onclick="applyDolarChip('venta')">💵 Venta BNA <span id="chip-rate-bna-venta">$1.535</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyDolarChip('mayorista')">🏛️ Mayorista <span id="chip-rate-bna-mayorista">$1.514</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyDolarChip('compra')">💵 Compra <span id="chip-rate-bna-compra">$1.485</span></button>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top:0.75rem; background:white; padding:0.75rem; border-radius:6px; border:1px solid #dcfce7; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; font-size:0.82rem;">
+              <div>
+                <span style="color:#64748b;">Precio en Pesos / Tonelada:</span><br>
+                <strong id="calc-precio-ars" style="color:#166534;">$0 ARS/Tn</strong>
+              </div>
+              <div>
+                <span style="color:#64748b;">Total en Dólares:</span><br>
+                <strong id="calc-total-usd" style="color:var(--corp-navy);">$0 USD</strong>
+              </div>
+              <div>
+                <span style="color:#64748b;">Total a Pagar en Pesos:</span><br>
+                <strong id="calc-total-ars" style="color:#059669; font-size:0.95rem;">$0 ARS</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta Facturación y Medio de Pago -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.9rem;">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--corp-navy); margin-bottom:0.6rem;">
+              🧾 Factura y Forma de Pago del Alquiler
+            </div>
+            
+            <div class="form-grid" style="margin-bottom:0.75rem;">
+              <div class="form-group">
+                <label class="form-label">Forma en que se Pagó *</label>
+                <select id="payment-medio-pago" class="form-select" required>
+                  <option value="Transferencia">Transferencia Bancaria</option>
+                  <option value="Echeq">Echeq (Cheque Electrónico)</option>
+                  <option value="Cheque Físico">Cheque Físico</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">N° de Ref. / Cheque / Transferencia</label>
+                <input type="text" id="payment-referencia" class="form-input" placeholder="Ej: TRF-982341 o CHQ-4029">
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; padding-top:0.5rem; border-top:1px dashed #cbd5e1;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <input type="checkbox" id="payment-factura-recibida" style="width:18px; height:18px; cursor:pointer;">
+                <label for="payment-factura-recibida" style="font-size:0.85rem; font-weight:600; cursor:pointer;">
+                  ¿Factura de alquiler recibida?
+                </label>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.4rem;">
+                <label class="form-label" style="margin:0;">N° Factura:</label>
+                <input type="text" id="payment-nro-factura" class="form-input" style="width:140px; padding:0.35rem 0.6rem;" placeholder="0001-00012345">
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta Comprobante Adjunto -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.9rem;">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--corp-navy); margin-bottom:0.5rem;">
+              📁 Cargar Comprobante de Pago (Se guarda identificado por pago)
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+              <input type="file" id="payment-file-input" accept="image/*,.pdf" style="display:none;" onchange="handlePaymentFileSelect(event)">
+              <button type="button" class="btn-secondary" style="font-size:0.82rem; display:flex; align-items:center; gap:0.4rem;" onclick="document.getElementById('payment-file-input').click()">
+                📎 Seleccionar Archivo (PDF o Imagen)
+              </button>
+              <span id="payment-file-name" style="font-size:0.8rem; color:#64748b;">Ningún comprobante seleccionado</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-payment-form')">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btn-save-payment">Registrar Liquidación y Pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-login">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h2>🔐 Acceso Administrador</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-login')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="login-password"
+            class="form-input" placeholder="admin123"></div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Clave: <code>admin123</code></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-login')">Cancelar</button>
+        <button type="button" class="btn-primary" id="btn-submit-login">Ingresar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-rates-config">
+    <div class="modal-container modal-sm" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2>⚙️ Cotizaciones: Chicago y Dólar BNA</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-rates-config')">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:1rem;">
+        <p style="font-size:0.8rem; color:var(--text-secondary); margin:0;">
+          Ajuste los valores de referencia del día para el Mercado de Chicago y las cotizaciones del Banco Nación.
+        </p>
+        
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.85rem; border-radius:8px;">
+          <div style="font-size:0.8rem; font-weight:700; color:#166534; margin-bottom:0.5rem;">
+            🌱 Mercado de Chicago (USD / Tonelada)
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">🌾 Soja (USD/Tn)</label>
+              <input type="number" step="0.1" id="config-chicago-soja" class="form-input" value="382.5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌽 Maíz (USD/Tn)</label>
+              <input type="number" step="0.1" id="config-chicago-maiz" class="form-input" value="176.4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌾 Trigo (USD/Tn)</label>
+              <input type="number" step="0.1" id="config-chicago-trigo" class="form-input" value="215.0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌻 Girasol (USD/Tn)</label>
+              <input type="number" step="0.1" id="config-chicago-girasol" class="form-input" value="310.0">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.85rem; border-radius:8px;">
+          <div style="font-size:0.8rem; font-weight:700; color:var(--corp-navy); margin-bottom:0.5rem;">
+            💵 Dólar Banco Nación Argentina (ARS)
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Dólar BNA Venta ($)</label>
+              <input type="number" step="0.5" id="config-bna-venta" class="form-input" value="1535">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Dólar BNA Mayorista ($)</label>
+              <input type="number" step="0.5" id="config-bna-mayorista" class="form-input" value="1514">
+            </div>
+            <div class="form-group-full">
+              <label class="form-label">Dólar BNA Compra ($)</label>
+              <input type="number" step="0.5" id="config-bna-compra" class="form-input" value="1485">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn-secondary" style="font-size:0.8rem;" id="btn-reset-market-api">🌐 Sincronizar BNA en Vivo</button>
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-rates-config')">Cancelar</button>
+          <button type="button" class="btn-primary" id="btn-save-rates-config">Guardar Cotizaciones</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    // Emulación para ejecución y previsualización en navegador local (fuera de Google Apps Script)
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      (function () {
+        var STORAGE_KEY = 'agro_contracts_persistent_sheet_v3';
+        var STORAGE_MOVEMENTS_KEY = 'agro_contracts_movements_v3';
+        var todayStr = new Date().toISOString().split('T')[0];
+
+        var defaultContracts = [
+          {
+            rowIndex: 2,
+            id: 'CTR-2025-001',
+            codigo: 'AGRO-LP-01',
+            establecimiento: 'Establecimiento La Posta',
+            ubicacion: 'Pergamino, Bs. As.',
+            arrendador: 'Agrícola Ganadera Los Ombúes S.A.',
+            arrendatario: 'Administración Rural',
+            superficieHa: 450,
+            cultivoPactado: 'Soja',
+            modalidad: '12.0 qq/ha',
+            kgPactados: 540000,
+            kgPagados: 360000,
+            saldoKg: 180000,
+            precioTn: 295,
+            totalUSD: 159300,
+            pagadoUSD: 106200,
+            saldoUSD: 53100,
+            facturaRecibida: true,
+            campana: '2024/2025',
+            porcentajeCumplimiento: 66.7,
+            estado: 'PARCIAL',
+            observaciones: 'Entrega en acopio Pergamino',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-09-25'
+          },
+          {
+            rowIndex: 3,
+            id: 'CTR-2025-002',
+            codigo: 'AGRO-VT-02',
+            establecimiento: 'Campo Los Aromos',
+            ubicacion: 'Venado Tuerto, Sta. Fe',
+            arrendador: 'Sucesión Fernández',
+            arrendatario: 'Cresud S.A.',
+            superficieHa: 600,
+            cultivoPactado: 'Maíz',
+            modalidad: '40.0 qq/ha',
+            kgPactados: 2400000,
+            kgPagados: 2400000,
+            saldoKg: 0,
+            precioTn: 180,
+            totalUSD: 432000,
+            pagadoUSD: 432000,
+            saldoUSD: 0,
+            facturaRecibida: true,
+            campana: '2024/2025',
+            porcentajeCumplimiento: 100,
+            estado: 'PAGADO',
+            observaciones: 'Cancelado 100%',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-08-31'
+          },
+          {
+            rowIndex: 4,
+            id: 'CTR-2025-003',
+            codigo: 'AGRO-BAL-03',
+            establecimiento: 'Estancia Santa María',
+            ubicacion: 'Balcarce, Bs. As.',
+            arrendador: 'Fideicomiso Agro del Sud',
+            arrendatario: 'Cerealera del Plata',
+            superficieHa: 320,
+            cultivoPactado: 'Trigo',
+            modalidad: '25.0 qq/ha',
+            kgPactados: 800000,
+            kgPagados: 400000,
+            saldoKg: 400000,
+            precioTn: 215,
+            totalUSD: 172000,
+            pagadoUSD: 86000,
+            saldoUSD: 86000,
+            facturaRecibida: false,
+            campana: '2025/2026',
+            porcentajeCumplimiento: 50,
+            estado: 'PARCIAL',
+            observaciones: 'Entrega Puerto Quequén',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-10-31'
+          },
+          {
+            rowIndex: 5,
+            id: 'CTR-2025-004',
+            codigo: 'AGRO-RC-04',
+            establecimiento: 'Lote Las Palmeras',
+            ubicacion: 'Río Cuarto, Cba.',
+            arrendador: 'Don Héctor Morales',
+            arrendatario: 'Cooperativa Central',
+            superficieHa: 200,
+            cultivoPactado: 'Girasol',
+            modalidad: '10.0 qq/ha',
+            kgPactados: 200000,
+            kgPagados: 0,
+            saldoKg: 200000,
+            precioTn: 310,
+            totalUSD: 62000,
+            pagadoUSD: 0,
+            saldoUSD: 62000,
+            facturaRecibida: false,
+            campana: '2025/2026',
+            porcentajeCumplimiento: 0,
+            estado: 'PENDIENTE',
+            observaciones: 'Cosecha gruesa',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2027-05-31'
+          }
+        ];
+
+        var defaultMovements = {
+          'CTR-2025-001': [
+            {
+              fecha: todayStr,
+              tipo: 'ALTA CONTRATO',
+              detalle: 'Creación y firma inicial de contrato',
+              kgMov: 0,
+              kgPagados: 0,
+              saldoKg: 540000,
+              precioChicagoUSD: 295,
+              tipoCambioARS: 1350,
+              usdMov: 0,
+              arsMov: 0,
+              medioPago: '-',
+              nroRef: '-',
+              factura: 'SI',
+              comprobanteUrl: '',
+              observaciones: 'Contrato firmado'
+            },
+            {
+              fecha: todayStr,
+              tipo: 'LIQUIDACION / PAGO',
+              detalle: 'Entrega en acopio Pergamino y fijación Chicago',
+              kgMov: 360000,
+              kgPagados: 360000,
+              saldoKg: 180000,
+              precioChicagoUSD: 295,
+              tipoCambioARS: 1350,
+              usdMov: 106200,
+              arsMov: 106200 * 1350,
+              medioPago: 'Transferencia',
+              nroRef: 'TRF-884920',
+              factura: 'SI (N° 0001-000412)',
+              comprobanteUrl: 'https://drive.google.com/file/d/sample1/view',
+              observaciones: '12 camiones entregados'
+            }
+          ],
+          'CTR-2025-002': [
+            {
+              fecha: todayStr,
+              tipo: 'ALTA CONTRATO',
+              detalle: 'Creación del contrato de maíz',
+              kgMov: 0,
+              kgPagados: 0,
+              saldoKg: 2400000,
+              precioChicagoUSD: 180,
+              tipoCambioARS: 1350,
+              usdMov: 0,
+              arsMov: 0,
+              medioPago: '-',
+              nroRef: '-',
+              factura: 'SI',
+              comprobanteUrl: '',
+              observaciones: 'Contrato por 600 Ha'
+            },
+            {
+              fecha: todayStr,
+              tipo: 'LIQUIDACION / PAGO',
+              detalle: 'Entrega final y liquidación total',
+              kgMov: 2400000,
+              kgPagados: 2400000,
+              saldoKg: 0,
+              precioChicagoUSD: 180,
+              tipoCambioARS: 1350,
+              usdMov: 432000,
+              arsMov: 432000 * 1350,
+              medioPago: 'Echeq',
+              nroRef: 'ECH-0094182',
+              factura: 'SI (N° 0002-000854)',
+              comprobanteUrl: 'https://drive.google.com/file/d/sample2/view',
+              observaciones: 'Liquidación total cancelada'
+            }
+          ],
+          'CTR-2025-003': [
+            {
+              fecha: todayStr,
+              tipo: 'ALTA CONTRATO',
+              detalle: 'Alta de contrato trigo',
+              kgMov: 0,
+              kgPagados: 0,
+              saldoKg: 800000,
+              precioChicagoUSD: 215,
+              tipoCambioARS: 1350,
+              usdMov: 0,
+              arsMov: 0,
+              medioPago: '-',
+              nroRef: '-',
+              factura: 'NO',
+              comprobanteUrl: '',
+              observaciones: 'Puerto Quequén'
+            },
+            {
+              fecha: todayStr,
+              tipo: 'LIQUIDACION / PAGO',
+              detalle: 'Entrega parcial 50% fijación trigo',
+              kgMov: 400000,
+              kgPagados: 400000,
+              saldoKg: 400000,
+              precioChicagoUSD: 215,
+              tipoCambioARS: 1350,
+              usdMov: 86000,
+              arsMov: 86000 * 1350,
+              medioPago: 'Cheque Físico',
+              nroRef: 'CHQ-7782103',
+              factura: 'NO',
+              comprobanteUrl: '',
+              observaciones: 'Pendiente remito de descarga'
+            }
+          ],
+          'CTR-2025-004': [
+            {
+              fecha: todayStr,
+              tipo: 'ALTA CONTRATO',
+              detalle: 'Alta de contrato girasol',
+              kgMov: 0,
+              kgPagados: 0,
+              saldoKg: 200000,
+              precioChicagoUSD: 310,
+              tipoCambioARS: 1350,
+              usdMov: 0,
+              arsMov: 0,
+              medioPago: '-',
+              nroRef: '-',
+              factura: 'NO',
+              comprobanteUrl: '',
+              observaciones: 'Siembra en lote'
+            }
+          ]
+        };
+
+        var localSampleContracts = defaultContracts;
+        var localMovements = defaultMovements;
+
+        try {
+          var savedC = localStorage.getItem(STORAGE_KEY);
+          if (savedC) {
+            localSampleContracts = JSON.parse(savedC);
+            // Asegurar que existan fechas de vencimiento de prueba para simular alertas
+            localSampleContracts.forEach(function (c, idx) {
+              if (!c.fechaVencimiento) {
+                if (idx === 0) c.fechaVencimiento = '2026-09-25'; // ~16 días (próximo)
+                else if (idx === 1) c.fechaVencimiento = '2026-08-31'; // Vencido
+                else if (idx === 2) c.fechaVencimiento = '2026-10-31'; // ~52 días
+                else c.fechaVencimiento = '2027-05-31'; // Vigente
+              }
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localSampleContracts));
+          } else {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultContracts));
+          }
+
+          var savedM = localStorage.getItem(STORAGE_MOVEMENTS_KEY);
+          if (savedM) localMovements = JSON.parse(savedM);
+          else localStorage.setItem(STORAGE_MOVEMENTS_KEY, JSON.stringify(defaultMovements));
+        } catch (e) {
+          console.warn('Error accediendo a almacenamiento local:', e);
+        }
+
+        function persistData() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localSampleContracts));
+            localStorage.setItem(STORAGE_MOVEMENTS_KEY, JSON.stringify(localMovements));
+          } catch (e) {
+            console.error('Error guardando en localStorage:', e);
+          }
+        }
+
+        window.google = {
+          script: {
+            run: {
+              _success: null,
+              _failure: null,
+              withSuccessHandler: function (fn) {
+                var inst = Object.create(this);
+                inst._success = fn;
+                return inst;
+              },
+              withFailureHandler: function (fn) {
+                var inst = Object.create(this);
+                inst._failure = fn;
+                return inst;
+              },
+              getContractsFromSheet: function () {
+                var cb = this._success;
+                setTimeout(function () {
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 150);
+              },
+              getContractMovementsFromSheet: function (codigoOrId) {
+                var cb = this._success;
+                setTimeout(function () {
+                  var list = localMovements[codigoOrId];
+                  if (!list) {
+                    var found = localSampleContracts.find(function (c) { return c.codigo === codigoOrId || c.id === codigoOrId; });
+                    if (found) list = localMovements[found.id] || localMovements[found.codigo];
+                  }
+                  if (cb) cb(JSON.parse(JSON.stringify(list || [])));
+                }, 150);
+              },
+              saveContractToSheet: function (c) {
+                var cb = this._success;
+                setTimeout(function () {
+                  var ha = parseFloat(c.superficieHa) || 0;
+                  var qq = parseFloat(c.modalidad) || 12.0;
+                  var kgPactados = Math.round(ha * qq * 100);
+                  var kgPagados = parseInt(c.kgPagados, 10) || 0;
+                  var saldoKg = Math.max(0, kgPactados - kgPagados);
+                  var precioTn = parseFloat(c.precioTn) || 0;
+                  var precioKg = precioTn / 1000;
+                  var totalUSD = kgPactados * precioKg;
+                  var pagadoUSD = kgPagados * precioKg;
+                  var saldoUSD = saldoKg * precioKg;
+                  var pct = kgPactados > 0 ? parseFloat(((kgPagados / kgPactados) * 100).toFixed(1)) : 0;
+                  var estado = kgPagados >= kgPactados ? 'PAGADO' : (kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+                  var fecha = c.fecha || todayStr;
+                  var fechaVencimiento = c.fechaVencimiento || '';
+
+                  var existing = localSampleContracts.find(function (item) { return item.id == c.id; });
+                  if (existing) {
+                    Object.assign(existing, c, {
+                      superficieHa: ha,
+                      kgPactados: kgPactados,
+                      saldoKg: saldoKg,
+                      totalUSD: totalUSD,
+                      pagadoUSD: pagadoUSD,
+                      saldoUSD: saldoUSD,
+                      porcentajeCumplimiento: pct,
+                      estado: estado,
+                      fechaModificacion: fecha,
+                      fechaVencimiento: fechaVencimiento
+                    });
+                    if (!localMovements[existing.id]) localMovements[existing.id] = [];
+                    localMovements[existing.id].push({
+                      fecha: fecha,
+                      tipo: 'MODIFICACION',
+                      detalle: 'Actualización de condiciones (Vigencia: ' + (fechaVencimiento || 'No definida') + ')',
+                      kgMov: 0,
+                      kgPagados: existing.kgPagados,
+                      saldoKg: saldoKg,
+                      precioChicagoUSD: precioTn,
+                      tipoCambioARS: 0,
+                      usdMov: 0,
+                      arsMov: 0,
+                      medioPago: '-',
+                      nroRef: '-',
+                      factura: c.facturaRecibida ? 'SI' : 'NO',
+                      comprobanteUrl: '',
+                      observaciones: c.observaciones || 'Guardado de modificación'
+                    });
+                  } else {
+                    var newId = 'CTR-2025-00' + (localSampleContracts.length + 1);
+                    var newContract = {
+                      rowIndex: localSampleContracts.length + 2,
+                      id: newId,
+                      codigo: c.codigo || ('AGRO-NEW-0' + (localSampleContracts.length + 1)),
+                      establecimiento: c.establecimiento,
+                      ubicacion: c.ubicacion,
+                      arrendador: c.arrendador,
+                      arrendatario: c.arrendatario,
+                      superficieHa: ha,
+                      cultivoPactado: c.cultivoPactado,
+                      modalidad: qq.toFixed(1) + ' qq/ha',
+                      kgPactados: kgPactados,
+                      kgPagados: 0,
+                      saldoKg: kgPactados,
+                      precioTn: precioTn,
+                      totalUSD: totalUSD,
+                      pagadoUSD: 0,
+                      saldoUSD: totalUSD,
+                      facturaRecibida: !!c.facturaRecibida,
+                      campana: c.campana || '2024/2025',
+                      porcentajeCumplimiento: 0,
+                      estado: 'PENDIENTE',
+                      observaciones: c.observaciones || '',
+                      fechaModificacion: fecha,
+                      fechaVencimiento: fechaVencimiento
+                    };
+                    localSampleContracts.push(newContract);
+                    localMovements[newId] = [{
+                      fecha: fecha,
+                      tipo: 'ALTA CONTRATO',
+                      detalle: 'Creación y firma inicial de contrato',
+                      kgMov: 0,
+                      kgPagados: 0,
+                      saldoKg: kgPactados,
+                      precioChicagoUSD: precioTn,
+                      tipoCambioARS: 0,
+                      usdMov: 0,
+                      arsMov: 0,
+                      medioPago: '-',
+                      nroRef: '-',
+                      factura: c.facturaRecibida ? 'SI' : 'NO',
+                      comprobanteUrl: '',
+                      observaciones: c.observaciones || 'Contrato inicial'
+                    }];
+                  }
+                  persistData();
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 150);
+              },
+              recordPaymentToSheet: function (payment) {
+                var cb = this._success;
+                var errCb = this._failure;
+                setTimeout(function () {
+                  var target = localSampleContracts.find(function (item) { return item.id == payment.contractId; });
+                  if (!target) {
+                    if (errCb) errCb(new Error('Contrato no encontrado'));
+                    return;
+                  }
+                  var nuevosKg = parseInt(payment.kg, 10) || 0;
+                  if (nuevosKg > target.saldoKg) {
+                    if (errCb) errCb(new Error('No se pueden entregar ' + nuevosKg + ' Kg. El saldo máximo es ' + target.saldoKg + ' Kg.'));
+                    return;
+                  }
+                  var fecha = payment.fechaVenta || payment.fecha || todayStr;
+                  var precioChicago = parseFloat(payment.precioChicagoUSD) || parseFloat(target.precioTn) || 0;
+                  var tipoCambio = parseFloat(payment.tipoCambioARS) || 1350;
+                  var precioKg = precioChicago / 1000;
+                  var usdPagadoMov = (nuevosKg / 1000) * precioChicago;
+                  var arsPagadoMov = usdPagadoMov * tipoCambio;
+
+                  target.kgPagados = (target.kgPagados || 0) + nuevosKg;
+                  target.saldoKg = Math.max(0, target.kgPactados - target.kgPagados);
+                  target.pagadoUSD = (target.pagadoUSD || 0) + usdPagadoMov;
+                  target.saldoUSD = target.saldoKg * precioKg;
+                  target.porcentajeCumplimiento = target.kgPactados > 0 ? parseFloat(((target.kgPagados / target.kgPactados) * 100).toFixed(1)) : 0;
+                  target.estado = target.kgPagados >= target.kgPactados ? 'PAGADO' : (target.kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+                  target.fechaModificacion = fecha;
+                  if (payment.facturaRecibida !== undefined) {
+                    target.facturaRecibida = !!payment.facturaRecibida;
+                  }
+
+                  var comprobanteUrl = '';
+                  if (payment.comprobanteFile) {
+                    comprobanteUrl = payment.comprobanteFile.dataUrl || ('https://drive.google.com/drive/folders/demo?file=' + encodeURIComponent(payment.comprobanteFile.name || 'comprobante.pdf'));
+                  }
+
+                  if (!localMovements[target.id]) localMovements[target.id] = [];
+                  localMovements[target.id].push({
+                    fecha: fecha,
+                    tipo: 'LIQUIDACION / PAGO',
+                    detalle: 'Fijación precio Chicago y entrega de granos',
+                    kgMov: nuevosKg,
+                    saldoKg: target.saldoKg,
+                    precioChicagoUSD: precioChicago,
+                    tipoCambioARS: tipoCambio,
+                    usdMov: usdPagadoMov,
+                    arsMov: arsPagadoMov,
+                    medioPago: payment.medioPago || 'Transferencia',
+                    nroRef: payment.nroReferencia || payment.nroFactura || '-',
+                    factura: (payment.facturaRecibida ? 'SI' : 'NO') + (payment.nroFactura ? ' (N° ' + payment.nroFactura + ')' : ''),
+                    comprobanteUrl: comprobanteUrl,
+                    observaciones: payment.observaciones || ('Fijación Chicago: USD ' + precioChicago + '/Tn x $' + tipoCambio + ' ARS')
+                  });
+
+                  persistData();
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 150);
+              },
+              toggleInvoiceStatus: function (id) {
+                var cb = this._success;
+                setTimeout(function () {
+                  var target = localSampleContracts.find(function (item) { return item.id == id; });
+                  if (target) {
+                    target.facturaRecibida = !target.facturaRecibida;
+                    target.fechaModificacion = todayStr;
+                    if (!localMovements[target.id]) localMovements[target.id] = [];
+                    localMovements[target.id].push({
+                      fecha: todayStr,
+                      tipo: 'CAMBIO FACTURA',
+                      detalle: 'Estado de factura cambiado a: ' + (target.facturaRecibida ? 'RECIBIDA' : 'PENDIENTE'),
+                      kgMov: 0,
+                      kgPagados: target.kgPagados,
+                      saldoKg: target.saldoKg,
+                      usdMov: 0,
+                      saldoUSD: target.saldoUSD,
+                      factura: target.facturaRecibida ? 'SI' : 'NO',
+                      observaciones: 'Actualización de factura'
+                    });
+                  }
+                  persistData();
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 100);
+              },
+              deleteContractFromSheet: function (id) {
+                var cb = this._success;
+                setTimeout(function () {
+                  localSampleContracts = localSampleContracts.filter(function (item) { return item.id != id; });
+                  delete localMovements[id];
+                  persistData();
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 100);
+              },
+              getMarketRates: function () {
+                var cb = this._success;
+                setTimeout(function () {
+                  if (cb) cb(JSON.parse(JSON.stringify(marketRates)));
+                }, 100);
+              }
+            }
+          }
+        };
+      })();
+    }
+
+    var marketRates = {
+      dolarBNA: {
+        compra: 1485,
+        venta: 1535,
+        mayorista: 1514,
+        fechaActualizacion: new Date().toISOString()
+      },
+      chicago: {
+        soja: 382.50,
+        sojaVar: '+1.2%',
+        maiz: 176.40,
+        maizVar: '+0.5%',
+        trigo: 215.00,
+        trigoVar: '-0.3%',
+        girasol: 310.00
+      },
+      lastUpdated: new Date()
+    };
+
+    var state = {
+      contracts: [],
+      filteredContracts: [],
+      isAdmin: false,
+      searchQuery: '',
+      selectedCampaign: 'all',
+      selectedCrop: 'all',
+      selectedInvoice: 'all',
+      selectedExpiration: 'all',
+      selectedSheetTab: 'master'
+    };
+
+    function formatDateDisplay(dateStr) {
+      if (!dateStr) return '-';
+      var clean = String(dateStr).trim().split('T')[0];
+      var p = clean.split('-');
+      if (p.length === 3) {
+        return p[2] + '/' + p[1] + '/' + p[0];
+      }
+      return dateStr;
+    }
+
+    function getExpirationStatus(dateStr) {
+      if (!dateStr) {
+        return {
+          status: 'SIN_FECHA',
+          days: null,
+          badgeClass: 'exp-soon',
+          label: 'Vigencia: No definida',
+          shortLabel: 'Sin fecha',
+          icon: '⚪',
+          isAlert: false,
+          urgency: 99
+        };
+      }
+      var clean = String(dateStr).trim().split('T')[0];
+      var parts = clean.split('-');
+      if (parts.length !== 3) {
+        return {
+          status: 'SIN_FECHA',
+          days: null,
+          badgeClass: 'exp-soon',
+          label: 'Formato no válido',
+          shortLabel: clean,
+          icon: '⚪',
+          isAlert: false,
+          urgency: 99
+        };
+      }
+      var expDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      var now = new Date();
+      var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var diffDays = Math.round((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        var d = Math.abs(diffDays);
+        return {
+          status: 'VENCIDO',
+          days: diffDays,
+          badgeClass: 'exp-expired',
+          label: 'VENCIDO (hace ' + d + (d === 1 ? ' día' : ' días') + ')',
+          shortLabel: 'Vencido (' + d + 'd)',
+          icon: '❌',
+          isAlert: true,
+          urgency: 1
+        };
+      } else if (diffDays === 0) {
+        return {
+          status: 'CRITICO',
+          days: 0,
+          badgeClass: 'exp-critical',
+          label: 'VENCE HOY',
+          shortLabel: 'Vence Hoy',
+          icon: '🚨',
+          isAlert: true,
+          urgency: 2
+        };
+      } else if (diffDays <= 15) {
+        return {
+          status: 'CRITICO',
+          days: diffDays,
+          badgeClass: 'exp-critical',
+          label: 'Vence en ' + diffDays + ' días',
+          shortLabel: 'Vence en ' + diffDays + 'd',
+          icon: '🚨',
+          isAlert: true,
+          urgency: 2
+        };
+      } else if (diffDays <= 30) {
+        return {
+          status: 'WARNING',
+          days: diffDays,
+          badgeClass: 'exp-warning',
+          label: 'Vence en ' + diffDays + ' días',
+          shortLabel: 'Vence en ' + diffDays + 'd',
+          icon: '⚠️',
+          isAlert: true,
+          urgency: 3
+        };
+      } else if (diffDays <= 60) {
+        return {
+          status: 'PROXIMO',
+          days: diffDays,
+          badgeClass: 'exp-soon',
+          label: 'Vence en ' + diffDays + ' días',
+          shortLabel: 'Vence en ' + diffDays + 'd',
+          icon: '🗓️',
+          isAlert: false,
+          urgency: 4
+        };
+      } else {
+        return {
+          status: 'VIGENTE',
+          days: diffDays,
+          badgeClass: 'exp-valid',
+          label: 'Vigente (' + diffDays + ' días restantes)',
+          shortLabel: 'Vigente (' + diffDays + 'd)',
+          icon: '🟢',
+          isAlert: false,
+          urgency: 5
+        };
+      }
+    }
+
+    function updateExpirationHint(val) {
+      var hintEl = document.getElementById('form-vencimiento-hint');
+      if (!hintEl) return;
+      if (!val) {
+        hintEl.textContent = 'Indique hasta cuándo está vigente el contrato';
+        hintEl.style.color = 'var(--text-muted)';
+        return;
+      }
+      var exp = getExpirationStatus(val);
+      hintEl.textContent = exp.icon + ' ' + exp.label;
+      if (exp.status === 'VENCIDO') {
+        hintEl.style.color = '#dc2626';
+      } else if (exp.isAlert) {
+        hintEl.style.color = '#d97706';
+      } else {
+        hintEl.style.color = '#16a34a';
+      }
+    }
+
+    window.filterByUrgentExpiration = function () {
+      var sel = document.getElementById('filter-expiration-select');
+      if (sel) {
+        sel.value = 'urgente';
+        state.selectedExpiration = 'urgente';
+        renderContracts();
+        var cCont = document.getElementById('contracts-container');
+        if (cCont) cCont.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    window.editContract = function (id) {
+      var c = state.contracts.find(function (item) { return item.id == id; });
+      if (!c) return;
+
+      var titleEl = document.getElementById('modal-contract-form-title');
+      if (titleEl) titleEl.textContent = '✏️ Modificar Contrato: ' + c.establecimiento;
+      document.getElementById('form-row-index').value = c.rowIndex || '';
+      document.getElementById('form-codigo').value = c.codigo || '';
+      document.getElementById('form-establecimiento').value = c.establecimiento || '';
+      document.getElementById('form-arrendador').value = c.arrendador || '';
+      document.getElementById('form-arrendatario').value = c.arrendatario || 'Administración Rural';
+      document.getElementById('form-ubicacion').value = c.ubicacion || '';
+      document.getElementById('form-campana').value = c.campana || '2024/2025';
+      document.getElementById('form-ha').value = c.superficieHa || '';
+      document.getElementById('form-cultivo').value = c.cultivoPactado || 'Soja';
+      var modVal = parseFloat(c.modalidad) || 12.0;
+      document.getElementById('form-qq-ha').value = modVal;
+      document.getElementById('form-precio-tn').value = c.precioTn || 290;
+      document.getElementById('form-factura').checked = !!c.facturaRecibida;
+      document.getElementById('form-fecha').value = c.fechaModificacion || new Date().toISOString().split('T')[0];
+      document.getElementById('form-fecha-vencimiento').value = c.fechaVencimiento || '';
+
+      updateExpirationHint(c.fechaVencimiento);
+      if (typeof updateCalc === 'function') updateCalc();
+      closeModal('modal-contract-detail');
+      openModal('modal-contract-form');
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+      initClock();
+      initMarketRates();
+      initBackgroundCarousel();
+      setupEventListeners();
+      loadContractsFromSheet();
+    });
+
+    function initMarketRates() {
+      try {
+        var savedRates = localStorage.getItem('agro_market_rates_v1');
+        if (savedRates) {
+          var parsed = JSON.parse(savedRates);
+          if (parsed.dolarBNA) Object.assign(marketRates.dolarBNA, parsed.dolarBNA);
+          if (parsed.chicago) Object.assign(marketRates.chicago, parsed.chicago);
+        }
+      } catch (e) { }
+
+      renderMarketTopBar();
+      fetchLiveMarketRates(false);
+    }
+
+    function renderMarketTopBar() {
+      var elSoja = document.getElementById('top-chicago-soja');
+      var elMaiz = document.getElementById('top-chicago-maiz');
+      var elTrigo = document.getElementById('top-chicago-trigo');
+      var elGirasol = document.getElementById('top-chicago-girasol');
+
+      var elBnaVenta = document.getElementById('top-bna-venta');
+      var elBnaMayorista = document.getElementById('top-bna-mayorista');
+      var elBnaCompra = document.getElementById('top-bna-compra');
+      var elBadge = document.getElementById('market-date-badge');
+
+      if (elSoja) elSoja.textContent = 'USD ' + Number(marketRates.chicago.soja).toFixed(2);
+      if (elMaiz) elMaiz.textContent = 'USD ' + Number(marketRates.chicago.maiz).toFixed(2);
+      if (elTrigo) elTrigo.textContent = 'USD ' + Number(marketRates.chicago.trigo).toFixed(2);
+      if (elGirasol) elGirasol.textContent = 'USD ' + Number(marketRates.chicago.girasol).toFixed(2);
+
+      if (elBnaVenta) elBnaVenta.textContent = '$' + formatNum(marketRates.dolarBNA.venta) + ',00';
+      if (elBnaMayorista) elBnaMayorista.textContent = '$' + formatNum(marketRates.dolarBNA.mayorista) + ',00';
+      if (elBnaCompra) elBnaCompra.textContent = '$' + formatNum(marketRates.dolarBNA.compra) + ',00';
+
+      if (elBadge) {
+        var now = new Date();
+        var d = String(now.getDate()).padStart(2, '0');
+        var m = String(now.getMonth() + 1).padStart(2, '0');
+        elBadge.textContent = d + '/' + m + '/' + now.getFullYear();
+      }
+
+      // Actualizar chips dentro del modal de liquidación
+      var cSoja = document.getElementById('chip-rate-soja');
+      var cMaiz = document.getElementById('chip-rate-maiz');
+      var cTrigo = document.getElementById('chip-rate-trigo');
+      var cGirasol = document.getElementById('chip-rate-girasol');
+      var cBnaVenta = document.getElementById('chip-rate-bna-venta');
+      var cBnaMayorista = document.getElementById('chip-rate-bna-mayorista');
+      var cBnaCompra = document.getElementById('chip-rate-bna-compra');
+
+      if (cSoja) cSoja.textContent = '$' + marketRates.chicago.soja;
+      if (cMaiz) cMaiz.textContent = '$' + marketRates.chicago.maiz;
+      if (cTrigo) cTrigo.textContent = '$' + marketRates.chicago.trigo;
+      if (cGirasol) cGirasol.textContent = '$' + marketRates.chicago.girasol;
+      if (cBnaVenta) cBnaVenta.textContent = '$' + formatNum(marketRates.dolarBNA.venta);
+      if (cBnaMayorista) cBnaMayorista.textContent = '$' + formatNum(marketRates.dolarBNA.mayorista);
+      if (cBnaCompra) cBnaCompra.textContent = '$' + formatNum(marketRates.dolarBNA.compra);
+    }
+
+    function fetchLiveMarketRates(isManual) {
+      var liveTag = document.getElementById('market-live-tag');
+      if (liveTag) liveTag.innerHTML = '<span class="live-blink-circle"></span> ACTUALIZANDO...';
+
+      if (typeof google !== 'undefined' && google.script && google.script.run && !window.__isLocalMock) {
+        google.script.run
+          .withSuccessHandler(function (data) {
+            if (data && data.dolarBNA) {
+              Object.assign(marketRates.dolarBNA, data.dolarBNA);
+              if (data.chicago) Object.assign(marketRates.chicago, data.chicago);
+              renderMarketTopBar();
+              if (liveTag) liveTag.innerHTML = '<span class="live-blink-circle"></span> EN VIVO • BNA';
+              if (isManual) showToast('Cotizaciones actualizadas desde Banco Nación y Chicago');
+            }
+          })
+          .withFailureHandler(function () {
+            fallbackFetchApi(isManual);
+          })
+          .getMarketRates();
+      } else {
+        fallbackFetchApi(isManual);
+      }
+    }
+
+    function fallbackFetchApi(isManual) {
+      var liveTag = document.getElementById('market-live-tag');
+      fetch('https://dolarapi.com/v1/dolares/oficial')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.venta) {
+            marketRates.dolarBNA.venta = data.venta;
+            marketRates.dolarBNA.compra = data.compra || marketRates.dolarBNA.compra;
+          }
+          return fetch('https://dolarapi.com/v1/dolares/mayorista');
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (dataM) {
+          if (dataM && dataM.venta) {
+            marketRates.dolarBNA.mayorista = dataM.venta;
+          }
+          try {
+            localStorage.setItem('agro_market_rates_v1', JSON.stringify(marketRates));
+          } catch (e) { }
+          renderMarketTopBar();
+          if (liveTag) liveTag.innerHTML = '<span class="live-blink-circle"></span> EN VIVO • BNA';
+          if (isManual) showToast('Dólar Banco Nación y Chicago sincronizados');
+        })
+        .catch(function (err) {
+          renderMarketTopBar();
+          if (liveTag) liveTag.innerHTML = '<span class="live-blink-circle"></span> BNA LOCAL';
+          if (isManual) showToast('Cotizaciones cargadas localmente');
+        });
+    }
+
+    window.openPaymentModalWithCrop = function (cropName) {
+      var btn = document.getElementById('admin-btn-record-payment');
+      if (btn) btn.click();
+      applyChicagoChip((cropName || 'soja').toLowerCase());
+      applyDolarChip('venta');
+    };
+
+    window.applyChicagoChip = function (crop) {
+      var key = (crop || '').toLowerCase();
+      if (key === 'maíz') key = 'maiz';
+      var val = marketRates.chicago[key] || marketRates.chicago.soja;
+      var el = document.getElementById('payment-precio-chicago');
+      if (el) {
+        el.value = val;
+        if (window.updatePaymentCalculations) window.updatePaymentCalculations();
+      }
+    };
+
+    window.applyDolarChip = function (type) {
+      var val = marketRates.dolarBNA[type] || marketRates.dolarBNA.venta;
+      var el = document.getElementById('payment-tipo-cambio');
+      if (el) {
+        el.value = val;
+        if (window.updatePaymentCalculations) window.updatePaymentCalculations();
+      }
+    };
+
+    window.openRatesConfig = function () {
+      document.getElementById('config-chicago-soja').value = marketRates.chicago.soja;
+      document.getElementById('config-chicago-maiz').value = marketRates.chicago.maiz;
+      document.getElementById('config-chicago-trigo').value = marketRates.chicago.trigo;
+      document.getElementById('config-chicago-girasol').value = marketRates.chicago.girasol;
+
+      document.getElementById('config-bna-venta').value = marketRates.dolarBNA.venta;
+      document.getElementById('config-bna-mayorista').value = marketRates.dolarBNA.mayorista;
+      document.getElementById('config-bna-compra').value = marketRates.dolarBNA.compra;
+
+      openModal('modal-rates-config');
+    };
+
+    window.saveRatesConfig = function () {
+      marketRates.chicago.soja = parseFloat(document.getElementById('config-chicago-soja').value) || marketRates.chicago.soja;
+      marketRates.chicago.maiz = parseFloat(document.getElementById('config-chicago-maiz').value) || marketRates.chicago.maiz;
+      marketRates.chicago.trigo = parseFloat(document.getElementById('config-chicago-trigo').value) || marketRates.chicago.trigo;
+      marketRates.chicago.girasol = parseFloat(document.getElementById('config-chicago-girasol').value) || marketRates.chicago.girasol;
+
+      marketRates.dolarBNA.venta = parseFloat(document.getElementById('config-bna-venta').value) || marketRates.dolarBNA.venta;
+      marketRates.dolarBNA.mayorista = parseFloat(document.getElementById('config-bna-mayorista').value) || marketRates.dolarBNA.mayorista;
+      marketRates.dolarBNA.compra = parseFloat(document.getElementById('config-bna-compra').value) || marketRates.dolarBNA.compra;
+
+      try {
+        localStorage.setItem('agro_market_rates_v1', JSON.stringify(marketRates));
+      } catch (e) { }
+
+      renderMarketTopBar();
+      closeModal('modal-rates-config');
+      showToast('Cotizaciones fijadas y aplicadas con éxito');
+    };
+
+    function initClock() {
+      var timeEl = document.getElementById('live-time');
+      var dateEl = document.getElementById('live-date');
+      setInterval(function () {
+        var now = new Date();
+        if (timeEl) timeEl.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (dateEl) dateEl.textContent = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }, 1000);
+    }
+
+    function loadContractsFromSheet() {
+      document.getElementById('contracts-container').innerHTML = '<div style="padding:3rem; text-align:center; color:var(--text-muted); background:white; border-radius:12px;">⏳ Conectando con Google Sheets...</div>';
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function (data) {
+            state.contracts = data || [];
+            updateCampaignsDropdown();
+            renderAll();
+          })
+          .withFailureHandler(function (err) { alert('Error: ' + err.message); })
+          .getContractsFromSheet();
+      }
+    }
+
+    function updateCampaignsDropdown() {
+      var select = document.getElementById('filter-campaign-select');
+      var campMap = {};
+      state.contracts.forEach(function (c) { if (c.campana) campMap[c.campana] = true; });
+      var campaigns = Object.keys(campMap);
+      var html = '<option value="all">📅 Todas las Campañas</option>';
+      campaigns.forEach(function (camp) {
+        html += '<option value="' + camp + '">' + camp + '</option>';
+      });
+      select.innerHTML = html;
+
+      // Actualizar selector de solapas por contrato en la planilla
+      var tabSelect = document.getElementById('sheet-subtab-contract-select');
+      if (tabSelect) {
+        var tabHtml = '<option value="">📂 Solapa Individual por Contrato...</option>';
+        state.contracts.forEach(function (c) {
+          tabHtml += '<option value="' + c.id + '">📑 ' + escapeHtml(c.codigo) + ' - ' + escapeHtml(c.establecimiento) + '</option>';
+        });
+        tabSelect.innerHTML = tabHtml;
+        if (state.selectedSheetTab && state.selectedSheetTab !== 'master') {
+          tabSelect.value = state.selectedSheetTab;
+        }
+      }
+    }
+
+    function renderAll() {
+      updateKPIDashboard();
+      renderContracts();
+      renderConsolidatedSheet();
+      document.getElementById('tab-contracts-count').textContent = state.contracts.length;
+    }
+
+    function updateKPIDashboard() {
+      var totalHa = 0, totalKgPactados = 0, totalKgPagados = 0, totalUSDPactado = 0, totalUSDPagado = 0;
+      var expiredCount = 0;
+      var urgentCount = 0;
+
+      state.contracts.forEach(function (c) {
+        totalHa += parseFloat(c.superficieHa) || 0;
+        totalKgPactados += parseInt(c.kgPactados, 10) || 0;
+        totalKgPagados += parseInt(c.kgPagados, 10) || 0;
+        totalUSDPactado += parseFloat(c.totalUSD) || 0;
+        totalUSDPagado += parseFloat(c.pagadoUSD) || 0;
+
+        var exp = getExpirationStatus(c.fechaVencimiento);
+        if (exp.status === 'VENCIDO') {
+          expiredCount++;
+        } else if (exp.status === 'CRITICO' || exp.status === 'WARNING') {
+          urgentCount++;
+        }
+      });
+
+      var saldoKg = Math.max(0, totalKgPactados - totalKgPagados);
+      var saldoUSD = Math.max(0, totalUSDPactado - totalUSDPagado);
+      var pct = totalKgPactados > 0 ? ((totalKgPagados / totalKgPactados) * 100).toFixed(1) : 0;
+
+      document.getElementById('kpi-total-ha').textContent = formatNum(totalHa) + ' Ha';
+      document.getElementById('kpi-total-contracts').textContent = state.contracts.length + ' contratos activos';
+      document.getElementById('kpi-total-kg-pactados').textContent = formatNum(totalKgPactados) + ' Kg';
+      document.getElementById('kpi-total-usd-pactados').textContent = '$' + formatNum(Math.round(totalUSDPactado)) + ' USD';
+      document.getElementById('kpi-total-kg-pagados').textContent = formatNum(totalKgPagados) + ' Kg';
+      document.getElementById('kpi-total-usd-pagados').textContent = '$' + formatNum(Math.round(totalUSDPagado)) + ' USD';
+      document.getElementById('kpi-total-saldo-kg').textContent = formatNum(saldoKg) + ' Kg';
+      document.getElementById('kpi-total-usd-saldo').textContent = '$' + formatNum(Math.round(saldoUSD)) + ' USD';
+      document.getElementById('kpi-percentage-paid').textContent = pct + '%';
+      document.getElementById('kpi-progress-bar').style.width = pct + '%';
+
+      // Actualizar Banner de Alertas de Vencimiento
+      var bannerEl = document.getElementById('expiration-alert-banner');
+      var bannerTitle = document.getElementById('alert-banner-title');
+      var bannerDesc = document.getElementById('alert-banner-desc');
+      if (bannerEl) {
+        if (expiredCount > 0 || urgentCount > 0) {
+          bannerEl.style.display = 'flex';
+          var msgs = [];
+          if (expiredCount > 0) msgs.push('<strong>' + expiredCount + ' contrato(s) VENCIDO(S)</strong>');
+          if (urgentCount > 0) msgs.push('<strong>' + urgentCount + ' contrato(s) por vencer (&lt; 30 días)</strong>');
+          bannerTitle.innerHTML = '🚨 ATENCIÓN: VENCIMIENTO DE CONTRATOS (' + (expiredCount + urgentCount) + ' que requieren revisión)';
+          bannerDesc.innerHTML = 'Estado de vigencia crítico: ' + msgs.join(' y ') + '. Verifique renovaciones, prórrogas o liquidaciones finales.';
+        } else {
+          bannerEl.style.display = 'none';
+        }
+      }
+    }
+
+    function filterContracts() {
+      var list = state.contracts.slice();
+      if (state.searchQuery.trim()) {
+        var q = state.searchQuery.toLowerCase().trim();
+        list = list.filter(function (c) {
+          return (c.establecimiento && c.establecimiento.toLowerCase().indexOf(q) !== -1) ||
+            (c.arrendador && c.arrendador.toLowerCase().indexOf(q) !== -1) ||
+            (c.codigo && c.codigo.toLowerCase().indexOf(q) !== -1);
+        });
+      }
+      if (state.selectedCampaign !== 'all') {
+        list = list.filter(function (c) { return c.campana === state.selectedCampaign; });
+      }
+      if (state.selectedCrop !== 'all') {
+        list = list.filter(function (c) { return c.cultivoPactado === state.selectedCrop; });
+      }
+      if (state.selectedInvoice !== 'all') {
+        var isRecibida = state.selectedInvoice === 'SI';
+        list = list.filter(function (c) { return c.facturaRecibida === isRecibida; });
+      }
+      if (state.selectedExpiration && state.selectedExpiration !== 'all') {
+        list = list.filter(function (c) {
+          var exp = getExpirationStatus(c.fechaVencimiento);
+          if (state.selectedExpiration === 'urgente') return exp.status === 'CRITICO' || exp.status === 'WARNING';
+          if (state.selectedExpiration === 'critico') return exp.status === 'CRITICO';
+          if (state.selectedExpiration === 'proximo') return exp.status === 'PROXIMO';
+          if (state.selectedExpiration === 'vigente') return exp.status === 'VIGENTE';
+          if (state.selectedExpiration === 'vencido') return exp.status === 'VENCIDO';
+          return true;
+        });
+      }
+      state.filteredContracts = list;
+    }
+
+    function renderContracts() {
+      filterContracts();
+      var container = document.getElementById('contracts-container');
+      if (state.filteredContracts.length === 0) {
+        container.innerHTML = '<div style="background:white; padding:3rem; text-align:center; border-radius:12px; color:var(--text-muted);">No se encontraron contratos con los filtros actuales.</div>';
+        return;
+      }
+
+      var html = '<div class="contracts-grid">';
+      state.filteredContracts.forEach(function (c) {
+        var stClass = c.estado === 'PAGADO' ? 'status-paid' : (c.estado === 'PARCIAL' ? 'status-partial' : 'status-pending');
+        var factClass = c.facturaRecibida ? 'received' : 'pending';
+        var factText = c.facturaRecibida ? 'Factura: RECIBIDA ✅' : 'Factura: PENDIENTE ⏳';
+        var fechaBadge = c.fechaModificacion ? ' • 🕒 ' + c.fechaModificacion : '';
+
+        var expInfo = getExpirationStatus(c.fechaVencimiento);
+        var cardAlertClass = expInfo.status === 'VENCIDO' ? 'card-alert-expired' : (expInfo.isAlert ? (expInfo.status === 'CRITICO' ? 'card-alert-critical' : 'card-alert-warning') : '');
+
+        html += '<div class="contract-card ' + cardAlertClass + '">';
+        html += '<div class="contract-card-header">';
+        html += '<div style="flex:1; min-width:0; padding-right:0.5rem;">';
+        html += '<h3 class="contract-establishment">' + escapeHtml(c.establecimiento) + '</h3>';
+        html += '<span class="contract-code-tag">' + escapeHtml(c.codigo) + ' • 📅 ' + escapeHtml(c.campana) + fechaBadge + '</span>';
+        html += '</div>';
+        html += '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">';
+        html += '<span class="status-badge ' + stClass + '">' + c.estado + '</span>';
+        html += '<span class="invoice-badge ' + factClass + '" onclick="toggleInvoice(\'' + c.id + '\')" title="Clic para alternar estado de factura (Admin)">' + factText + '</span>';
+        html += '</div>';
+        html += '</div>';
+
+        // Barra de Vigencia y Vencimiento
+        html += '<div class="contract-expiration-bar">';
+        html += '<span class="exp-badge ' + expInfo.badgeClass + '" title="Vigencia hasta: ' + (c.fechaVencimiento || 'No definida') + '">';
+        html += '<span>' + expInfo.icon + '</span>';
+        html += '<span><strong>Vigencia:</strong> ' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : 'No definida') + ' • ' + expInfo.label + '</span>';
+        html += '</span>';
+        if (expInfo.days !== null) {
+          var diasTxt = expInfo.days < 0 ? ('Venció hace ' + Math.abs(expInfo.days) + 'd') : ('Quedan ' + expInfo.days + ' días');
+          html += '<span style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">' + diasTxt + '</span>';
+        }
+        html += '</div>';
+
+        html += '<div class="contract-card-body">';
+        html += '<div style="font-size:0.8rem; color:var(--text-secondary);">';
+        html += '<strong>Arrendador:</strong> ' + escapeHtml(c.arrendador) + '<br>';
+        html += '<strong>Superficie:</strong> ' + c.superficieHa + ' Ha • ' + c.cultivoPactado + ' (' + c.modalidad + ')';
+        html += '</div>';
+
+        html += '<div class="contract-kg-metrics">';
+        html += '<div>';
+        html += '<span class="kg-stat-label">Total Kg a Pagar</span>';
+        html += '<div class="kg-stat-val">' + formatNum(c.kgPactados) + ' Kg</div>';
+        html += '</div>';
+        html += '<div>';
+        html += '<span class="kg-stat-label">Total Kg Pagados</span>';
+        html += '<div class="kg-stat-val paid">' + formatNum(c.kgPagados) + ' Kg</div>';
+        html += '</div>';
+        html += '</div>';
+
+        html += '<div class="contract-finance-box">';
+        html += '<div><span>Precio:</span> <strong>USD ' + c.precioTn + '/Tn</strong></div>';
+        html += '<div><span>Total a Pagar:</span> <strong style="color:var(--corp-navy);">USD ' + formatNum(Math.round(c.totalUSD)) + '</strong></div>';
+        html += '</div>';
+
+        html += '<div class="progress-container"><div class="progress-fill" style="width:' + c.porcentajeCumplimiento + '%;"></div></div>';
+        html += '</div>';
+
+        html += '<div class="contract-card-footer">';
+        html += '<span style="font-size:0.75rem; color:var(--text-muted);">Saldo: <strong style="color:#b45309;">' + formatNum(c.saldoKg) + ' Kg (USD ' + formatNum(Math.round(c.saldoUSD)) + ')</strong></span>';
+        html += '<div style="display:flex; gap:0.35rem; flex-wrap:wrap;">';
+        html += '<button class="btn-card-view" onclick="openDetail(\'' + c.id + '\')">👁️ Ficha</button>';
+        html += '<button class="btn-card-view btn-card-edit" onclick="editContract(\'' + c.id + '\')" title="Modificar contrato y vigencia">✏️ Editar</button>';
+        html += '<button class="btn-card-view" style="background:#f0fdf4; border-color:#86efac; color:#166534;" onclick="viewContractTab(\'' + c.id + '\')" title="Ver Solapa de este contrato">📑 Solapa</button>';
+        html += '<button class="btn-card-delete" onclick="deleteContract(\'' + c.id + '\', \'' + c.establecimiento + '\')" title="Eliminar">🗑️</button>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    window.switchSheetSubtab = function (tabName) {
+      state.selectedSheetTab = tabName || 'master';
+      var btnMaster = document.getElementById('btn-subtab-master');
+      var selContract = document.getElementById('sheet-subtab-contract-select');
+
+      if (state.selectedSheetTab === 'master') {
+        if (btnMaster) btnMaster.classList.add('active');
+        if (selContract) selContract.value = '';
+      } else {
+        if (btnMaster) btnMaster.classList.remove('active');
+        if (selContract) selContract.value = state.selectedSheetTab;
+      }
+      renderConsolidatedSheet();
+    };
+
+    window.viewContractTab = function (id) {
+      document.querySelectorAll('.nav-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
+      var tabBtn = document.querySelector('[data-tab="tab-sheet-viewer"]');
+      if (tabBtn) tabBtn.classList.add('active');
+      var sheetView = document.getElementById('tab-sheet-viewer');
+      if (sheetView) sheetView.classList.add('active');
+
+      switchSheetSubtab(id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    function renderConsolidatedSheet() {
+      var container = document.getElementById('consolidated-sheet-container');
+      if (!container) return;
+
+      if (state.selectedSheetTab === 'master' || !state.selectedSheetTab) {
+        // Vista Master Consolidada
+        var html = '<table class="sheet-table">';
+        html += '<thead><tr><th>#</th><th>Código</th><th>Establecimiento</th><th>Campaña</th><th>Vigencia Hasta</th><th>Alerta Vencimiento</th><th>Arrendador</th><th>Has</th><th>Cultivo</th><th>Precio (Tn)</th><th>Kg a Pagar</th><th>Kg Pagados</th><th>Saldo Kg</th><th>Total USD</th><th>Saldo USD</th><th>Factura</th><th>Estado</th><th>Última Modif.</th></tr></thead>';
+        html += '<tbody>';
+        state.contracts.forEach(function (c, i) {
+          var exp = getExpirationStatus(c.fechaVencimiento);
+          html += '<tr>';
+          html += '<td>' + (i + 1) + '</td>';
+          html += '<td><code>' + escapeHtml(c.codigo) + '</code></td>';
+          html += '<td><strong>' + escapeHtml(c.establecimiento) + '</strong></td>';
+          html += '<td>' + escapeHtml(c.campana) + '</td>';
+          html += '<td><strong style="color:var(--corp-navy);">' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : '-') + '</strong></td>';
+          html += '<td><span class="exp-badge ' + exp.badgeClass + '" style="font-size:0.7rem; padding:0.15rem 0.5rem;">' + exp.shortLabel + '</span></td>';
+          html += '<td>' + escapeHtml(c.arrendador) + '</td>';
+          html += '<td>' + c.superficieHa + '</td>';
+          html += '<td>' + c.cultivoPactado + '</td>';
+          html += '<td>USD ' + c.precioTn + '</td>';
+          html += '<td>' + formatNum(c.kgPactados) + '</td>';
+          html += '<td style="color:var(--agro-green); font-weight:700;">' + formatNum(c.kgPagados) + '</td>';
+          html += '<td style="color:#b45309; font-weight:700;">' + formatNum(c.saldoKg) + '</td>';
+          html += '<td>USD ' + formatNum(Math.round(c.totalUSD)) + '</td>';
+          html += '<td style="color:#b45309; font-weight:700;">USD ' + formatNum(Math.round(c.saldoUSD)) + '</td>';
+          html += '<td>' + (c.facturaRecibida ? 'RECIBIDA ✅' : 'PENDIENTE ⏳') + '</td>';
+          html += '<td>' + c.estado + '</td>';
+          html += '<td><small>' + (c.fechaModificacion || '-') + '</small></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } else {
+        // Vista de Solapa Individual por Contrato
+        var c = state.contracts.find(function (item) { return item.id == state.selectedSheetTab || item.codigo == state.selectedSheetTab; });
+        if (!c) {
+          container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-muted);">Seleccione una solapa válida.</div>';
+          return;
+        }
+        var expSolapa = getExpirationStatus(c.fechaVencimiento);
+        var headerHtml = '<div style="background:white; border-bottom:1px solid #e2e8f0; padding:1.25rem; margin-bottom:1rem; border-radius:8px;">';
+        headerHtml += '<div style="background:#0f2744; color:white; padding:0.75rem 1rem; border-radius:6px; font-weight:800; font-size:1.05rem; margin-bottom:1rem;">';
+        headerHtml += '📑 SOLAPA DE SEGUIMIENTO: ' + escapeHtml(c.establecimiento) + ' (' + escapeHtml(c.codigo) + ')';
+        headerHtml += '</div>';
+        headerHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.75rem; font-size:0.82rem; background:#f8fafc; padding:0.85rem; border-radius:6px; border:1px solid #e2e8f0;">';
+        headerHtml += '<div><span style="color:#64748b;">Arrendador:</span><br><strong>' + escapeHtml(c.arrendador) + '</strong></div>';
+        headerHtml += '<div><span style="color:#64748b;">Superficie:</span><br><strong>' + c.superficieHa + ' Ha (' + c.cultivoPactado + ')</strong></div>';
+        headerHtml += '<div><span style="color:#64748b;">Vigencia Hasta:</span><br><strong>' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : '-') + '</strong> <span class="exp-badge ' + expSolapa.badgeClass + '" style="font-size:0.68rem; padding:0.1rem 0.4rem; margin-top:0.2rem;">' + expSolapa.shortLabel + '</span></div>';
+        headerHtml += '<div><span style="color:#64748b;">Precio Referencia:</span><br><strong>USD ' + c.precioTn + ' / Tn</strong></div>';
+        headerHtml += '<div><span style="color:#64748b;">Total Pactado:</span><br><strong>' + formatNum(c.kgPactados) + ' Kg (USD ' + formatNum(Math.round(c.totalUSD)) + ')</strong></div>';
+        headerHtml += '<div><span style="color:#64748b;">Total Pagado:</span><br><strong style="color:#059669;">' + formatNum(c.kgPagados) + ' Kg</strong></div>';
+        headerHtml += '<div><span style="color:#64748b;">Saldo Pendiente:</span><br><strong style="color:#b45309;">' + formatNum(c.saldoKg) + ' Kg</strong></div>';
+        headerHtml += '<div><span style="color:#64748b;">Última Modificación:</span><br><strong>' + (c.fechaModificacion || '-') + '</strong></div>';
+        headerHtml += '</div>';
+        headerHtml += '</div>';
+
+        container.innerHTML = headerHtml + '<div id="contract-tab-movements-container"><div style="padding:1rem; color:#64748b;">Cargando movimientos de la solapa...</div></div>';
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function (movements) {
+              renderMovementsTable('contract-tab-movements-container', movements);
+            })
+            .getContractMovementsFromSheet(c.codigo || c.id);
+        }
+      }
+    }
+
+    function renderMovementsTable(containerId, movements) {
+      var cont = document.getElementById(containerId);
+      if (!cont) return;
+
+      if (!movements || movements.length === 0) {
+        cont.innerHTML = '<div style="background:white; padding:2rem; text-align:center; border-radius:8px; color:var(--text-muted); border:1px solid #e2e8f0;">No hay movimientos registrados en esta solapa todavía.</div>';
+        return;
+      }
+
+      var html = '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid #e2e8f0; border-radius:8px;">';
+      html += '<table class="movements-table" style="margin-top:0; min-width:1250px;">';
+      html += '<thead><tr>' +
+        '<th>Fecha Venta/Fijación</th>' +
+        '<th>Tipo Movimiento</th>' +
+        '<th>Detalle / Concepto</th>' +
+        '<th>Kg Liquidados</th>' +
+        '<th>Saldo Pendiente</th>' +
+        '<th>Precio Chicago</th>' +
+        '<th>T/C (ARS)</th>' +
+        '<th>Total USD</th>' +
+        '<th>Total ARS</th>' +
+        '<th>Forma de Pago</th>' +
+        '<th>N° Ref / Cheque</th>' +
+        '<th>Factura Alquiler</th>' +
+        '<th>Comprobante</th>' +
+        '<th>Observaciones</th>' +
+        '</tr></thead><tbody>';
+      movements.forEach(function (m) {
+        var badgeClass = 'badge-mov-alta';
+        if (m.tipo === 'ENTREGA DE GRANOS' || m.tipo === 'LIQUIDACION / PAGO') badgeClass = 'badge-mov-pago';
+        else if (m.tipo === 'MODIFICACION') badgeClass = 'badge-mov-mod';
+        else if (m.tipo === 'CAMBIO FACTURA') badgeClass = 'badge-mov-fact';
+
+        var comprobanteHtml = '<span style="color:#94a3b8; font-size:0.75rem;">Sin archivo</span>';
+        if (m.comprobanteUrl) {
+          comprobanteHtml = '<a href="' + escapeHtml(m.comprobanteUrl) + '" target="_blank" class="btn-voucher-link" title="Ver comprobante en Google Drive">📎 Ver Comprobante</a>';
+        }
+
+        var medioPagoHtml = m.medioPago && m.medioPago !== '-' ? '<span class="badge-medio-pago">' + escapeHtml(m.medioPago) + '</span>' : '<span style="color:#94a3b8;">-</span>';
+
+        html += '<tr>';
+        html += '<td><strong>' + (m.fecha || '-') + '</strong></td>';
+        html += '<td><span class="badge-mov-tipo ' + badgeClass + '">' + m.tipo + '</span></td>';
+        html += '<td>' + escapeHtml(m.detalle) + '</td>';
+        html += '<td>' + (m.kgMov ? '+' + formatNum(m.kgMov) + ' Kg' : '-') + '</td>';
+        html += '<td style="color:#b45309; font-weight:700;">' + formatNum(m.saldoKg) + ' Kg</td>';
+        html += '<td>' + (m.precioChicagoUSD ? 'USD ' + m.precioChicagoUSD : '-') + '</td>';
+        html += '<td>' + (m.tipoCambioARS ? '$' + formatNum(m.tipoCambioARS) : '-') + '</td>';
+        html += '<td>' + (m.usdMov ? 'USD ' + formatNum(Math.round(m.usdMov)) : '-') + '</td>';
+        html += '<td style="color:#059669; font-weight:700;">' + (m.arsMov ? '$' + formatNum(Math.round(m.arsMov)) : '-') + '</td>';
+        html += '<td>' + medioPagoHtml + '</td>';
+        html += '<td><code>' + escapeHtml(m.nroRef || '-') + '</code></td>';
+        html += '<td>' + (m.factura && m.factura.indexOf('SI') !== -1 ? '✅ ' + escapeHtml(m.factura) : '⏳ ' + escapeHtml(m.factura || 'NO')) + '</td>';
+        html += '<td>' + comprobanteHtml + '</td>';
+        html += '<td><small>' + escapeHtml(m.observaciones || '') + '</small></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      cont.innerHTML = html;
+    }
+
+    window.openDetail = function (id) {
+      var c = state.contracts.find(function (item) { return item.id == id; });
+      if (!c) return;
+      window.currentDetailContractId = id;
+      document.getElementById('detail-contract-title').textContent = c.establecimiento + ' (' + c.codigo + ')';
+      document.getElementById('detail-contract-subtitle').textContent = 'Campaña ' + c.campana + ' • ' + c.ubicacion;
+
+      var exp = getExpirationStatus(c.fechaVencimiento);
+      var html = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:1rem; margin-bottom:1.25rem;">';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">ARRENDADOR</div><div style="font-weight:700;">' + escapeHtml(c.arrendador) + '</div></div>';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">SUPERFICIE Y CULTIVO</div><div style="font-weight:700;">' + c.superficieHa + ' Ha • ' + c.cultivoPactado + ' (' + c.modalidad + ')</div></div>';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px; border-left:4px solid ' + (exp.isAlert ? '#ef4444' : '#22c55e') + ';"><div style="font-size:0.75rem; color:var(--text-muted);">VIGENCIA / VENCIMIENTO</div><div style="font-weight:700;">' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : 'No definida') + '</div><div style="margin-top:0.25rem;"><span class="exp-badge ' + exp.badgeClass + '" style="font-size:0.7rem; padding:0.15rem 0.5rem;">' + exp.label + '</span></div></div>';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">FECHA DE MODIFICACIÓN</div><div style="font-weight:700;">' + (c.fechaModificacion || 'Hoy') + '</div></div>';
+      html += '</div>';
+
+      html += '<div class="contract-kg-metrics" style="padding:1rem; margin-bottom:1rem;">';
+      html += '<div><span class="kg-stat-label">Total Kilos a Pagar</span><div class="kg-stat-val" style="font-size:1.4rem;">' + formatNum(c.kgPactados) + ' Kg</div></div>';
+      html += '<div><span class="kg-stat-label">Total Kilos Pagados</span><div class="kg-stat-val paid" style="font-size:1.4rem;">' + formatNum(c.kgPagados) + ' Kg</div></div>';
+      html += '</div>';
+
+      html += '<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:1rem; display:flex; justify-content:space-around; margin-bottom:1.25rem; text-align:center;">';
+      html += '<div><span style="font-size:0.75rem; color:var(--text-muted);">PRECIO / TN</span><div style="font-weight:700; font-size:1.1rem;">USD ' + c.precioTn + '</div></div>';
+      html += '<div><span style="font-size:0.75rem; color:var(--text-muted);">MONTO TOTAL A PAGAR</span><div style="font-weight:700; font-size:1.1rem; color:var(--corp-navy);">USD ' + formatNum(Math.round(c.totalUSD)) + '</div></div>';
+      html += '<div><span style="font-size:0.75rem; color:var(--text-muted);">SALDO EN DINERO</span><div style="font-weight:700; font-size:1.1rem; color:#b45309;">USD ' + formatNum(Math.round(c.saldoUSD)) + '</div></div>';
+      html += '</div>';
+
+      html += '<div style="margin-top:1.5rem;">';
+      html += '<h3 style="font-size:0.95rem; font-weight:700; color:var(--corp-navy); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">📜 Historial de Movimientos de la Solapa</h3>';
+      html += '<div id="detail-modal-movements-container"><div style="color:var(--text-muted); font-size:0.85rem;">Cargando movimientos...</div></div>';
+      html += '</div>';
+
+      document.getElementById('detail-contract-body').innerHTML = html;
+      openModal('modal-contract-detail');
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function (movements) {
+            renderMovementsTable('detail-modal-movements-container', movements);
+          })
+          .getContractMovementsFromSheet(c.codigo || c.id);
+      }
+    };
+
+    window.toggleInvoice = function (id) {
+      if (!state.isAdmin) {
+        showToast('Inicie sesión como Administrador para cambiar la factura.');
+        return;
+      }
+      showToast('Actualizando factura...');
+      google.script.run
+        .withSuccessHandler(function (data) {
+          state.contracts = data || [];
+          renderAll();
+          showToast('Estado de factura actualizado');
+        })
+        .toggleInvoiceStatus(id);
+    };
+
+    window.deleteContract = function (id, nombre) {
+      if (!state.isAdmin) return;
+      if (confirm('¿Está seguro de que desea eliminar el campo "' + nombre + '"?\nSe archivará su solapa en Google Sheets.')) {
+        showToast('Eliminando...');
+        google.script.run
+          .withSuccessHandler(function (data) {
+            state.contracts = data || [];
+            updateCampaignsDropdown();
+            renderAll();
+            showToast('Campo eliminado');
+          })
+          .deleteContractFromSheet(id);
+      }
+    };
+
+    window.exportActiveSheetTab = function () {
+      if (state.selectedSheetTab === 'master' || !state.selectedSheetTab) {
+        document.getElementById('btn-export-sheet').click();
+      } else {
+        var c = state.contracts.find(function (item) { return item.id == state.selectedSheetTab || item.codigo == state.selectedSheetTab; });
+        if (!c) return;
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function (movements) {
+              var csv = "\uFEFFFecha_Venta_Fijacion,Tipo_Movimiento,Detalle,Kg_Liquidados,Saldo_Pendiente_Kg,Precio_Chicago_USD_Tn,Tipo_Cambio_ARS,Total_Liquidado_USD,Total_Liquidado_ARS,Forma_Pago,Nro_Ref_Cheque,Factura_Alquiler,Comprobante_Drive,Observaciones\r\n";
+              (movements || []).forEach(function (m) {
+                csv += '"' + (m.fecha || '') + '",' +
+                  '"' + (m.tipo || '') + '",' +
+                  '"' + (m.detalle || '').replace(/"/g, '""') + '",' +
+                  (m.kgMov || 0) + ',' +
+                  (m.saldoKg || 0) + ',' +
+                  (m.precioChicagoUSD || 0) + ',' +
+                  (m.tipoCambioARS || 0) + ',' +
+                  Math.round(m.usdMov || 0) + ',' +
+                  Math.round(m.arsMov || 0) + ',' +
+                  '"' + (m.medioPago || '') + '",' +
+                  '"' + (m.nroRef || '').replace(/"/g, '""') + '",' +
+                  '"' + (m.factura || '').replace(/"/g, '""') + '",' +
+                  '"' + (m.comprobanteUrl || '').replace(/"/g, '""') + '",' +
+                  '"' + (m.observaciones || '').replace(/"/g, '""') + '"\r\n';
+              });
+              var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              var a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'Solapa_' + c.codigo + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+              a.click();
+              showToast('Solapa descargada: ' + c.codigo);
+            })
+            .getContractMovementsFromSheet(c.codigo || c.id);
+        }
+      }
+    };
+
+    function setupEventListeners() {
+      var updateCalc = function () {
+        var ha = parseFloat(document.getElementById('form-ha').value) || 0;
+        var qq = parseFloat(document.getElementById('form-qq-ha').value) || 0;
+        var precioTn = parseFloat(document.getElementById('form-precio-tn').value) || 0;
+        var kilos = Math.round(ha * qq * 100);
+        var totalUSD = kilos * (precioTn / 1000);
+        document.getElementById('calc-kilos').textContent = formatNum(kilos) + ' Kg';
+        document.getElementById('calc-usd').textContent = '$' + formatNum(Math.round(totalUSD)) + ' USD';
+      };
+      document.getElementById('form-ha').addEventListener('input', updateCalc);
+      document.getElementById('form-qq-ha').addEventListener('input', updateCalc);
+      document.getElementById('form-precio-tn').addEventListener('input', updateCalc);
+
+      window.currentPaymentFile = null;
+
+      window.handlePaymentFileSelect = function (event) {
+        var file = event.target.files[0];
+        if (!file) {
+          window.currentPaymentFile = null;
+          document.getElementById('payment-file-name').textContent = 'Ningún comprobante seleccionado';
+          return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+          alert('⚠️ El archivo no debe superar 15MB.');
+          event.target.value = '';
+          return;
+        }
+        document.getElementById('payment-file-name').textContent = '📄 ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          var base64 = e.target.result.split(',')[1];
+          window.currentPaymentFile = {
+            name: file.name,
+            mimeType: file.type || 'application/pdf',
+            base64: base64,
+            dataUrl: e.target.result
+          };
+        };
+        reader.readAsDataURL(file);
+      };
+
+      window.updatePaymentCalculations = function () {
+        var kg = parseInt(document.getElementById('payment-kg').value, 10) || 0;
+        var precioChicagoUSD = parseFloat(document.getElementById('payment-precio-chicago').value) || 0;
+        var tipoCambioARS = parseFloat(document.getElementById('payment-tipo-cambio').value) || 0;
+
+        var precioARSxTn = precioChicagoUSD * tipoCambioARS;
+        var totalUSD = (kg / 1000) * precioChicagoUSD;
+        var totalARS = totalUSD * tipoCambioARS;
+
+        document.getElementById('calc-precio-ars').textContent = '$' + formatNum(Math.round(precioARSxTn)) + ' ARS/Tn';
+        document.getElementById('calc-total-usd').textContent = '$' + formatNum(Math.round(totalUSD)) + ' USD';
+        document.getElementById('calc-total-ars').textContent = '$' + formatNum(Math.round(totalARS)) + ' ARS';
+      };
+
+      var selectPayment = document.getElementById('payment-contract-select');
+      var inputKg = document.getElementById('payment-kg');
+      var msgValidation = document.getElementById('payment-validation-msg');
+
+      var updatePaymentLimit = function () {
+        var c = state.contracts.find(function (item) { return item.id == selectPayment.value; });
+        if (c) {
+          document.getElementById('payment-max-kg').textContent = formatNum(c.saldoKg) + ' Kg (Pactado: ' + formatNum(c.kgPactados) + ' Kg)';
+          inputKg.max = c.saldoKg;
+          var crop = (c.cultivoPactado || '').toLowerCase();
+          if (crop === 'maíz') crop = 'maiz';
+          if (marketRates.chicago[crop]) {
+            document.getElementById('payment-precio-chicago').value = marketRates.chicago[crop];
+          } else if (c.precioTn) {
+            document.getElementById('payment-precio-chicago').value = c.precioTn;
+          }
+          if (marketRates.dolarBNA && marketRates.dolarBNA.venta) {
+            document.getElementById('payment-tipo-cambio').value = marketRates.dolarBNA.venta;
+          }
+          window.updatePaymentCalculations();
+        }
+      };
+      selectPayment.addEventListener('change', updatePaymentLimit);
+
+      inputKg.addEventListener('input', function () {
+        var c = state.contracts.find(function (item) { return item.id == selectPayment.value; });
+        if (c) {
+          var val = parseInt(inputKg.value, 10) || 0;
+          if (val > c.saldoKg) {
+            msgValidation.textContent = '⚠️ No puede vender/entregar más de ' + formatNum(c.saldoKg) + ' Kg (Saldo pendiente).';
+            msgValidation.style.display = 'block';
+            document.getElementById('btn-save-payment').disabled = true;
+          } else {
+            msgValidation.style.display = 'none';
+            document.getElementById('btn-save-payment').disabled = false;
+          }
+        }
+        window.updatePaymentCalculations();
+      });
+
+      document.getElementById('payment-precio-chicago').addEventListener('input', window.updatePaymentCalculations);
+      document.getElementById('payment-tipo-cambio').addEventListener('input', window.updatePaymentCalculations);
+
+      // Event listeners para la barra de cotizaciones de Chicago y Dólar BNA
+      var btnRefreshMarket = document.getElementById('btn-refresh-market');
+      if (btnRefreshMarket) btnRefreshMarket.addEventListener('click', function () { fetchLiveMarketRates(true); });
+
+      var btnConfigMarket = document.getElementById('btn-config-market');
+      if (btnConfigMarket) btnConfigMarket.addEventListener('click', window.openRatesConfig);
+
+      var btnSaveRates = document.getElementById('btn-save-rates-config');
+      if (btnSaveRates) btnSaveRates.addEventListener('click', window.saveRatesConfig);
+
+      var btnResetApi = document.getElementById('btn-reset-market-api');
+      if (btnResetApi) btnResetApi.addEventListener('click', function () { fallbackFetchApi(true); });
+
+      document.querySelectorAll('.nav-tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('.nav-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+          document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.tab).classList.add('active');
+          if (btn.dataset.tab === 'tab-sheet-viewer') renderConsolidatedSheet();
+        });
+      });
+
+      document.getElementById('btn-auth-toggle').addEventListener('click', function () {
+        if (state.isAdmin) {
+          state.isAdmin = false;
+          document.body.classList.remove('admin-mode');
+          document.getElementById('btn-auth-toggle').classList.remove('is-admin');
+          document.getElementById('auth-btn-text').textContent = 'Acceso Administrador';
+          showToast('Modo Invitado (Solo Lectura) activado');
+          renderContracts();
+        } else {
+          openModal('modal-login');
+        }
+      });
+
+      document.getElementById('btn-submit-login').addEventListener('click', function () {
+        if (document.getElementById('login-password').value === 'admin123') {
+          state.isAdmin = true;
+          document.body.classList.add('admin-mode');
+          document.getElementById('btn-auth-toggle').classList.add('is-admin');
+          document.getElementById('auth-btn-text').textContent = 'Cerrar Sesión Admin';
+          closeModal('modal-login');
+          showToast('Sesión de Administrador iniciada');
+          renderContracts();
+        } else {
+          alert('Clave incorrecta. Use: admin123');
+        }
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', function () {
+        loadContractsFromSheet();
+        showToast('Sincronizando...');
+      });
+
+      document.getElementById('admin-btn-new-contract').addEventListener('click', function () {
+        var titleEl = document.getElementById('modal-contract-form-title');
+        if (titleEl) titleEl.textContent = '➕ Cargar Nuevo Contrato Agrícola';
+        document.getElementById('form-row-index').value = '';
+        document.getElementById('form-establecimiento').value = '';
+        document.getElementById('form-codigo').value = '';
+        document.getElementById('form-arrendador').value = '';
+        document.getElementById('form-ubicacion').value = '';
+        document.getElementById('form-ha').value = '';
+        document.getElementById('form-factura').checked = false;
+        document.getElementById('form-fecha').value = new Date().toISOString().split('T')[0];
+
+        var defVenc = new Date();
+        defVenc.setFullYear(defVenc.getFullYear() + 1);
+        var defVencStr = defVenc.toISOString().split('T')[0];
+        document.getElementById('form-fecha-vencimiento').value = defVencStr;
+        updateExpirationHint(defVencStr);
+
+        updateCalc();
+        openModal('modal-contract-form');
+      });
+
+      document.getElementById('admin-btn-record-payment').addEventListener('click', function () {
+        var select = document.getElementById('payment-contract-select');
+        var html = '';
+        state.contracts.forEach(function (c) {
+          html += '<option value="' + c.id + '">' + c.establecimiento + ' (Saldo: ' + formatNum(c.saldoKg) + ' Kg)</option>';
+        });
+        select.innerHTML = html;
+        document.getElementById('payment-kg').value = '';
+        document.getElementById('payment-fecha').value = new Date().toISOString().split('T')[0];
+        document.getElementById('payment-file-input').value = '';
+        document.getElementById('payment-file-name').textContent = 'Ningún comprobante seleccionado';
+        document.getElementById('payment-referencia').value = '';
+        document.getElementById('payment-medio-pago').value = 'Transferencia';
+        document.getElementById('payment-factura-recibida').checked = false;
+        document.getElementById('payment-nro-factura').value = '';
+        window.currentPaymentFile = null;
+
+        var firstContract = state.contracts[0];
+        if (firstContract) {
+          var crop = (firstContract.cultivoPactado || '').toLowerCase();
+          if (crop === 'maíz') crop = 'maiz';
+          document.getElementById('payment-precio-chicago').value = marketRates.chicago[crop] || firstContract.precioTn || marketRates.chicago.soja;
+        }
+        if (marketRates.dolarBNA && marketRates.dolarBNA.venta) {
+          document.getElementById('payment-tipo-cambio').value = marketRates.dolarBNA.venta;
+        }
+        updatePaymentLimit();
+        window.updatePaymentCalculations();
+        openModal('modal-payment-form');
+      });
+
+      document.getElementById('btn-save-contract').addEventListener('click', function () {
+        var fechaVal = document.getElementById('form-fecha').value;
+        if (!fechaVal) {
+          alert('⚠️ La fecha de modificación o carga es obligatoria.');
+          document.getElementById('form-fecha').focus();
+          return;
+        }
+
+        var fechaVencVal = document.getElementById('form-fecha-vencimiento').value;
+        if (!fechaVencVal) {
+          alert('⚠️ La fecha de vigencia / vencimiento es obligatoria.');
+          document.getElementById('form-fecha-vencimiento').focus();
+          return;
+        }
+
+        var cData = {
+          rowIndex: parseInt(document.getElementById('form-row-index').value, 10) || 0,
+          codigo: document.getElementById('form-codigo').value || ('AGRO-' + Date.now().toString().slice(-3)),
+          establecimiento: document.getElementById('form-establecimiento').value,
+          arrendador: document.getElementById('form-arrendador').value,
+          arrendatario: document.getElementById('form-arrendatario').value,
+          ubicacion: document.getElementById('form-ubicacion').value,
+          campana: document.getElementById('form-campana').value,
+          superficieHa: parseFloat(document.getElementById('form-ha').value) || 0,
+          cultivoPactado: document.getElementById('form-cultivo').value,
+          modalidad: document.getElementById('form-qq-ha').value,
+          precioTn: parseFloat(document.getElementById('form-precio-tn').value) || 0,
+          facturaRecibida: document.getElementById('form-factura').checked,
+          fecha: fechaVal,
+          fechaVencimiento: fechaVencVal
+        };
+
+        if (!cData.establecimiento || !cData.arrendador || cData.superficieHa <= 0) {
+          alert('Complete los campos obligatorios (*).');
+          return;
+        }
+
+        showToast('Guardando en Google Sheets...');
+        google.script.run
+          .withSuccessHandler(function (data) {
+            state.contracts = data;
+            updateCampaignsDropdown();
+            closeModal('modal-contract-form');
+            renderAll();
+            showToast('Contrato y Solapa guardados exitosamente');
+          })
+          .saveContractToSheet(cData);
+      });
+
+      document.getElementById('btn-save-payment').addEventListener('click', function () {
+        var contractId = document.getElementById('payment-contract-select').value;
+        var kg = parseInt(document.getElementById('payment-kg').value, 10) || 0;
+        var fechaVal = document.getElementById('payment-fecha').value;
+        var precioChicago = parseFloat(document.getElementById('payment-precio-chicago').value) || 0;
+        var tipoCambio = parseFloat(document.getElementById('payment-tipo-cambio').value) || 0;
+        var medioPago = document.getElementById('payment-medio-pago').value;
+        var nroRef = document.getElementById('payment-referencia').value.trim();
+        var facturaRecibida = document.getElementById('payment-factura-recibida').checked;
+        var nroFactura = document.getElementById('payment-nro-factura').value.trim();
+        var c = state.contracts.find(function (item) { return item.id == contractId; });
+
+        if (!fechaVal) {
+          alert('⚠️ La fecha de venta / fijación es obligatoria.');
+          document.getElementById('payment-fecha').focus();
+          return;
+        }
+
+        if (kg <= 0) {
+          alert('⚠️ Ingrese los kilos a liquidar (mayor a 0).');
+          document.getElementById('payment-kg').focus();
+          return;
+        }
+
+        if (c && kg > c.saldoKg) {
+          alert('⚠️ Error: No se pueden liquidar más de ' + formatNum(c.saldoKg) + ' Kg.');
+          return;
+        }
+
+        if (precioChicago <= 0) {
+          alert('⚠️ Ingrese un precio de Chicago válido.');
+          document.getElementById('payment-precio-chicago').focus();
+          return;
+        }
+
+        if (tipoCambio <= 0) {
+          alert('⚠️ Ingrese un tipo de cambio válido.');
+          document.getElementById('payment-tipo-cambio').focus();
+          return;
+        }
+
+        var paymentData = {
+          contractId: contractId,
+          kg: kg,
+          fecha: fechaVal,
+          fechaVenta: fechaVal,
+          precioChicagoUSD: precioChicago,
+          tipoCambioARS: tipoCambio,
+          medioPago: medioPago,
+          nroReferencia: nroRef,
+          facturaRecibida: facturaRecibida,
+          nroFactura: nroFactura,
+          comprobanteFile: window.currentPaymentFile,
+          observaciones: (c ? c.establecimiento : '') + ' - Fijación USD ' + precioChicago + '/Tn'
+        };
+
+        showToast('Registrando liquidación...');
+        google.script.run
+          .withSuccessHandler(function (data) {
+            state.contracts = data;
+            closeModal('modal-payment-form');
+            renderAll();
+            showToast('Liquidación y comprobante guardados con éxito');
+          })
+          .withFailureHandler(function (err) { alert(err.message); })
+          .recordPaymentToSheet(paymentData);
+      });
+
+      document.getElementById('search-contracts').addEventListener('input', function (e) {
+        state.searchQuery = e.target.value;
+        renderContracts();
+      });
+
+      document.getElementById('filter-campaign-select').addEventListener('change', function (e) {
+        state.selectedCampaign = e.target.value;
+        renderContracts();
+      });
+
+      document.getElementById('filter-crop-select').addEventListener('change', function (e) {
+        state.selectedCrop = e.target.value;
+        renderContracts();
+      });
+
+      document.getElementById('filter-invoice-select').addEventListener('change', function (e) {
+        state.selectedInvoice = e.target.value;
+        renderContracts();
+      });
+
+      document.getElementById('filter-expiration-select').addEventListener('change', function (e) {
+        state.selectedExpiration = e.target.value;
+        renderContracts();
+      });
+
+      document.getElementById('form-fecha-vencimiento').addEventListener('input', function (e) {
+        updateExpirationHint(e.target.value);
+      });
+
+      var btnDetailEdit = document.getElementById('btn-detail-edit-contract');
+      if (btnDetailEdit) {
+        btnDetailEdit.addEventListener('click', function () {
+          if (window.currentDetailContractId) {
+            editContract(window.currentDetailContractId);
+          }
+        });
+      }
+
+      document.getElementById('btn-fullscreen').addEventListener('click', function () {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () { });
+        else document.exitFullscreen().catch(function () { });
+      });
+
+      document.getElementById('btn-export-sheet').addEventListener('click', function () {
+        var headers = [
+          'ID', 'Codigo', 'Establecimiento', 'Ubicacion', 'Arrendador',
+          'Arrendatario', 'Superficie_Ha', 'Cultivo', 'Modalidad',
+          'Kg_Pactados', 'Kg_Pagados', 'Saldo_Kg', 'Precio_USD_Tn',
+          'Total_USD_Pagar', 'Total_USD_Pagado', 'Saldo_USD',
+          'Factura_Recibida', 'Campana', 'Porcentaje_Pagado', 'Estado', 'Observaciones', 'Fecha_Modificacion', 'Fecha_Vencimiento'
+        ];
+        var csv = "\uFEFF" + headers.join(",") + "\r\n";
+        state.contracts.forEach(function (c) {
+          var row = [
+            c.id,
+            c.codigo,
+            '"' + (c.establecimiento || '').replace(/"/g, '""') + '"',
+            '"' + (c.ubicacion || '').replace(/"/g, '""') + '"',
+            '"' + (c.arrendador || '').replace(/"/g, '""') + '"',
+            '"' + (c.arrendatario || '').replace(/"/g, '""') + '"',
+            c.superficieHa,
+            '"' + (c.cultivoPactado || '') + '"',
+            '"' + (c.modalidad || '') + '"',
+            c.kgPactados,
+            c.kgPagados,
+            c.saldoKg,
+            c.precioTn,
+            Math.round(c.totalUSD || 0),
+            Math.round(c.pagadoUSD || 0),
+            Math.round(c.saldoUSD || 0),
+            c.facturaRecibida ? 'SI' : 'NO',
+            '"' + (c.campana || '') + '"',
+            '"' + (c.porcentajeCumplimiento || 0) + '%"',
+            c.estado,
+            '"' + (c.observaciones || '').replace(/"/g, '""') + '"',
+            '"' + (c.fechaModificacion || '') + '"',
+            '"' + (c.fechaVencimiento || '') + '"'
+          ];
+          csv += row.join(",") + "\r\n";
+        });
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Planilla_Contratos_Agricolas_' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        showToast('Planilla Master descargada (CSV)');
+      });
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function formatNum(n) { return (n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+    function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]; }); }
+    function showToast(msg) {
+      var c = document.getElementById('toast-container');
+      var t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(function () { t.remove(); }, 3500);
+    }
+
+    /* ==========================================================================
+       SISTEMA DE FONDOS ROTATIVOS DE CAMPO Y CULTIVOS (5 MINUTOS)
+       ========================================================================== */
+    var agroBackgrounds = [
+      {
+        url: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1920&q=80',
+        title: '🌾 Cultivo de Soja en Crecimiento',
+        crop: 'Soja',
+        desc: 'Lote tecnificado de oleaginosas'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80',
+        title: '🌾 Campo de Trigo Dorado',
+        crop: 'Trigo',
+        desc: 'Espigas maduras listas para cosecha'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=1920&q=80',
+        title: '🚜 Cosechadora en Faena Agrícola',
+        crop: 'Cosecha',
+        desc: 'Operación de recolección de granos'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=1920&q=80',
+        title: '🌻 Lote de Girasoles en Floración',
+        crop: 'Girasol',
+        desc: 'Cultivo oleaginoso en pleno desarrollo'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80',
+        title: '🌅 Atardecer en la Pampa Húmeda',
+        crop: 'Paisaje',
+        desc: 'Horizonte rural agrícola'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1920&q=80',
+        title: '🌱 Siembra y Lotes de Precisión',
+        crop: 'Siembra',
+        desc: 'Agricultura de precisión y monitoreo'
+      }
+    ];
+
+    var currentBgIndex = 0;
+    var currentBgActiveLayer = 1; // alterna entre capa 1 y capa 2 para crossfade
+    var bgIntervalSeconds = 300; // 5 minutos exactos = 300 segundos
+    var bgSecondsRemaining = 300;
+    var bgCountdownTimerId = null;
+
+    function initBackgroundCarousel() {
+      // Pre-cargar imágenes para evitar parpadeos
+      agroBackgrounds.forEach(function (item) {
+        var img = new Image();
+        img.src = item.url;
+      });
+
+      // Aplicar primera imagen inmediatamente
+      applyBackground(0, true);
+
+      // Iniciar cuenta regresiva de 5 minutos (1 seg por tick)
+      if (bgCountdownTimerId) clearInterval(bgCountdownTimerId);
+      bgCountdownTimerId = setInterval(function () {
+        bgSecondsRemaining--;
+        if (bgSecondsRemaining <= 0) {
+          nextBackground();
+        } else {
+          updateBgTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function applyBackground(index, isInitial) {
+      if (index < 0) index = agroBackgrounds.length - 1;
+      if (index >= agroBackgrounds.length) index = 0;
+      currentBgIndex = index;
+
+      var bgData = agroBackgrounds[currentBgIndex];
+      var layer1 = document.getElementById('agro-bg-layer-1');
+      var layer2 = document.getElementById('agro-bg-layer-2');
+
+      if (!layer1 || !layer2) return;
+
+      if (isInitial) {
+        layer1.style.backgroundImage = 'url("' + bgData.url + '")';
+        layer1.classList.add('active');
+        layer2.classList.remove('active');
+        currentBgActiveLayer = 1;
+      } else {
+        // Alternar capas para transición suave (crossfade)
+        if (currentBgActiveLayer === 1) {
+          layer2.style.backgroundImage = 'url("' + bgData.url + '")';
+          layer2.classList.add('active');
+          layer1.classList.remove('active');
+          currentBgActiveLayer = 2;
+        } else {
+          layer1.style.backgroundImage = 'url("' + bgData.url + '")';
+          layer1.classList.add('active');
+          layer2.classList.remove('active');
+          currentBgActiveLayer = 1;
+        }
+      }
+
+      // Actualizar título en el widget del encabezado
+      var titleEl = document.getElementById('bg-photo-title');
+      if (titleEl) {
+        titleEl.textContent = bgData.title;
+        titleEl.title = bgData.title + ' - ' + bgData.desc;
+      }
+
+      // Reiniciar contador a 5 minutos
+      bgSecondsRemaining = bgIntervalSeconds;
+      updateBgTimerDisplay();
+    }
+
+    function nextBackground() {
+      var nextIdx = (currentBgIndex + 1) % agroBackgrounds.length;
+      applyBackground(nextIdx, false);
+      showToast('Fondo: ' + agroBackgrounds[nextIdx].title);
+    }
+
+    function prevBackground() {
+      var prevIdx = (currentBgIndex - 1 + agroBackgrounds.length) % agroBackgrounds.length;
+      applyBackground(prevIdx, false);
+      showToast('Fondo: ' + agroBackgrounds[prevIdx].title);
+    }
+
+    function updateBgTimerDisplay() {
+      var timerEl = document.getElementById('bg-photo-timer');
+      if (!timerEl) return;
+      var mins = Math.floor(bgSecondsRemaining / 60);
+      var secs = bgSecondsRemaining % 60;
+      timerEl.textContent = '⏱️ ' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+  </script>
+</body>
+
+</html>
