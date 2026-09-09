@@ -183,6 +183,11 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    .market-row-rosario {
+      background: linear-gradient(90deg, #131d27 0%, #1c2738 50%, #2b250e 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
     .market-row-dolar {
       background: linear-gradient(90deg, #06171e 0%, #082229 60%, #0b2d31 100%);
     }
@@ -214,20 +219,34 @@
       flex-shrink: 0;
     }
 
+    .market-section-title.rosario-title {
+      background: rgba(250, 204, 21, 0.15);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.3);
+    }
+
     .market-section-title.bna-title {
       background: rgba(74, 222, 128, 0.12);
       color: #4ade80;
       border: 1px solid rgba(74, 222, 128, 0.25);
     }
 
-    .pulse-dot-cbot, .pulse-dot-bna {
+    .pulse-dot-cbot, .pulse-dot-rosario, .pulse-dot-bna {
       width: 7px;
       height: 7px;
       border-radius: 50%;
       display: inline-block;
     }
     .pulse-dot-cbot { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+    .pulse-dot-rosario { background: #facc15; box-shadow: 0 0 8px #facc15; }
     .pulse-dot-bna { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+
+    .crop-equiv {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      font-weight: 600;
+      margin-left: 0.15rem;
+    }
 
     .market-ticker-item {
       display: flex;
@@ -366,7 +385,7 @@
       justify-content: space-between;
       padding: 0 2rem;
       position: sticky;
-      top: 71px;
+      top: 106px;
       z-index: 100;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
     }
@@ -1403,7 +1422,56 @@
       </div>
     </div>
 
-    <!-- Renglón 2: Dólar Banco Nación (BNA) -->
+    <!-- Renglón 2: Bolsa de Comercio de Rosario (BCR / Pizarra) -->
+    <div class="market-row market-row-rosario">
+      <div class="market-row-items">
+        <span class="market-section-title rosario-title">
+          <span class="pulse-dot-rosario"></span> 🇦🇷 BOLSA DE COMERCIO DE ROSARIO (BCR)
+        </span>
+        
+        <div class="market-ticker-item highlight-rosario" onclick="openPaymentModalWithRosario('Soja')" title="Clic para liquidar con Soja Rosario">
+          <span class="crop-icon">🌾</span>
+          <span class="crop-name">Soja Rosario:</span>
+          <strong class="crop-price" id="top-rosario-soja">$342.000</strong>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-equiv" id="equiv-rosario-soja">(USD 223)</span>
+          <span class="crop-trend up" id="trend-rosario-soja">+0.8%</span>
+        </div>
+
+        <div class="market-ticker-item" onclick="openPaymentModalWithRosario('Maíz')" title="Clic para liquidar con Maíz Rosario">
+          <span class="crop-icon">🌽</span>
+          <span class="crop-name">Maíz Rosario:</span>
+          <strong class="crop-price" id="top-rosario-maiz">$198.000</strong>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-equiv" id="equiv-rosario-maiz">(USD 129)</span>
+          <span class="crop-trend up" id="trend-rosario-maiz">+1.0%</span>
+        </div>
+
+        <div class="market-ticker-item" onclick="openPaymentModalWithRosario('Trigo')" title="Clic para liquidar con Trigo Rosario">
+          <span class="crop-icon">🌾</span>
+          <span class="crop-name">Trigo Rosario:</span>
+          <strong class="crop-price" id="top-rosario-trigo">$245.000</strong>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-equiv" id="equiv-rosario-trigo">(USD 160)</span>
+          <span class="crop-trend up" id="trend-rosario-trigo">+0.4%</span>
+        </div>
+
+        <div class="market-ticker-item" onclick="openPaymentModalWithRosario('Girasol')" title="Clic para liquidar con Girasol Rosario">
+          <span class="crop-icon">🌻</span>
+          <span class="crop-name">Girasol Rosario:</span>
+          <strong class="crop-price" id="top-rosario-girasol">$350.000</strong>
+          <span class="crop-unit">/Tn</span>
+          <span class="crop-equiv" id="equiv-rosario-girasol">(USD 228)</span>
+        </div>
+      </div>
+
+      <div style="font-size:0.7rem; color:#94a3b8; display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+        <span style="background:rgba(250,204,21,0.18); color:#facc15; padding:0.15rem 0.45rem; border-radius:4px; font-weight:700;">PIZARRA BCR</span>
+        <span class="hide-mobile" style="color:#64748b;">• Base oficial para liquidación de alquileres</span>
+      </div>
+    </div>
+
+    <!-- Renglón 3: Dólar Banco Nación (BNA) -->
     <div class="market-row market-row-dolar">
       <div class="market-row-items">
         <span class="market-section-title bna-title">
@@ -1735,25 +1803,25 @@
           <span id="payment-validation-msg"
             style="font-size:0.75rem; color:#dc2626; font-weight:600; display:none;"></span>
 
-          <!-- Tarjeta Fijación Mercado de Chicago y Conversión a Pesos -->
-          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.9rem;">
-            <div style="font-size:0.8rem; font-weight:700; color:#166534; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
-              📈 Fijación de Precio (Mercado de Chicago) y Conversión
+          <!-- Tarjeta Fijación Bolsa de Comercio de Rosario y Liquidación del Alquiler -->
+          <div style="background:#fefce8; border:1px solid #fef08a; border-radius:8px; padding:0.9rem;">
+            <div style="font-size:0.82rem; font-weight:700; color:#854d0e; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
+              🌾 Fijación con Precio de la Bolsa de Comercio de Rosario (BCR Pizarra)
             </div>
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">Precio Chicago (USD / Tonelada) *</label>
-                <input type="number" step="0.1" id="payment-precio-chicago" class="form-input" value="382.5" required>
+                <label class="form-label">Precio Rosario ($ ARS / Tonelada) *</label>
+                <input type="number" step="500" id="payment-precio-rosario" class="form-input" value="342000" required>
                 <div style="display:flex; align-items:center; gap:0.25rem; margin-top:0.35rem; flex-wrap:wrap;">
-                  <span style="font-size:0.68rem; color:#166534; font-weight:700;">Tomar Chicago:</span>
-                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('soja')">🌾 Soja <span id="chip-rate-soja">$382.5</span></button>
-                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('maiz')">🌽 Maíz <span id="chip-rate-maiz">$176.4</span></button>
-                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('trigo')">🌾 Trigo <span id="chip-rate-trigo">$215.0</span></button>
-                  <button type="button" class="btn-rate-chip" onclick="applyChicagoChip('girasol')">🌻 Girasol <span id="chip-rate-girasol">$310.0</span></button>
+                  <span style="font-size:0.68rem; color:#854d0e; font-weight:700;">Tomar Rosario:</span>
+                  <button type="button" class="btn-rate-chip" onclick="applyRosarioChip('soja')">🌾 Soja <span id="chip-rate-rosario-soja">$342.000</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyRosarioChip('maiz')">🌽 Maíz <span id="chip-rate-rosario-maiz">$198.000</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyRosarioChip('trigo')">🌾 Trigo <span id="chip-rate-rosario-trigo">$245.000</span></button>
+                  <button type="button" class="btn-rate-chip" onclick="applyRosarioChip('girasol')">🌻 Girasol <span id="chip-rate-rosario-girasol">$350.000</span></button>
                 </div>
               </div>
               <div class="form-group">
-                <label class="form-label">Tipo de Cambio Dólar a Pesos (ARS) *</label>
+                <label class="form-label">Dólar BNA Oficial (Tipo de Cambio de Referencia) *</label>
                 <input type="number" step="0.5" id="payment-tipo-cambio" class="form-input" value="1535" required>
                 <div style="display:flex; align-items:center; gap:0.25rem; margin-top:0.35rem; flex-wrap:wrap;">
                   <span style="font-size:0.68rem; color:#166534; font-weight:700;">Tomar BNA:</span>
@@ -1763,19 +1831,26 @@
                 </div>
               </div>
             </div>
+
+            <!-- Referencia Chicago comparativa -->
+            <div style="margin-top:0.5rem; display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:#64748b; background:white; padding:0.4rem 0.75rem; border-radius:6px; border:1px solid #e2e8f0; flex-wrap:wrap; gap:0.4rem;">
+              <span>📈 Referencia Chicago (CBOT): <strong id="payment-ref-chicago-text">USD 382.50/Tn</strong></span>
+              <input type="hidden" id="payment-precio-chicago" value="382.5">
+              <span style="color:#854d0e; font-weight:600;">✨ Cuenta calculada sobre cotización Rosario oficial</span>
+            </div>
             
-            <div style="margin-top:0.75rem; background:white; padding:0.75rem; border-radius:6px; border:1px solid #dcfce7; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; font-size:0.82rem;">
+            <div style="margin-top:0.75rem; background:white; padding:0.75rem; border-radius:6px; border:1px solid #fef08a; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; font-size:0.82rem;">
               <div>
-                <span style="color:#64748b;">Precio en Pesos / Tonelada:</span><br>
-                <strong id="calc-precio-ars" style="color:#166534;">$0 ARS/Tn</strong>
+                <span style="color:#64748b;">Precio Rosario Aplicado:</span><br>
+                <strong id="calc-precio-ars" style="color:#854d0e; font-size:0.95rem;">$0 ARS/Tn</strong>
               </div>
               <div>
-                <span style="color:#64748b;">Total en Dólares:</span><br>
-                <strong id="calc-total-usd" style="color:var(--corp-navy);">$0 USD</strong>
+                <span style="color:#64748b;">Equivalente en Dólares:</span><br>
+                <strong id="calc-total-usd" style="color:var(--corp-navy); font-size:0.95rem;">$0 USD</strong>
               </div>
               <div>
-                <span style="color:#64748b;">Total a Pagar en Pesos:</span><br>
-                <strong id="calc-total-ars" style="color:#059669; font-size:0.95rem;">$0 ARS</strong>
+                <span style="color:#64748b;">TOTAL A PAGAR EN PESOS:</span><br>
+                <strong id="calc-total-ars" style="color:#15803d; font-size:1.1rem; font-weight:800;">$0 ARS</strong>
               </div>
             </div>
           </div>
@@ -1913,6 +1988,30 @@
             <div class="form-group">
               <label class="form-label">🌻 Girasol (USD/Tn)</label>
               <input type="number" step="0.1" id="config-chicago-girasol" class="form-input" value="310.0">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fefce8; border:1px solid #fef08a; padding:0.85rem; border-radius:8px;">
+          <div style="font-size:0.8rem; font-weight:700; color:#854d0e; margin-bottom:0.5rem;">
+            🌾 Bolsa de Comercio de Rosario (BCR Pizarra - $ ARS / Tonelada)
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">🌾 Soja Rosario ($/Tn)</label>
+              <input type="number" step="500" id="config-rosario-soja" class="form-input" value="342000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌽 Maíz Rosario ($/Tn)</label>
+              <input type="number" step="500" id="config-rosario-maiz" class="form-input" value="198000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌾 Trigo Rosario ($/Tn)</label>
+              <input type="number" step="500" id="config-rosario-trigo" class="form-input" value="245000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌻 Girasol Rosario ($/Tn)</label>
+              <input type="number" step="500" id="config-rosario-girasol" class="form-input" value="350000">
             </div>
           </div>
         </div>
@@ -2485,6 +2584,16 @@
         trigoVar: '-0.3%',
         girasol: 310.00
       },
+      rosario: {
+        soja: 342000,
+        sojaVar: '+0.8%',
+        maiz: 198000,
+        maizVar: '+1.0%',
+        trigo: 245000,
+        trigoVar: '+0.4%',
+        girasol: 350000,
+        girasolVar: '0.0%'
+      },
       lastUpdated: new Date()
     };
 
@@ -2686,6 +2795,7 @@
           var parsed = JSON.parse(savedRates);
           if (parsed.dolarBNA) Object.assign(marketRates.dolarBNA, parsed.dolarBNA);
           if (parsed.chicago) Object.assign(marketRates.chicago, parsed.chicago);
+          if (parsed.rosario) Object.assign(marketRates.rosario, parsed.rosario);
         }
       } catch (e) { }
 
@@ -2694,20 +2804,45 @@
     }
 
     function renderMarketTopBar() {
+      // 1. Mercado de Chicago (CBOT)
       var elSoja = document.getElementById('top-chicago-soja');
       var elMaiz = document.getElementById('top-chicago-maiz');
       var elTrigo = document.getElementById('top-chicago-trigo');
       var elGirasol = document.getElementById('top-chicago-girasol');
 
-      var elBnaVenta = document.getElementById('top-bna-venta');
-      var elBnaMayorista = document.getElementById('top-bna-mayorista');
-      var elBnaCompra = document.getElementById('top-bna-compra');
-      var elBadge = document.getElementById('market-date-badge');
-
       if (elSoja) elSoja.textContent = 'USD ' + Number(marketRates.chicago.soja).toFixed(2);
       if (elMaiz) elMaiz.textContent = 'USD ' + Number(marketRates.chicago.maiz).toFixed(2);
       if (elTrigo) elTrigo.textContent = 'USD ' + Number(marketRates.chicago.trigo).toFixed(2);
       if (elGirasol) elGirasol.textContent = 'USD ' + Number(marketRates.chicago.girasol).toFixed(2);
+
+      // 2. Bolsa de Comercio de Rosario (BCR Pizarra)
+      var elRosSoja = document.getElementById('top-rosario-soja');
+      var elRosMaiz = document.getElementById('top-rosario-maiz');
+      var elRosTrigo = document.getElementById('top-rosario-trigo');
+      var elRosGirasol = document.getElementById('top-rosario-girasol');
+
+      if (elRosSoja) elRosSoja.textContent = '$' + formatNum(marketRates.rosario.soja);
+      if (elRosMaiz) elRosMaiz.textContent = '$' + formatNum(marketRates.rosario.maiz);
+      if (elRosTrigo) elRosTrigo.textContent = '$' + formatNum(marketRates.rosario.trigo);
+      if (elRosGirasol) elRosGirasol.textContent = '$' + formatNum(marketRates.rosario.girasol);
+
+      // Equivalencias de Rosario en USD tomando Dólar BNA Venta
+      var dolVenta = marketRates.dolarBNA.venta || 1535;
+      var eqSoja = document.getElementById('equiv-rosario-soja');
+      var eqMaiz = document.getElementById('equiv-rosario-maiz');
+      var eqTrigo = document.getElementById('equiv-rosario-trigo');
+      var eqGirasol = document.getElementById('equiv-rosario-girasol');
+
+      if (eqSoja) eqSoja.textContent = '(USD ' + Math.round(marketRates.rosario.soja / dolVenta) + ')';
+      if (eqMaiz) eqMaiz.textContent = '(USD ' + Math.round(marketRates.rosario.maiz / dolVenta) + ')';
+      if (eqTrigo) eqTrigo.textContent = '(USD ' + Math.round(marketRates.rosario.trigo / dolVenta) + ')';
+      if (eqGirasol) eqGirasol.textContent = '(USD ' + Math.round(marketRates.rosario.girasol / dolVenta) + ')';
+
+      // 3. Dólar Banco Nación (BNA)
+      var elBnaVenta = document.getElementById('top-bna-venta');
+      var elBnaMayorista = document.getElementById('top-bna-mayorista');
+      var elBnaCompra = document.getElementById('top-bna-compra');
+      var elBadge = document.getElementById('market-date-badge');
 
       if (elBnaVenta) elBnaVenta.textContent = '$' + formatNum(marketRates.dolarBNA.venta) + ',00';
       if (elBnaMayorista) elBnaMayorista.textContent = '$' + formatNum(marketRates.dolarBNA.mayorista) + ',00';
@@ -2720,19 +2855,22 @@
         elBadge.textContent = d + '/' + m + '/' + now.getFullYear();
       }
 
-      // Actualizar chips dentro del modal de liquidación
-      var cSoja = document.getElementById('chip-rate-soja');
-      var cMaiz = document.getElementById('chip-rate-maiz');
-      var cTrigo = document.getElementById('chip-rate-trigo');
-      var cGirasol = document.getElementById('chip-rate-girasol');
+      // Actualizar chips de Rosario dentro del modal de liquidación
+      var cRosSoja = document.getElementById('chip-rate-rosario-soja');
+      var cRosMaiz = document.getElementById('chip-rate-rosario-maiz');
+      var cRosTrigo = document.getElementById('chip-rate-rosario-trigo');
+      var cRosGirasol = document.getElementById('chip-rate-rosario-girasol');
+
+      if (cRosSoja) cRosSoja.textContent = '$' + formatNum(marketRates.rosario.soja);
+      if (cRosMaiz) cRosMaiz.textContent = '$' + formatNum(marketRates.rosario.maiz);
+      if (cRosTrigo) cRosTrigo.textContent = '$' + formatNum(marketRates.rosario.trigo);
+      if (cRosGirasol) cRosGirasol.textContent = '$' + formatNum(marketRates.rosario.girasol);
+
+      // Actualizar chips de Dólar BNA
       var cBnaVenta = document.getElementById('chip-rate-bna-venta');
       var cBnaMayorista = document.getElementById('chip-rate-bna-mayorista');
       var cBnaCompra = document.getElementById('chip-rate-bna-compra');
 
-      if (cSoja) cSoja.textContent = '$' + marketRates.chicago.soja;
-      if (cMaiz) cMaiz.textContent = '$' + marketRates.chicago.maiz;
-      if (cTrigo) cTrigo.textContent = '$' + marketRates.chicago.trigo;
-      if (cGirasol) cGirasol.textContent = '$' + marketRates.chicago.girasol;
       if (cBnaVenta) cBnaVenta.textContent = '$' + formatNum(marketRates.dolarBNA.venta);
       if (cBnaMayorista) cBnaMayorista.textContent = '$' + formatNum(marketRates.dolarBNA.mayorista);
       if (cBnaCompra) cBnaCompra.textContent = '$' + formatNum(marketRates.dolarBNA.compra);
@@ -2748,9 +2886,10 @@
             if (data && data.dolarBNA) {
               Object.assign(marketRates.dolarBNA, data.dolarBNA);
               if (data.chicago) Object.assign(marketRates.chicago, data.chicago);
+              if (data.rosario) Object.assign(marketRates.rosario, data.rosario);
               renderMarketTopBar();
               if (liveTag) liveTag.innerHTML = '<span class="live-blink-circle"></span> EN VIVO • BNA';
-              if (isManual) showToast('Cotizaciones actualizadas desde Banco Nación y Chicago');
+              if (isManual) showToast('Cotizaciones actualizadas desde Rosario, Chicago y Banco Nación');
             }
           })
           .withFailureHandler(function () {
@@ -2783,7 +2922,7 @@
           } catch (e) { }
           renderMarketTopBar();
           if (liveTag) liveTag.innerHTML = '<span class="live-blink-circle"></span> EN VIVO • BNA';
-          if (isManual) showToast('Dólar Banco Nación y Chicago sincronizados');
+          if (isManual) showToast('Dólar Banco Nación, Rosario y Chicago sincronizados');
         })
         .catch(function (err) {
           renderMarketTopBar();
@@ -2792,11 +2931,26 @@
         });
     }
 
-    window.openPaymentModalWithCrop = function (cropName) {
+    window.openPaymentModalWithRosario = function (cropName) {
       var btn = document.getElementById('admin-btn-record-payment');
       if (btn) btn.click();
-      applyChicagoChip((cropName || 'soja').toLowerCase());
+      applyRosarioChip((cropName || 'soja').toLowerCase());
       applyDolarChip('venta');
+    };
+
+    window.openPaymentModalWithCrop = function (cropName) {
+      window.openPaymentModalWithRosario(cropName);
+    };
+
+    window.applyRosarioChip = function (crop) {
+      var key = (crop || '').toLowerCase();
+      if (key === 'maíz') key = 'maiz';
+      var val = (marketRates.rosario && marketRates.rosario[key]) || 342000;
+      var el = document.getElementById('payment-precio-rosario');
+      if (el) {
+        el.value = val;
+        if (window.updatePaymentCalculations) window.updatePaymentCalculations();
+      }
     };
 
     window.applyChicagoChip = function (crop) {
@@ -2825,6 +2979,11 @@
       document.getElementById('config-chicago-trigo').value = marketRates.chicago.trigo;
       document.getElementById('config-chicago-girasol').value = marketRates.chicago.girasol;
 
+      document.getElementById('config-rosario-soja').value = marketRates.rosario.soja;
+      document.getElementById('config-rosario-maiz').value = marketRates.rosario.maiz;
+      document.getElementById('config-rosario-trigo').value = marketRates.rosario.trigo;
+      document.getElementById('config-rosario-girasol').value = marketRates.rosario.girasol;
+
       document.getElementById('config-bna-venta').value = marketRates.dolarBNA.venta;
       document.getElementById('config-bna-mayorista').value = marketRates.dolarBNA.mayorista;
       document.getElementById('config-bna-compra').value = marketRates.dolarBNA.compra;
@@ -2838,6 +2997,11 @@
       marketRates.chicago.trigo = parseFloat(document.getElementById('config-chicago-trigo').value) || marketRates.chicago.trigo;
       marketRates.chicago.girasol = parseFloat(document.getElementById('config-chicago-girasol').value) || marketRates.chicago.girasol;
 
+      marketRates.rosario.soja = parseFloat(document.getElementById('config-rosario-soja').value) || marketRates.rosario.soja;
+      marketRates.rosario.maiz = parseFloat(document.getElementById('config-rosario-maiz').value) || marketRates.rosario.maiz;
+      marketRates.rosario.trigo = parseFloat(document.getElementById('config-rosario-trigo').value) || marketRates.rosario.trigo;
+      marketRates.rosario.girasol = parseFloat(document.getElementById('config-rosario-girasol').value) || marketRates.rosario.girasol;
+
       marketRates.dolarBNA.venta = parseFloat(document.getElementById('config-bna-venta').value) || marketRates.dolarBNA.venta;
       marketRates.dolarBNA.mayorista = parseFloat(document.getElementById('config-bna-mayorista').value) || marketRates.dolarBNA.mayorista;
       marketRates.dolarBNA.compra = parseFloat(document.getElementById('config-bna-compra').value) || marketRates.dolarBNA.compra;
@@ -2848,7 +3012,7 @@
 
       renderMarketTopBar();
       closeModal('modal-rates-config');
-      showToast('Cotizaciones fijadas y aplicadas con éxito');
+      showToast('Cotizaciones Rosario y Chicago fijadas y aplicadas con éxito');
     };
 
     function initClock() {
@@ -3389,14 +3553,17 @@
 
       window.updatePaymentCalculations = function () {
         var kg = parseInt(document.getElementById('payment-kg').value, 10) || 0;
-        var precioChicagoUSD = parseFloat(document.getElementById('payment-precio-chicago').value) || 0;
-        var tipoCambioARS = parseFloat(document.getElementById('payment-tipo-cambio').value) || 0;
+        var precioRosario = parseFloat(document.getElementById('payment-precio-rosario').value) || 0;
+        var tipoCambioARS = parseFloat(document.getElementById('payment-tipo-cambio').value) || 1535;
 
-        var precioARSxTn = precioChicagoUSD * tipoCambioARS;
-        var totalUSD = (kg / 1000) * precioChicagoUSD;
-        var totalARS = totalUSD * tipoCambioARS;
+        // La cuenta del pago de alquiler se hace con el precio de los cereales de la Bolsa de Comercio de Rosario ($ ARS/Tn)
+        // Toneladas = kg / 1000
+        // Total a Pagar en Pesos = Toneladas * Precio Rosario ($ ARS/Tn)
+        var totalARS = (kg / 1000) * precioRosario;
+        var totalUSD = tipoCambioARS > 0 ? (totalARS / tipoCambioARS) : 0;
+        var equivUSDxTn = tipoCambioARS > 0 ? (precioRosario / tipoCambioARS) : 0;
 
-        document.getElementById('calc-precio-ars').textContent = '$' + formatNum(Math.round(precioARSxTn)) + ' ARS/Tn';
+        document.getElementById('calc-precio-ars').textContent = '$' + formatNum(Math.round(precioRosario)) + ' ARS/Tn (≈ USD ' + equivUSDxTn.toFixed(1) + ')';
         document.getElementById('calc-total-usd').textContent = '$' + formatNum(Math.round(totalUSD)) + ' USD';
         document.getElementById('calc-total-ars').textContent = '$' + formatNum(Math.round(totalARS)) + ' ARS';
       };
@@ -3412,11 +3579,21 @@
           inputKg.max = c.saldoKg;
           var crop = (c.cultivoPactado || '').toLowerCase();
           if (crop === 'maíz') crop = 'maiz';
-          if (marketRates.chicago[crop]) {
-            document.getElementById('payment-precio-chicago').value = marketRates.chicago[crop];
-          } else if (c.precioTn) {
-            document.getElementById('payment-precio-chicago').value = c.precioTn;
+
+          // Asignar cotización oficial de la Bolsa de Comercio de Rosario
+          if (marketRates.rosario && marketRates.rosario[crop]) {
+            document.getElementById('payment-precio-rosario').value = marketRates.rosario[crop];
+          } else if (marketRates.rosario && marketRates.rosario.soja) {
+            document.getElementById('payment-precio-rosario').value = marketRates.rosario.soja;
           }
+
+          // Referencia Chicago comparativa
+          if (marketRates.chicago && marketRates.chicago[crop]) {
+            document.getElementById('payment-precio-chicago').value = marketRates.chicago[crop];
+            var refEl = document.getElementById('payment-ref-chicago-text');
+            if (refEl) refEl.textContent = 'USD ' + marketRates.chicago[crop].toFixed(2) + '/Tn (' + crop.toUpperCase() + ')';
+          }
+
           if (marketRates.dolarBNA && marketRates.dolarBNA.venta) {
             document.getElementById('payment-tipo-cambio').value = marketRates.dolarBNA.venta;
           }
@@ -3441,6 +3618,7 @@
         window.updatePaymentCalculations();
       });
 
+      document.getElementById('payment-precio-rosario').addEventListener('input', window.updatePaymentCalculations);
       document.getElementById('payment-precio-chicago').addEventListener('input', window.updatePaymentCalculations);
       document.getElementById('payment-tipo-cambio').addEventListener('input', window.updatePaymentCalculations);
 
@@ -3556,7 +3734,14 @@
         if (firstContract) {
           var crop = (firstContract.cultivoPactado || '').toLowerCase();
           if (crop === 'maíz') crop = 'maiz';
-          document.getElementById('payment-precio-chicago').value = marketRates.chicago[crop] || firstContract.precioTn || marketRates.chicago.soja;
+          if (marketRates.rosario && marketRates.rosario[crop]) {
+            document.getElementById('payment-precio-rosario').value = marketRates.rosario[crop];
+          }
+          if (marketRates.chicago && marketRates.chicago[crop]) {
+            document.getElementById('payment-precio-chicago').value = marketRates.chicago[crop];
+            var refEl = document.getElementById('payment-ref-chicago-text');
+            if (refEl) refEl.textContent = 'USD ' + marketRates.chicago[crop].toFixed(2) + '/Tn (' + crop.toUpperCase() + ')';
+          }
         }
         if (marketRates.dolarBNA && marketRates.dolarBNA.venta) {
           document.getElementById('payment-tipo-cambio').value = marketRates.dolarBNA.venta;
@@ -3619,6 +3804,7 @@
         var contractId = document.getElementById('payment-contract-select').value;
         var kg = parseInt(document.getElementById('payment-kg').value, 10) || 0;
         var fechaVal = document.getElementById('payment-fecha').value;
+        var precioRosario = parseFloat(document.getElementById('payment-precio-rosario').value) || 0;
         var precioChicago = parseFloat(document.getElementById('payment-precio-chicago').value) || 0;
         var tipoCambio = parseFloat(document.getElementById('payment-tipo-cambio').value) || 0;
         var medioPago = document.getElementById('payment-medio-pago').value;
@@ -3644,9 +3830,9 @@
           return;
         }
 
-        if (precioChicago <= 0) {
-          alert('⚠️ Ingrese un precio de Chicago válido.');
-          document.getElementById('payment-precio-chicago').focus();
+        if (precioRosario <= 0) {
+          alert('⚠️ Ingrese un precio válido de la Bolsa de Comercio de Rosario ($ ARS/Tn).');
+          document.getElementById('payment-precio-rosario').focus();
           return;
         }
 
@@ -3656,19 +3842,25 @@
           return;
         }
 
+        var totalARS = Math.round((kg / 1000) * precioRosario);
+        var totalUSD = Math.round(tipoCambio > 0 ? (totalARS / tipoCambio) : 0);
+
         var paymentData = {
           contractId: contractId,
           kg: kg,
           fecha: fechaVal,
           fechaVenta: fechaVal,
+          precioRosarioARS: precioRosario,
           precioChicagoUSD: precioChicago,
           tipoCambioARS: tipoCambio,
+          totalARS: totalARS,
+          totalUSD: totalUSD,
           medioPago: medioPago,
           nroReferencia: nroRef,
           facturaRecibida: facturaRecibida,
           nroFactura: nroFactura,
           comprobanteFile: window.currentPaymentFile,
-          observaciones: (c ? c.establecimiento : '') + ' - Fijación USD ' + precioChicago + '/Tn'
+          observaciones: (c ? c.establecimiento : '') + ' - Fijación Rosario: $' + formatNum(precioRosario) + ' ARS/Tn (Total: $' + formatNum(totalARS) + ' ARS)'
         };
 
         showToast('Registrando liquidación...');

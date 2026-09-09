@@ -164,7 +164,7 @@ function getOrCreateContractTab(c) {
       'Detalle / Concepto', 
       'Kg Liquidados', 
       'Saldo Pendiente (Kg)', 
-      'Precio Chicago (USD/Tn)', 
+      'Precio Rosario ($ ARS/Tn)', 
       'Tipo Cambio (ARS)', 
       'Total Liquidado (USD)', 
       'Total Liquidado (ARS)', 
@@ -191,7 +191,7 @@ function logContractMovement(c, mov) {
       mov.detalle || '',
       mov.kg || 0,
       c.saldoKg || 0,
-      mov.precioChicagoUSD || c.precioTn || 0,
+      mov.precioRosarioARS || mov.precioChicagoUSD || c.precioTn || 0,
       mov.tipoCambioARS || 0,
       mov.totalUSD || 0,
       mov.totalARS || 0,
@@ -389,15 +389,16 @@ function recordPaymentToSheet(payment) {
         throw new Error('No se pueden entregar ' + kgNuevos + ' Kg. El saldo pendiente máximo es ' + saldoActual + ' Kg.');
       }
 
-      const precioChicago = parseFloat(payment.precioChicagoUSD) || parseFloat(values[i][12]) || 0;
+      const precioRosario = parseFloat(payment.precioRosarioARS) || 0;
       const tipoCambio = parseFloat(payment.tipoCambioARS) || 1;
+      const precioChicago = parseFloat(payment.precioChicagoUSD) || (tipoCambio > 0 && precioRosario > 0 ? (precioRosario / tipoCambio) : (parseFloat(values[i][12]) || 0));
       const nuevoTotalPagado = kgActuales + kgNuevos;
       const nuevoSaldoKg = Math.max(0, kgPactados - nuevoTotalPagado);
       
-      const precioKgUSD = precioChicago / 1000;
-      const pagadoMovUSD = kgNuevos * precioKgUSD;
-      const pagadoMovARS = pagadoMovUSD * tipoCambio;
+      const pagadoMovARS = precioRosario > 0 ? Math.round((kgNuevos / 1000) * precioRosario) : (parseFloat(payment.totalARS) || 0);
+      const pagadoMovUSD = tipoCambio > 0 ? Math.round(pagadoMovARS / tipoCambio) : Math.round(kgNuevos * (precioChicago / 1000));
       const nuevoTotalPagadoUSD = (parseFloat(values[i][14]) || 0) + pagadoMovUSD;
+      const precioKgUSD = (tipoCambio > 0 && precioRosario > 0) ? (precioRosario / tipoCambio / 1000) : (precioChicago / 1000);
       const saldoUSD = nuevoSaldoKg * precioKgUSD;
       
       const pct = kgPactados > 0 ? ((nuevoTotalPagado / kgPactados) * 100).toFixed(1) + '%' : '0%';
@@ -440,8 +441,9 @@ function recordPaymentToSheet(payment) {
       logContractMovement(contractObj, {
         fecha: fechaVenta,
         tipo: 'LIQUIDACION / PAGO',
-        detalle: 'Fijación precio Chicago y entrega de granos',
+        detalle: 'Fijación precio Rosario BCR y entrega de granos',
         kg: kgNuevos,
+        precioRosarioARS: precioRosario,
         precioChicagoUSD: precioChicago,
         tipoCambioARS: tipoCambio,
         totalUSD: pagadoMovUSD,
@@ -450,7 +452,7 @@ function recordPaymentToSheet(payment) {
         nroRef: payment.nroReferencia || payment.nroFactura || '-',
         factura: factura + (payment.nroFactura ? ' (N° ' + payment.nroFactura + ')' : ''),
         comprobanteUrl: comprobanteUrl,
-        observaciones: payment.observaciones || ('Fijación Chicago a ' + precioChicago + ' USD/Tn x $' + tipoCambio + ' ARS')
+        observaciones: payment.observaciones || ('Fijación Rosario a $' + precioRosario + ' ARS/Tn - Total $' + pagadoMovARS + ' ARS')
       });
       break;
     }
@@ -568,6 +570,13 @@ function getMarketRates() {
       venta: 1535,
       mayorista: 1514,
       fechaActualizacion: new Date().toISOString()
+    },
+    rosario: {
+      soja: 342000,
+      maiz: 198000,
+      trigo: 245000,
+      girasol: 350000,
+      moneda: '$ ARS/Tn'
     },
     chicago: {
       soja: 382.5,

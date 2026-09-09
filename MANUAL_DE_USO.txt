@@ -59,8 +59,8 @@ Cuando cualquier persona abre la aplicación, entra en "MODO INVITADO (Solo Lect
 En este modo, toda la información puede consultarse y filtrarse libremente, pero no
 se pueden alterar los datos ni registrar pagos sin la clave de Administrador.
 
-2.1. BARRA SUPERIOR DE COTIZACIONES EN VIVO (2 RENGLONES SEPARADOS)
-En el borde superior de la pantalla se muestran las cotizaciones oficiales:
+2.1. BARRA SUPERIOR DE COTIZACIONES EN VIVO (3 RENGLONES FIJOS)
+En el borde superior de la pantalla se muestran las cotizaciones oficiales de los mercados:
 - RENGLÓN 1 (MERCADO DE CHICAGO - CBOT):
   Muestra el precio internacional de futuros por tonelada en USD para:
   * Soja (USD/Tn)
@@ -68,14 +68,25 @@ En el borde superior de la pantalla se muestran las cotizaciones oficiales:
   * Trigo (USD/Tn)
   * Girasol (USD/Tn)
   Al hacer clic en cualquiera de estos granos, se abre la calculadora de liquidación.
-- RENGLÓN 2 (DÓLAR BANCO NACIÓN - BNA):
+- RENGLÓN 2 (BOLSA DE COMERCIO DE ROSARIO - BCR PIZARRA):
+  Ubicado fijo directamente debajo de los precios de Chicago. Muestra las cotizaciones
+  locales oficiales de la Cámara Arbitral de Rosario en Pesos por Tonelada ($ ARS/Tn)
+  con su correspondiente valor equivalente estimado en dólares:
+  * Soja Rosario ($ ARS/Tn)
+  * Maíz Rosario ($ ARS/Tn)
+  * Trigo Rosario ($ ARS/Tn)
+  * Girasol Rosario ($ ARS/Tn)
+  Al hacer clic sobre cualquiera de los granos de Rosario, se abre la liquidación de alquiler
+  cargando automáticamente dicho precio oficial.
+- RENGLÓN 3 (DÓLAR BANCO NACIÓN - BNA):
   Muestra las cotizaciones oficiales del Banco de la Nación Argentina:
-  * Venta BNA (Billete Vendedor Oficial)
-  * Mayorista / Divisa (Tipo de cambio para liquidación de operaciones de comercio)
+  * Venta BNA (Billete Vendedor Oficial de Referencia)
+  * Mayorista / Divisa (Tipo de cambio para comercio exterior)
   * Compra BNA (Billete Comprador Oficial)
 - BOTONES DE LA BARRA:
   * [🔄]: Actualiza las cotizaciones conectándose a los servicios en vivo.
-  * [⚙️]: Permite al administrador ajustar manualmente los precios de referencia.
+  * [⚙️]: Permite al administrador ajustar o fijar manualmente las cotizaciones de la
+    Bolsa de Comercio de Rosario, Chicago y Dólar BNA.
 
 2.2. TARJETAS DE MÉTRICAS GLOBALES
 En la parte superior de la vista de contratos se aprecian 4 indicadores consolidados:
@@ -147,27 +158,37 @@ cultivos argentinos (Soja, Trigo maduro, Cosechadoras, Girasoles, Pampa Húmeda)
 3. La fecha de modificación se fijará automáticamente con el día actual.
 4. Aplique los cambios y haga clic en [Guardar Cambios].
 
-3.4. REGISTRO DE ENTREGAS Y LIQUIDACIÓN DE PAGOS
-Para registrar un pago de alquiler en granos o dinero:
-1. Haga clic en el botón [📦 Registrar Entrega / Kg] en la barra de gestión, o en
-   [Registrar Pago] dentro de la tarjeta del contrato.
-2. Complete los datos de liquidación:
-   - Fecha de la operación / fijación.
-   - Kg de cereal a liquidar.
-   - El sistema cargará automáticamente el precio de Chicago (CBOT) del grano
-     elegido y el Dólar Banco Nación oficial, calculando al instante:
-     * Precio fijado en USD/Tn.
-     * Tipo de cambio BNA aplicado ($/USD).
-     * Total Liquidado en Pesos ($ ARS).
+3.4. REGISTRO DE ENTREGAS Y LIQUIDACIÓN DE PAGOS CON PRECIO ROSARIO (BCR)
+Para registrar un pago de alquiler en base a la Bolsa de Comercio de Rosario:
+1. Haga clic en el botón [📦 Registrar Entrega / Kg] en la barra de gestión, o haga
+   clic en cualquier grano de la fila de Rosario en la barra superior.
+2. Complete los datos de liquidación del formulario:
+   - Seleccione el Contrato a liquidar.
+   - Ingrese la Fecha de la operación / fijación.
+   - Ingrese los Kg netos de cereal a liquidar.
+   - FÓRMULA DE CÁLCULO APLICADA:
+     * Toneladas a liquidar = Kg / 1.000
+     * TOTAL A PAGAR EN PESOS ($ ARS) = Toneladas * Precio Rosario ($ ARS/Tn)
+     * Equivalente en Dólares (USD) = Total $ ARS / Dólar BNA Oficial
+   - BOTONES RÁPIDOS (CHIPS):
+     * Puede hacer clic en los botones [🌾 Soja], [🌽 Maíz], [🌾 Trigo] o [🌻 Girasol]
+       para cargar automáticamente el precio oficial de la Bolsa de Comercio de Rosario.
+     * Puede hacer clic en [Venta BNA], [Mayorista] o [Compra] para seleccionar el tipo
+       de cambio de referencia.
+   - El sistema calcula y muestra en tiempo real:
+     * Precio Rosario Aplicado ($ ARS/Tn y ≈ USD).
+     * Equivalente en Dólares (USD).
+     * TOTAL A PAGAR EN PESOS ($ ARS en tipografía destacada y verde).
 3. Seleccione la FORMA DE PAGO en el menú desplegable:
+   * Transferencia Bancaria
    * E-cheq (Cheque Electrónico)
    * Cheque Físico
-   * Transferencia Bancaria
 4. Ingrese el número de comprobante, banco o ID de transacción.
-5. Marque si se recibió la Factura correspondiente [Factura Recibida: SÍ / NO].
+5. Marque si se recibió la Factura correspondiente [Factura Recibida: SÍ / NO] e
+   ingrese el N° de Factura.
 6. Opcional: Suba el archivo del comprobante (PDF o imagen).
-7. Haga clic en [Registrar Entrega y Liquidar]. El saldo del contrato se descontará
-   automáticamente.
+7. Haga clic en [Registrar Liquidación y Pago]. El saldo del contrato se descontará
+   automáticamente y se guardará el movimiento en la solapa correspondiente.
 
 
 ================================================================================
