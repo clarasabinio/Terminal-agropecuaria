@@ -492,6 +492,37 @@
       justify-content: center;
     }
 
+    .btn-exit-kiosk {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.85rem;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius-md);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-exit-kiosk:hover {
+      background: #fee2e2;
+      border-color: #ef4444;
+      transform: translateY(-1px);
+    }
+
+    body.kiosk-mode-active .btn-exit-kiosk {
+      display: inline-flex;
+    }
+
+    body.kiosk-mode-active {
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: default;
+    }
+
     .admin-action-bar {
       display: none;
       background: #0f172a;
@@ -1445,6 +1476,9 @@
       </button>
       <button class="icon-btn" id="btn-refresh" title="Refrescar">🔄</button>
       <button class="icon-btn" id="btn-fullscreen" title="Pantalla Completa">⛶</button>
+      <button class="btn-exit-kiosk" id="btn-exit-kiosk" title="Salir del Modo Kiosco" onclick="requestExitKiosk()">
+        <span>🔒</span> Salir de Kiosco
+      </button>
     </div>
   </header>
 
@@ -1453,9 +1487,12 @@
       <span class="admin-bar-tag">MODO GESTIÓN ACTIVO</span>
       <span>Puede crear contratos, registrar entregas en Kg, tildar facturas y sincronizar.</span>
     </div>
-    <div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
       <button class="btn-admin-action btn-admin-primary" id="admin-btn-new-contract">➕ Nuevo Contrato</button>
       <button class="btn-admin-action" id="admin-btn-record-payment">📦 Registrar Entrega / Kg</button>
+      <button class="btn-admin-action btn-exit-kiosk" id="admin-btn-exit-kiosk" onclick="requestExitKiosk()" style="background:#dc2626; border-color:#b91c1c; color:white;">
+        🛑 Salir del Modo Kiosco
+      </button>
     </div>
   </div>
 
@@ -1815,6 +1852,32 @@
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeModal('modal-login')">Cancelar</button>
         <button type="button" class="btn-primary" id="btn-submit-login">Ingresar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-exit-kiosk">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h2>🔒 Salir del Modo Kiosco</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-exit-kiosk')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">
+          Esta terminal está operando en <strong>Modo Kiosco Bloqueado</strong>. Para salir al escritorio o restaurar la navegación libre, ingrese la clave o PIN de Administrador:
+        </p>
+        <div class="form-group">
+          <label class="form-label">Clave / PIN de Administrador</label>
+          <input type="password" id="kiosk-exit-password" class="form-input" placeholder="admin123 o 1234">
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Clave: <code>admin123</code> o PIN: <code>1234</code></p>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; gap:0.5rem;">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-exit-kiosk')">Cancelar</button>
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" class="btn-secondary" id="btn-unlock-kiosk-normal" style="color:var(--corp-navy); font-weight:700;">🔓 Desbloquear</button>
+          <button type="button" class="btn-primary" id="btn-submit-exit-kiosk" style="background:#dc2626; border-color:#b91c1c;">Cerrar Ventana</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2611,6 +2674,7 @@
       initClock();
       initMarketRates();
       initBackgroundCarousel();
+      initKioskMode();
       setupEventListeners();
       loadContractsFromSheet();
     });
@@ -3430,6 +3494,20 @@
         }
       });
 
+      var btnUnlockKiosk = document.getElementById('btn-unlock-kiosk-normal');
+      if (btnUnlockKiosk) {
+        btnUnlockKiosk.addEventListener('click', function () {
+          handleExitKioskSubmit('normal');
+        });
+      }
+
+      var btnSubmitExitKiosk = document.getElementById('btn-submit-exit-kiosk');
+      if (btnSubmitExitKiosk) {
+        btnSubmitExitKiosk.addEventListener('click', function () {
+          handleExitKioskSubmit('close');
+        });
+      }
+
       document.getElementById('btn-refresh').addEventListener('click', function () {
         loadContractsFromSheet();
         showToast('Sincronizando...');
@@ -3838,6 +3916,91 @@
       var mins = Math.floor(bgSecondsRemaining / 60);
       var secs = bgSecondsRemaining % 60;
       timerEl.textContent = '⏱️ ' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+
+    /* ==========================================================================
+       CONTROL DE MODO KIOSCO BLOQUEADO
+       ========================================================================== */
+    var isKioskModeActive = false;
+
+    function initKioskMode() {
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('kiosk') === '1' || window.location.hash === '#kiosk') {
+        isKioskModeActive = true;
+        document.body.classList.add('kiosk-mode-active');
+
+        // 1. Bloquear menú contextual (clic derecho)
+        window.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+          return false;
+        });
+
+        // 2. Bloquear combinaciones de teclas de navegación y desarrollo
+        window.addEventListener('keydown', function (e) {
+          // F12, F5
+          if (e.key === 'F12' || e.key === 'F5') {
+            e.preventDefault();
+            return false;
+          }
+          // Ctrl+R, Cmd+R (Recargar página)
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R')) {
+            e.preventDefault();
+            return false;
+          }
+          // Cmd+Option+I, Ctrl+Shift+I, Cmd+Option+J (Herramientas de Desarrollador)
+          if ((e.metaKey && e.altKey && (e.key === 'i' || e.key === 'I' || e.key === 'j' || e.key === 'J')) ||
+              (e.ctrlKey && e.shiftKey && (e.key === 'i' || e.key === 'I' || e.key === 'j' || e.key === 'J'))) {
+            e.preventDefault();
+            return false;
+          }
+          // Cmd+U, Ctrl+U (Ver código fuente)
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
+            e.preventDefault();
+            return false;
+          }
+        });
+
+        var exitBtn = document.getElementById('btn-exit-kiosk');
+        if (exitBtn) exitBtn.style.display = 'inline-flex';
+        var adminExitBtn = document.getElementById('admin-btn-exit-kiosk');
+        if (adminExitBtn) adminExitBtn.style.display = 'inline-block';
+
+        showToast('🔒 Terminal iniciada en Modo Kiosco Bloqueado');
+      }
+    }
+
+    function requestExitKiosk() {
+      var input = document.getElementById('kiosk-exit-password');
+      if (input) input.value = '';
+      openModal('modal-exit-kiosk');
+      if (input) setTimeout(function () { input.focus(); }, 150);
+    }
+
+    function handleExitKioskSubmit(action) {
+      var pass = (document.getElementById('kiosk-exit-password').value || '').trim();
+      if (pass === 'admin123' || pass === '1234') {
+        closeModal('modal-exit-kiosk');
+        if (action === 'normal') {
+          isKioskModeActive = false;
+          document.body.classList.remove('kiosk-mode-active');
+          var exitBtn = document.getElementById('btn-exit-kiosk');
+          if (exitBtn) exitBtn.style.display = 'none';
+          var adminExitBtn = document.getElementById('admin-btn-exit-kiosk');
+          if (adminExitBtn) adminExitBtn.style.display = 'none';
+          showToast('🔓 Modo Kiosco desactivado. Navegación libre habilitada.');
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        } else {
+          showToast('Cerrando ventana de Kiosco...');
+          window.close();
+          setTimeout(function () {
+            alert('Para cerrar la ventana en Chrome presione: Cmd + Q');
+          }, 300);
+        }
+      } else {
+        alert('Clave incorrecta. Clave: admin123 o PIN: 1234');
+      }
     }
   </script>
 </body>

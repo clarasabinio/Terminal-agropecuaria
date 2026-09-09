@@ -1,0 +1,259 @@
+================================================================================
+          TERMINAL AGROPECUARIA DE CONSULTA Y GESTIÓN DE CONTRATOS
+                       MANUAL DE USO Y GUÍA DEL SISTEMA
+================================================================================
+
+Versión: 2.0 (Edición Kiosco y Fondos Dinámicos)
+Fecha de Actualización: Septiembre 2026
+Repositorio GitHub: https://github.com/clarasabinio/Terminal-agropecuaria
+
+
+--------------------------------------------------------------------------------
+ÍNDICE GENERAL
+--------------------------------------------------------------------------------
+1. INTRODUCCIÓN Y PROPÓSITO DEL SISTEMA
+2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA)
+   2.1. Barra Superior de Cotizaciones en Vivo (Chicago y Dólar BNA)
+   2.2. Tarjetas de Métricas Globales
+   2.3. Buscador Inteligente y Filtros
+   2.4. Tarjetas de Contratos y Ficha Técnica Detallada
+   2.5. Semáforos de Vigencia y Alertas de Vencimiento
+   2.6. Fondos Fotográficos Rotativos de Campo (Cada 5 Minutos)
+3. MODO ADMINISTRADOR (GESTIÓN Y CONTROL TOTAL)
+   3.1. Cómo Iniciar Sesión de Administrador
+   3.2. Carga de un Nuevo Contrato Agrícola
+   3.3. Modificación de Contratos Existentes
+   3.4. Registro de Entregas y Liquidación de Pagos
+   3.5. Formas de Pago, Facturación y Comprobantes
+4. PLANILLA DE CÁLCULO CONSOLIDADA (GOOGLE SHEETS)
+   4.1. Solapa Master y Solapas Individuales por Contrato
+   4.2. Exportación a Formato CSV
+   4.3. Conexión con Google Apps Script (codigo.gs)
+5. MODO KIOSCO BLOQUEADO (SEGURIDAD Y CONTROL DE PANTALLA)
+   5.1. ¿Qué es y qué bloquea el Modo Kiosco?
+   5.2. Cómo Iniciar el Kiosco (Iniciar_Kiosco.command)
+   5.3. Cómo Salir o Desbloquear el Modo Kiosco
+   5.4. Qué hacer ante reinicio o corte de energía
+6. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+
+
+================================================================================
+1. INTRODUCCIÓN Y PROPÓSITO DEL SISTEMA
+================================================================================
+La Terminal Agropecuaria es una plataforma integral diseñada para productores,
+arrendadores y administradores rurales. Permite:
+- Centralizar y transparentar el estado de los contratos de arrendamiento agrícola.
+- Seguir en tiempo real los quintales pactados, los kilogramos entregados y los
+  saldos pendientes.
+- Liquidar y fijar granos tomando automáticamente las cotizaciones oficiales del
+  Mercado de Chicago (CBOT) y el tipo de cambio oficial del Banco Nación (BNA).
+- Respaldar los movimientos en una Hoja de Cálculo (Google Sheets) con una solapa
+  individual para cada contrato.
+- Operar en modo tótem de consulta o kiosco protegido en oficinas y salas de espera.
+
+
+================================================================================
+2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA)
+================================================================================
+Cuando cualquier persona abre la aplicación, entra en "MODO INVITADO (Solo Lectura)".
+En este modo, toda la información puede consultarse y filtrarse libremente, pero no
+se pueden alterar los datos ni registrar pagos sin la clave de Administrador.
+
+2.1. BARRA SUPERIOR DE COTIZACIONES EN VIVO (2 RENGLONES SEPARADOS)
+En el borde superior de la pantalla se muestran las cotizaciones oficiales:
+- RENGLÓN 1 (MERCADO DE CHICAGO - CBOT):
+  Muestra el precio internacional de futuros por tonelada en USD para:
+  * Soja (USD/Tn)
+  * Maíz (USD/Tn)
+  * Trigo (USD/Tn)
+  * Girasol (USD/Tn)
+  Al hacer clic en cualquiera de estos granos, se abre la calculadora de liquidación.
+- RENGLÓN 2 (DÓLAR BANCO NACIÓN - BNA):
+  Muestra las cotizaciones oficiales del Banco de la Nación Argentina:
+  * Venta BNA (Billete Vendedor Oficial)
+  * Mayorista / Divisa (Tipo de cambio para liquidación de operaciones de comercio)
+  * Compra BNA (Billete Comprador Oficial)
+- BOTONES DE LA BARRA:
+  * [🔄]: Actualiza las cotizaciones conectándose a los servicios en vivo.
+  * [⚙️]: Permite al administrador ajustar manualmente los precios de referencia.
+
+2.2. TARJETAS DE MÉTRICAS GLOBALES
+En la parte superior de la vista de contratos se aprecian 4 indicadores consolidados:
+- Superficie Total en Explotación: Suma total de hectáreas de todos los contratos.
+- Quintales Totales Pactados: Volumen total de granos comprometidos.
+- Quintales / Kg Entregados: Cantidad total pagada hasta la fecha.
+- Saldo Pendiente: Deuda pendiente calculada en Kilogramos y valuada en USD.
+
+2.3. BUSCADOR INTELIGENTE Y FILTROS
+Permite localizar contratos al instante mediante:
+- Caja de búsqueda en vivo: Busca por nombre de campo, arrendatario o código.
+- Filtro por Cultivo: Filtra por Soja, Maíz, Trigo o Girasol.
+- Filtro por Campaña: Selecciona campañas específicas (ej. 2024/2025).
+- Filtro por Estado: Muestra contratos Activos, Pendientes, Al Día o Vencidos.
+
+2.4. TARJETAS DE CONTRATOS Y FICHA TÉCNICA
+Cada contrato se visualiza en una tarjeta individual donde se detalla:
+- Nombre del establecimiento y código único (ej. CT-2024-001).
+- Arrendatario responsable y ubicación geográfica.
+- Superficie (Ha) y quintales/ha pactados.
+- Barra de progreso porcentual del cumplimiento de entregas.
+- Saldo pendiente de pago en Kg y en USD.
+- Botón [🔍 Ver Ficha Técnica]: Despliega la ficha agronómica completa del lote.
+
+2.5. SEMÁFOROS DE VIGENCIA Y ALERTAS DE VENCIMIENTO
+Cada contrato posee una etiqueta indicadora de vigencia con código de color:
+- VERDE (VIGENTE): El contrato tiene fecha de vencimiento lejana.
+- AMARILLO (ATENCIÓN): Quedan entre 31 y 90 días para el vencimiento.
+- NARANJA (CRÍTICO): Quedan menos de 30 días para el vencimiento.
+- ROJO (VENCIDO): La fecha de vigencia ya caducó y requiere renovación.
+
+2.6. FONDOS FOTOGRÁFICOS ROTATIVOS DE CAMPO (CADA 5 MINUTOS)
+De fondo en la pantalla se reproducen fotografías de alta definición de campos y
+cultivos argentinos (Soja, Trigo maduro, Cosechadoras, Girasoles, Pampa Húmeda).
+- Rotación automática: Cambian solas cada 5 minutos con un suave efecto de fundido.
+- Temporizador en el encabezado: Muestra la cuenta regresiva en vivo (ej. ⏱️ 4:45).
+- Botones de navegación [⏮️] y [⏭️]: Permiten cambiar de foto al instante si se
+  desea apreciar otra imagen sin esperar los 5 minutos.
+
+
+================================================================================
+3. MODO ADMINISTRADOR (GESTIÓN Y CONTROL TOTAL)
+================================================================================
+
+3.1. CÓMO INICIAR SESIÓN DE ADMINISTRADOR
+1. En la esquina superior derecha, haga clic en el botón: [🔐 Acceso Administrador].
+2. Ingrese la contraseña de administrador:
+   Clave: admin123  (o PIN: 1234)
+3. Al ingresar, la cabecera cambiará a color dorado indicando "👑 MODO ADMINISTRADOR"
+   y se activará la barra negra de gestión con botones de acción.
+
+3.2. CARGA DE UN NUEVO CONTRATO AGRÍCOLA
+1. En la barra de gestión, haga clic en [➕ Nuevo Contrato].
+2. Complete los datos del formulario:
+   - Establecimiento / Campo: Nombre del lote o estancia.
+   - Código de Contrato: Identificador único (ej. CT-2025-004).
+   - Arrendador / Propietario y Arrendatario.
+   - Superficie en Hectáreas (Ha).
+   - Cultivo Pactado (Soja, Maíz, Trigo, Girasol).
+   - Modalidad (Quintales Fijos por Ha o Porcentaje a Cosecha).
+   - Quintales por Ha o Kg pactados.
+   - Fecha de Firma y Fecha de Vencimiento de la vigencia.
+3. Haga clic en [Guardar Contrato]. Los datos se actualizarán en pantalla y se
+   generará automáticamente la solapa correspondiente en la hoja de cálculo.
+
+3.3. MODIFICACIÓN DE CONTRATOS EXISTENTES
+1. En la tarjeta del contrato, haga clic en [✏️ Modificar].
+2. Se abrirá el formulario cargado con la información actual.
+3. La fecha de modificación se fijará automáticamente con el día actual.
+4. Aplique los cambios y haga clic en [Guardar Cambios].
+
+3.4. REGISTRO DE ENTREGAS Y LIQUIDACIÓN DE PAGOS
+Para registrar un pago de alquiler en granos o dinero:
+1. Haga clic en el botón [📦 Registrar Entrega / Kg] en la barra de gestión, o en
+   [Registrar Pago] dentro de la tarjeta del contrato.
+2. Complete los datos de liquidación:
+   - Fecha de la operación / fijación.
+   - Kg de cereal a liquidar.
+   - El sistema cargará automáticamente el precio de Chicago (CBOT) del grano
+     elegido y el Dólar Banco Nación oficial, calculando al instante:
+     * Precio fijado en USD/Tn.
+     * Tipo de cambio BNA aplicado ($/USD).
+     * Total Liquidado en Pesos ($ ARS).
+3. Seleccione la FORMA DE PAGO en el menú desplegable:
+   * E-cheq (Cheque Electrónico)
+   * Cheque Físico
+   * Transferencia Bancaria
+4. Ingrese el número de comprobante, banco o ID de transacción.
+5. Marque si se recibió la Factura correspondiente [Factura Recibida: SÍ / NO].
+6. Opcional: Suba el archivo del comprobante (PDF o imagen).
+7. Haga clic en [Registrar Entrega y Liquidar]. El saldo del contrato se descontará
+   automáticamente.
+
+
+================================================================================
+4. PLANILLA DE CÁLCULO CONSOLIDADA (GOOGLE SHEETS)
+================================================================================
+
+4.1. SOLAPA MASTER Y SOLAPAS INDIVIDUALES POR CONTRATO
+En la pestaña "📊 Planilla de Cálculo Consolidada (Sheet)":
+- Solapa Master: Muestra una tabla unificada con todos los contratos, sus totales en
+  Kg, importes en USD, estado de facturación y fechas de vencimiento.
+- Selector de Solapas: Permite desplegar la solapa individual de cada contrato para
+  inspeccionar su historial completo de pagos y entregas registradas.
+
+4.2. EXPORTACIÓN A FORMATO CSV
+- Con el botón [📥 Descargar esta Solapa (CSV)] puede bajar el archivo compatible con
+  Microsoft Excel, LibreOffice o Google Sheets con un solo clic.
+
+4.3. CONEXIÓN CON GOOGLE APPS SCRIPT (codigo.gs)
+El archivo `codigo.gs` contiene las funciones para conectar la página con su Google
+Spreadsheet en la nube:
+- `doGet()`: Sirve la aplicación web en Google Apps Script.
+- `guardarContrato()`: Guarda o edita contratos y crea la solapa correspondiente.
+- `registrarPago()`: Agrega la fila de pago en la solapa del contrato y en la Master.
+- `subirComprobante()`: Guarda el comprobante en una carpeta dedicada de Google Drive.
+
+
+================================================================================
+5. MODO KIOSCO BLOQUEADO (SEGURIDAD Y CONTROL DE PANTALLA)
+================================================================================
+
+5.1. ¿QUÉ ES Y QUÉ HACE EL MODO KIOSCO?
+El Modo Kiosco está diseñado para colocar una computadora en un punto de consulta
+(oficina comercial, recepción, feria o sala de reuniones) de manera 100% segura:
+- Bloquea el acceso al resto de la computadora: La aplicación ocupa toda la pantalla
+  de borde a borde, tapando la barra de menús de macOS y el Dock de programas.
+- Navegación cerrada: No hay barra de URLs ni pestañas. El usuario no puede entrar a
+  otras páginas de internet ni abrir carpetas privadas de la computadora.
+- Bloqueo de teclado y clic derecho: Se desactiva el menú contextual del mouse y las
+  combinaciones de teclas técnicas (F12, inspeccionar elemento, recargar página).
+
+5.2. CÓMO INICIAR EL MODO KIOSCO
+En su computadora Mac:
+1. Abra la carpeta `mi-proyecto-antigravity` en su Escritorio.
+2. Haga DOBLE CLIC sobre el archivo:
+   👉 Iniciar_Kiosco.command
+3. Automáticamente se iniciará el servidor local y se abrirá Google Chrome en modo
+   Kiosco Bloqueado a pantalla completa.
+
+5.3. CÓMO SALIR O DESBLOQUEAR EL MODO KIOSCO
+Solo el Administrador que conoce la contraseña puede desbloquear o cerrar la pantalla.
+Existen dos formas:
+
+- FORMA 1 (BOTÓN EN PANTALLA CON PIN):
+  1. Haga clic en el botón rojo [🔒 Salir de Kiosco] ubicado en la barra superior.
+  2. Ingrese la clave de administrador:
+     Clave: admin123  (o PIN: 1234)
+  3. Elija una de las dos opciones:
+     * [🔓 Desbloquear]: Mantiene la página abierta pero desactiva las restricciones
+       de bloqueo de kiosco y devuelve el control normal del navegador.
+     * [Cerrar Ventana]: Cierra la ventana del kiosco.
+
+- FORMA 2 (ATAJO RÁPIDO DE TECLADO DEL ADMINISTRADOR):
+  En el teclado de la Mac, presione simultáneamente:
+  ⌨️  Cmd + Q
+  Esto cerrará inmediatamente la aplicación y devolverá el escritorio normal.
+
+5.4. QUÉ HACER ANTE REINICIO DE LA COMPUTADORA
+Si la computadora se apaga o reinicia:
+1. Encienda la máquina e inicie sesión en su usuario.
+2. Vaya a su Escritorio y haga doble clic en `Iniciar_Kiosco.command`.
+3. El sistema se reanudará exactamente como estaba.
+
+
+================================================================================
+6. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+================================================================================
+Todo el código y sus manuales se encuentran respaldados en su repositorio de GitHub:
+👉 https://github.com/clarasabinio/Terminal-agropecuaria
+
+Para enviar nuevos cambios al repositorio en cualquier momento:
+1. En la terminal de su computadora, dentro de la carpeta del proyecto, ejecute:
+   git add .
+   git commit -m "Actualización del sistema"
+   git push
+2. O simplemente solicítemelo en el chat y yo sincronizaré su repositorio al instante.
+
+================================================================================
+                          FIN DEL MANUAL DE USO
+================================================================================
