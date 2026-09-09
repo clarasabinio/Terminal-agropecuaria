@@ -2,15 +2,27 @@
 # ==============================================================================
 # TERMINAL AGROPECUARIA - LANZADOR DE MODO KIOSCO BLOQUEADO (macOS)
 # ==============================================================================
-# Este archivo bloquea el acceso al escritorio y abre la aplicación en pantalla
-# completa sin barras de direcciones, pestañas ni menús del sistema.
+# Este archivo abre la aplicación en pantalla completa sin barras de direcciones,
+# pestañas ni menús, y restaura todo el sistema automáticamente al salir.
 # ==============================================================================
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
+# Función de restauración automática al salir (Cmd+Q o cerrar)
+cleanup() {
+  echo ""
+  echo "🔄 Restaurando visibilidad de la barra inferior (Dock)..."
+  osascript -e 'tell application "System Events" to set autohide of dock preferences to false' 2>/dev/null
+  echo "✅ Sistema restaurado a su estado normal."
+  echo "=========================================================="
+  echo "Sesión de Kiosco finalizada."
+  echo "=========================================================="
+}
+trap cleanup EXIT INT TERM
+
 echo "=========================================================="
-echo "🌾 INICIANDO TERMINAL AGROPECUARIA EN MODO KIOSCO BLOQUEADO"
+echo "🌾 INICIANDO TERMINAL AGROPECUARIA EN MODO KIOSCO"
 echo "=========================================================="
 
 # 1. Comprobar y levantar el servidor local en puerto 8080 si no está activo
@@ -25,27 +37,26 @@ fi
 
 URL="http://localhost:8080/Index.html?kiosk=1"
 
-# 2. Ocultar la ventana de la Terminal para que no quede detrás
+# 2. Ocultar la ventana de la Terminal para no distraer
 osascript -e 'tell application "Terminal" to set miniaturized of window 1 to true' 2>/dev/null &
 
-# 3. Ocultar automáticamente el Dock de macOS durante el Kiosco
+# 3. Ocultar el Dock durante la sesión de pantalla completa
 osascript -e 'tell application "System Events" to set autohide of dock preferences to true' 2>/dev/null &
 
 # 4. Localizar Google Chrome
 CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 if [ -f "$CHROME_PATH" ]; then
-  echo "🔒 Abriendo en Google Chrome con modo Kiosco Estricto..."
-  echo "📌 Para salir del modo Kiosco presione Cmd + Q o use el botón de salida con PIN en pantalla."
+  echo "🔒 Abriendo en Google Chrome a pantalla completa..."
+  echo "📌 Para salir presione Cmd + Q o use el botón [🔒 Salir de Kiosco] con PIN."
   
-  # Directorio temporal aislado para perfil exclusivo de kiosco
   KIOSK_PROFILE="/tmp/agro_kiosk_profile"
   mkdir -p "$KIOSK_PROFILE"
 
-  # Ocultar otras aplicaciones abiertas
+  # Ocultar otras apps de fondo
   osascript -e 'tell application "System Events" to set visible of every process whose visible is true and name does not contain "Google Chrome" and name is not "Terminal" to false' 2>/dev/null &
 
-  # Ejecutar Chrome en Kiosco bloqueado a pantalla completa
+  # Ejecutar Chrome en Kiosco (bloquea el script hasta que el usuario cierre con Cmd+Q o el botón)
   "$CHROME_PATH" \
     --kiosk \
     --app="$URL" \
@@ -59,13 +70,8 @@ if [ -f "$CHROME_PATH" ]; then
     --kiosk-printing \
     --window-position=0,0
 
-  # Forzar foco al frente tras el arranque
   osascript -e 'tell application "Google Chrome" to activate' 2>/dev/null &
 else
-  echo "⚠️ Google Chrome no fue encontrado en /Applications. Abriendo con el navegador predeterminado..."
+  echo "⚠️ Abriendo con el navegador predeterminado..."
   open "$URL"
 fi
-
-echo "=========================================================="
-echo "Sesión de Kiosco finalizada."
-echo "=========================================================="
