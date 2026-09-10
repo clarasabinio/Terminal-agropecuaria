@@ -1145,14 +1145,98 @@
 
       var chips = [
         { label: '🌾 ¿Cuántos Kg me quedan?', action: 'kilos pendientes' },
+        { label: '🧮 ¿Cuánto cobro si vendo X Kg?', action: 'simular venta' },
         { label: '📅 ¿Cuándo recibo el pago?', action: 'fecha de pago' },
-        { label: '💵 ¿Cuál es el monto exacto?', action: 'monto a cobrar' },
-        { label: '📑 Ver detalle y pagos recibidos', action: 'historial de pagos' },
+        { label: '💵 Monto de todo el saldo', action: 'monto a cobrar' },
+        { label: '📑 Pagos y facturas', action: 'historial de pagos' },
         { label: '📄 Ficha Imprimible', action: 'ficha imprimible' },
         { label: '🔄 Consultar otro campo', action: 'cambiar' }
       ];
 
       addBotMessage(cardHtml, chips);
+    }
+
+    function extractKgFromQuery(text) {
+      if (!text) return null;
+      var clean = text.toLowerCase();
+
+      // Caso 1: Toneladas explícitas (ej: "25 tn", "30 toneladas", "12.5 tn")
+      var tnMatch = clean.match(/(\d+(?:[.,]\d+)?)\s*(?:tn|ton|tonelada|toneladas)\b/i);
+      if (tnMatch) {
+        var tnVal = parseFloat(tnMatch[1].replace(',', '.'));
+        if (!isNaN(tnVal) && tnVal > 0) return Math.round(tnVal * 1000);
+      }
+
+      // Caso 2: Kilos explícitos (ej: "30.000 kg", "30000 kilos", "25.000 kgs")
+      var kgMatch = clean.match(/(\d{1,3}(?:\.\d{3})+|\d+)\s*(?:kg|kgs|kilo|kilos)\b/i);
+      if (kgMatch) {
+        var numStr = kgMatch[1].replace(/\./g, '').replace(',', '.');
+        var kgVal = parseInt(numStr, 10);
+        if (!isNaN(kgVal) && kgVal > 0) return kgVal;
+      }
+
+      // Caso 3: Número tras palabras clave de venta/liquidación (ej: "si vendo 30000", "por 50000", "liquidar 20.000")
+      var sellNumMatch = clean.match(/(?:vendo|vender|venda|cobro|cobrar|recibo|recibiria|recibir|liquido|liquidar|por|simular|fijar)\s+(\d{1,3}(?:\.\d{3})+|\d+)\b/i);
+      if (sellNumMatch) {
+        var numStr2 = sellNumMatch[1].replace(/\./g, '').replace(',', '.');
+        var kgVal2 = parseInt(numStr2, 10);
+        if (!isNaN(kgVal2) && kgVal2 > 0) return kgVal2;
+      }
+
+      return null;
+    }
+
+    function simulateCustomKgSale(c, kgAmount) {
+      var crop = (c.cultivoPactado || 'Soja').toLowerCase();
+      if (crop === 'maíz') crop = 'maiz';
+      var precioRosario = (state.rates.rosario && state.rates.rosario[crop]) || 342000;
+      var tipoCambio = (state.rates.dolarBNA && state.rates.dolarBNA.venta) || 1535;
+
+      var tnSimuladas = kgAmount / 1000;
+      var totalPesosARS = Math.round(tnSimuladas * precioRosario);
+      var totalUSD = Math.round(tipoCambio > 0 ? (totalPesosARS / tipoCambio) : 0);
+
+      var isExceeding = kgAmount > c.saldoKg;
+      var saldoRestanteKg = Math.max(0, c.saldoKg - kgAmount);
+      var saldoRestanteTn = saldoRestanteKg / 1000;
+      var saldoRestantePesos = Math.round(saldoRestanteTn * precioRosario);
+
+      var html = '🧮 <strong>Cálculo de Liquidación por Cantidad Específica:</strong><br><br>' +
+        'Establecimiento: <strong>' + escapeHtml(c.establecimiento) + '</strong> (' + c.cultivoPactado + ')<br><br>';
+
+      if (isExceeding) {
+        var maxTotalPesos = Math.round((c.saldoKg / 1000) * precioRosario);
+        var maxTotalUSD = Math.round(tipoCambio > 0 ? (maxTotalPesos / tipoCambio) : 0);
+        html +=
+          '⚠️ <strong style="color:#d97706;">Aviso sobre su Saldo Disponible:</strong><br>' +
+          'Usted consultó por <strong>' + formatNum(kgAmount) + ' Kg</strong>, pero su saldo pendiente actual en este campo es de <strong style="color:#b45309;">' + formatNum(c.saldoKg) + ' Kg</strong>.<br><br>' +
+          '• <strong>Si vende el total disponible de su saldo (' + formatNum(c.saldoKg) + ' Kg):</strong><br>' +
+          '<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.75rem 1rem; margin:0.4rem 0;">' +
+            '<span style="font-size:1.35rem; font-weight:800; color:#15803d;">$' + formatNum(maxTotalPesos) + ' ARS</span><br>' +
+            '<span style="font-size:0.75rem; color:#166534;">(' + (c.saldoKg / 1000).toFixed(2) + ' Tn × $' + formatNum(precioRosario) + ' ARS/Tn • Bolsa de Comercio de Rosario)</span>' +
+          '</div>' +
+          '• <strong>Equivalente en Dólares:</strong> <strong style="color:#0f2744;">$' + formatNum(maxTotalUSD) + ' USD</strong> (al Dólar BNA de $' + formatNum(tipoCambio) + ').<br><br>' +
+          '• <em>Valor teórico por los ' + formatNum(kgAmount) + ' Kg solicitados:</em> $' + formatNum(totalPesosARS) + ' ARS (≈ USD $' + formatNum(totalUSD) + ').';
+      } else {
+        html +=
+          '• <strong>Cantidad a vender consultada:</strong> <span style="font-size:1.05rem; font-weight:800; color:#1e3a8a;">' + formatNum(kgAmount) + ' Kg</span> (' + tnSimuladas.toFixed(2) + ' Toneladas).<br><br>' +
+          '• <strong>MONTO ESTIMADO QUE RECIBIRÍA EN PESOS:</strong><br>' +
+          '<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.75rem 1rem; margin:0.4rem 0;">' +
+            '<span style="font-size:1.4rem; font-weight:800; color:#15803d;">$' + formatNum(totalPesosARS) + ' ARS</span><br>' +
+            '<span style="font-size:0.76rem; color:#166534;">(' + tnSimuladas.toFixed(2) + ' Tn × $' + formatNum(precioRosario) + ' ARS/Tn fijado en la Bolsa de Comercio de Rosario)</span>' +
+          '</div>' +
+          '• <strong>Equivalente en Dólares:</strong> <strong style="color:#0f2744;">$' + formatNum(totalUSD) + ' USD</strong> (al Dólar BNA Venta de $' + formatNum(tipoCambio) + ').<br>' +
+          '• <strong>Saldo remanente que le quedaría:</strong> <span style="color:#b45309; font-weight:700;">' + formatNum(saldoRestanteKg) + ' Kg</span> pendientes (valuados en approx. $' + formatNum(saldoRestantePesos) + ' ARS).';
+      }
+
+      var chips = [
+        { label: '🧮 Simular otra cantidad', action: 'simular venta' },
+        { label: '💵 Ver todo el saldo', action: 'monto a cobrar' },
+        { label: '📅 ¿Cuándo me pagan?', action: 'fecha de pago' },
+        { label: '🔄 Consultar otro campo', action: 'cambiar' }
+      ];
+
+      addBotMessage(html, chips);
     }
 
     function handleContractQuestions(rawQuery, norm) {
@@ -1168,6 +1252,32 @@
       var totalUSD = c.saldoUSD || Math.round(totalPesosARS / tipoCambio);
 
       showTypingIndicator(function () {
+        // 0. Pregunta por venta de cantidad específica de Kg (ej: "cuanto dinero recibiria si vendo 30.000 kg")
+        var specificKg = extractKgFromQuery(rawQuery);
+        if (specificKg && specificKg > 0) {
+          simulateCustomKgSale(c, specificKg);
+          return;
+        }
+
+        // Si consultó por simulación de venta sin especificar número
+        if (norm.includes('simular') || norm.includes('si vendo') || norm.includes('si vendiera') || norm.includes('venda una cantidad') || norm.includes('cantidad especifica') || norm.includes('si liquido') || norm === 'simular venta') {
+          var simChips = [];
+          if (c.saldoKg > 10000) simChips.push({ label: '🌾 Si vendo 10.000 Kg', action: 'Si vendo 10.000 kg' });
+          if (c.saldoKg > 30000) simChips.push({ label: '🌾 Si vendo 30.000 Kg', action: 'Si vendo 30.000 kg' });
+          if (c.saldoKg > 50000) simChips.push({ label: '🌾 Si vendo 50.000 Kg', action: 'Si vendo 50.000 kg' });
+          if (c.saldoKg > 100000) simChips.push({ label: '🌾 Si vendo 100.000 Kg', action: 'Si vendo 100.000 kg' });
+          simChips.push({ label: '🌾 Vender todo el saldo (' + formatNum(c.saldoKg) + ' Kg)', action: 'Si vendo ' + c.saldoKg + ' kg' });
+          simChips.push({ label: '🔄 Consultar otro campo', action: 'cambiar' });
+
+          addBotMessage(
+            '🧮 <strong>Simulador de Venta por Cantidad Específica:</strong><br><br>' +
+            'Para su campo <strong>' + escapeHtml(c.establecimiento) + '</strong> (' + c.cultivoPactado + '), su saldo total disponible es de <strong>' + formatNum(c.saldoKg) + ' Kg</strong>.<br><br>' +
+            '👉 <strong>Indíqueme cuántos kilos desea simular</strong> para calcular cuánto dinero recibiría.<br>' +
+            '<em>Puede escribir por ejemplo: "Si vendo 30.000 kg" o elegir una de las opciones rápidas:</em>',
+            simChips
+          );
+          return;
+        }
         // 1. Pregunta sobre Kilos pendientes
         if (norm.includes('kilo') || norm.includes('kg') || norm.includes('vender') || norm.includes('falta') || norm.includes('quedan') || norm.includes('entregar') || norm.includes('saldo')) {
           addBotMessage(
