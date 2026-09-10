@@ -34,7 +34,13 @@ Repositorio GitHub: https://github.com/clarasabinio/Terminal-agropecuaria
    5.2. Cómo Iniciar el Kiosco (Iniciar_Kiosco.command)
    5.3. Cómo Salir o Desbloquear el Modo Kiosco
    5.4. Qué hacer ante reinicio o corte de energía
-6. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+6. CHATBOT AUTÓNOMO PARA PROPIETARIOS RURALES (Chatbot.html)
+   6.1. Propósito y Funcionamiento Autónomo
+   6.2. Primera Pregunta: Búsqueda por Apellido o Establecimiento
+   6.3. Consultas Principales: Kilos por Vender, Fecha de Pago y Monto ($ ARS / USD)
+   6.4. Ficha de Liquidación Imprimible y Botón en la Terminal
+   6.5. Cómo Iniciar el Chatbot (Iniciar_Chatbot.command)
+7. RESPALDO Y SINCRONIZACIÓN CON GITHUB
 
 
 ================================================================================
@@ -268,9 +274,68 @@ Si la computadora se apaga o reinicia:
 
 
 ================================================================================
-6. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+6. CHATBOT AUTÓNOMO PARA PROPIETARIOS RURALES (Chatbot.html)
 ================================================================================
-Todo el código y sus manuales se encuentran respaldados en su repositorio de GitHub:
+
+6.1. PROPÓSITO Y FUNCIONAMIENTO AUTÓNOMO
+El Chatbot de Propietarios Rurales (`Chatbot.html`) es un módulo conversacional
+independiente diseñado específicamente para que los dueños de los campos
+(arrendadores) puedan consultar de forma rápida, intuitiva y amigable el estado
+financiero y físico de sus contratos de arrendamiento.
+- Funciona de forma 100% autónoma en cualquier navegador (Chrome, Safari, etc.).
+- Toma la información viva cargada en la Terminal Agropecuaria: lee los contratos,
+  saldos de kilos y las cotizaciones oficiales de la Bolsa de Comercio de Rosario
+  y del Banco Nación.
+- Posee sincronización en tiempo real: si un administrador registra un pago en la
+  Terminal, el Chatbot actualiza automáticamente los saldos sin recargar.
+
+6.2. PRIMERA PREGUNTA: BÚSQUEDA POR APELLIDO O ESTABLECIMIENTO
+Al iniciar la conversación, el asistente saluda cordialmente y formula su primera
+pregunta obligatoria:
+  👉 "¿Cuál es su apellido? (o el nombre de su establecimiento/sociedad)"
+- Búsqueda Inteligente: El propietario solo debe escribir su apellido (ej: Morales,
+  Fernández, Sabinio, etc.) o el nombre de su campo (ej: La Posta, Los Aromos).
+- Múltiples Campos: Si el apellido posee más de un campo a su nombre, el asistente
+  le presentará botones interactivos para elegir cuál desea consultar.
+
+6.3. CONSULTAS PRINCIPALES DEL PROPIETARIO
+Una vez seleccionado el campo, el chatbot responde con precisión a las tres dudas
+fundamentales del arrendador:
+1. ¿CUÁNTOS KG LE QUEDAN POR VENDER O FIJAR?
+   - Muestra el Saldo Pendiente en Kilogramos y Toneladas.
+   - Detalla el total pactado original, los kilos ya entregados y el porcentaje de
+     cumplimiento (con barra de progreso visual).
+2. ¿CUÁNDO RECIBIRÁ EL PAGO?
+   - Muestra la Fecha de Vigencia / Vencimiento estipulada en el contrato.
+   - Indica cuántos días restan para la fecha límite de liquidación (o si el plazo
+     ya se encuentra vencido con alerta destacada).
+   - Informa el estado de recepción de la Factura de alquiler correspondiente.
+3. ¿CUÁL ES EL MONTO A COBRAR?
+   - Valuación exacta en Pesos Argentinos ($ ARS) tomando la cotización oficial de
+     la Bolsa de Comercio de Rosario (BCR Pizarra) del cereal pactado (Soja, Maíz,
+     Trigo, Girasol).
+   - Muestra el desglose matemático: Toneladas Pendientes × Precio Rosario ($ ARS/Tn).
+   - Equivalente estimado en Dólares (USD) según tipo de cambio oficial del BNA.
+
+6.4. FICHA DE LIQUIDACIÓN IMPRIMIBLE Y BOTÓN EN LA TERMINAL
+- El chatbot cuenta con la opción [📄 Ficha Imprimible]: genera en pantalla una
+  constancia prolija con todos los datos del campo y el saldo, lista para imprimir
+  o guardar en PDF (`window.print()`).
+- En la Terminal Agropecuaria principal (`Index.html`) se incluyó en la barra
+  superior el botón verde [💬 Chatbot Propietarios] para acceder al chat con 1 clic.
+
+6.5. CÓMO INICIAR EL CHATBOT (Iniciar_Chatbot.command)
+En su computadora Mac:
+1. Vaya a la carpeta `mi-proyecto-antigravity` en su Escritorio.
+2. Haga DOBLE CLIC sobre el archivo ejecutable:
+   👉 Iniciar_Chatbot.command
+3. Se abrirá automáticamente su navegador predeterminado en `http://localhost:8080/Chatbot.html`.
+
+
+================================================================================
+7. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+================================================================================
+Todo el código, el chatbot y sus manuales se encuentran respaldados en GitHub:
 👉 https://github.com/clarasabinio/Terminal-agropecuaria
 
 Para enviar nuevos cambios al repositorio en cualquier momento:
