@@ -332,6 +332,26 @@ Para garantizar la confidencialidad absoluta entre diferentes propietarios rural
    - Solo al recibir la confirmación afirmativa del propietario se presentan los
      saldos de kilos, valuaciones en pesos/dólares, fechas y opciones de simulación.
 
+5. MEMORIA Y VINCULACIÓN EXCLUSIVA POR DISPOSITIVO (BLOQUEO DE OTROS APELLIDOS):
+   - Una vez que un propietario consulta y confirma su identidad, el chatbot guarda
+     automáticamente en la memoria de ese dispositivo (`localStorage`) la vinculación
+     exclusiva con ese titular.
+   - BLOQUEO DE CONSULTAS AJENAS: A partir de ese momento, ese dispositivo queda
+     bloqueado para preguntar por cualquier otro apellido o campo ajeno. Cualquier
+     intento de consultar por otro propietario es denegado por motivos de seguridad:
+     "🔒 Acceso Denegado por Seguridad: Este dispositivo ya se encuentra registrado
+      y vinculado exclusivamente al titular X. No está permitido consultar por otros
+      apellidos o campos ajenos desde este dispositivo."
+   - REAPERTURA Y RECONOCIMIENTO AUTOMÁTICO: Si el usuario cierra el navegador o
+     reinicia la máquina y vuelve a abrir el chatbot, el sistema lo reconoce al
+     instante ("📱 Dispositivo Reconocido y Vinculado: Morales"), cargando directamente
+     su campo sin necesidad de volver a tipear su apellido.
+   - DESVINCULACIÓN ADMINISTRATIVA (CLAVE DE ADMINISTRADOR):
+     Si el equipo necesita ser reasignado a otro propietario o para pruebas técnicas:
+     * En la barra superior, haga clic en el botón verde [Desvincular].
+     * O escriba directamente en el chat la clave de administrador: admin123
+     El dispositivo se desvinculará de inmediato y quedará listo para un nuevo titular.
+
 6.3. CONSULTAS PRINCIPALES DEL PROPIETARIO
 Una vez seleccionado el campo, el chatbot responde con precisión a las tres dudas
 fundamentales del arrendador:

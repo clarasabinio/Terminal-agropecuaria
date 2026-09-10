@@ -587,6 +587,10 @@
       </div>
     </div>
     <div class="header-actions">
+      <div id="device-lock-badge" style="display:none; align-items:center; gap:0.4rem; font-size:0.75rem; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:0.25rem 0.65rem; border-radius:20px; font-weight:600;">
+        📱 <span id="device-lock-text">Vinculado</span>
+        <button type="button" onclick="promptUnlinkDevice()" style="background:none; border:none; color:#059669; cursor:pointer; font-size:0.72rem; padding:0 2px; text-decoration:underline;" title="Desvincular dispositivo (Requiere clave de administrador)">[Desvincular]</button>
+      </div>
       <button type="button" class="btn-action" id="btn-sound-toggle" title="Activar/Desactivar sonido" onclick="toggleSound()">
         <span id="sound-icon">🔔</span>
       </button>
@@ -641,6 +645,7 @@
     var STORAGE_KEY = 'agro_contracts_persistent_sheet_v3';
     var STORAGE_MOVEMENTS_KEY = 'agro_contracts_movements_v3';
     var STORAGE_RATES_KEY = 'agro_market_rates_v1';
+    var STORAGE_DEVICE_OWNER_KEY = 'agro_chatbot_locked_device_owner_v1';
 
     var state = {
       contracts: [],
@@ -657,6 +662,7 @@
       pendingContract: null,
       pendingIsFuzzy: false,
       originalQuery: '',
+      lockedOwner: null,
       soundEnabled: true
     };
 
@@ -954,13 +960,13 @@
     }
 
     /* ==========================================================================
-       LÓGICA CONVERSACIONAL, PRIVACIDAD Y BÚSQUEDA DE PROPIETARIOS
+       LÓGICA CONVERSACIONAL, PRIVACIDAD Y VINCULACIÓN POR DISPOSITIVO
        ========================================================================== */
     var genericFarmWords = new Set([
       'de', 'del', 'la', 'las', 'el', 'los', 'sa', 's.a.', 'srl', 's.r.l.', 'don', 'dona',
       'san', 'sta', 'santa', 'santo', 'y', 'en', 'por', 'campo', 'lote', 'estancia',
       'establecimiento', 'chacra', 'fideicomiso', 'sociedad', 'agricola', 'ganadera',
-      'arrendador', 'propietario', 'sector', 'paraje'
+      'arrendador', 'propietario', 'sector', 'paraje', 'sucesion'
     ]);
 
     function levenshteinDistance(a, b) {
@@ -1075,8 +1081,195 @@
       return { match: false };
     }
 
+    /* ==========================================================================
+       GESTIÓN DE VINCULACIÓN DE ESTE DISPOSITIVO (LOCALSTORAGE)
+       ========================================================================== */
+    function getDeviceLockedOwner() {
+      try {
+        var raw = localStorage.getItem(STORAGE_DEVICE_OWNER_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
+
+    function saveDeviceLockedOwner(contract, queryText) {
+      try {
+        var data = {
+          arrendador: contract.arrendador,
+          registeredAt: new Date().toISOString(),
+          lastQuery: queryText || ''
+        };
+        localStorage.setItem(STORAGE_DEVICE_OWNER_KEY, JSON.stringify(data));
+        state.lockedOwner = data;
+        updateDeviceBadge();
+      } catch (e) {}
+    }
+
+    function clearDeviceLockedOwner() {
+      try {
+        localStorage.removeItem(STORAGE_DEVICE_OWNER_KEY);
+      } catch (e) {}
+      state.lockedOwner = null;
+      updateDeviceBadge();
+    }
+
+    function updateDeviceBadge() {
+      var badge = document.getElementById('device-lock-badge');
+      var text = document.getElementById('device-lock-text');
+      if (!badge || !text) return;
+      if (state.lockedOwner && state.lockedOwner.arrendador) {
+        badge.style.display = 'inline-flex';
+        text.textContent = 'Vinculado: ' + state.lockedOwner.arrendador;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function promptUnlinkDevice() {
+      var pin = prompt('🔐 Ingrese la clave de administrador para desvincular este dispositivo:');
+      if (pin === null) return;
+      if (pin === 'admin123' || pin === '1234') {
+        clearDeviceLockedOwner();
+        state.selectedContract = null;
+        state.pendingContract = null;
+        state.currentStep = 'WAITING_APELLIDO';
+        showTypingIndicator(function () {
+          addBotMessage('🔓 <strong>Dispositivo Desvinculado:</strong><br><br>Se ha retirado la vinculación de este dispositivo con éxito.<br>Ahora puede registrar o consultar con un nuevo apellido.');
+          initConversation();
+        }, 300);
+      } else {
+        alert('❌ Clave incorrecta. No se desvinculó el dispositivo.');
+      }
+    }
+
+    function isSameOwner(ownerA, ownerB) {
+      if (!ownerA || !ownerB) return false;
+      var normA = normalizeText(ownerA);
+      var normB = normalizeText(ownerB);
+      if (normA === normB) return true;
+      if (normA.includes(normB) || normB.includes(normA)) return true;
+
+      var tokensA = normA.split(/\s+/).filter(function (t) { return t.length >= 3 && !genericFarmWords.has(t); });
+      var tokensB = normB.split(/\s+/).filter(function (t) { return t.length >= 3 && !genericFarmWords.has(t); });
+
+      for (var i = 0; i < tokensA.length; i++) {
+        for (var j = 0; j < tokensB.length; j++) {
+          if (tokensA[i] === tokensB[j]) return true;
+          if (levenshteinDistance(tokensA[i], tokensB[j]) <= 1 && Math.max(tokensA[i].length, tokensB[j].length) >= 5) return true;
+        }
+      }
+      return false;
+    }
+
+    function isContractQuestion(normQ) {
+      return (
+        normQ.includes('kilo') || normQ.includes('kg') || normQ.includes('vender') || normQ.includes('falta') ||
+        normQ.includes('quedan') || normQ.includes('entregar') || normQ.includes('saldo') || normQ.includes('cuando') ||
+        normQ.includes('fecha') || normQ.includes('cobro') || normQ.includes('plazo') || normQ.includes('vence') ||
+        normQ.includes('vencimiento') || normQ.includes('monto') || normQ.includes('plata') || normQ.includes('dinero') ||
+        normQ.includes('cuanto') || normQ.includes('precio') || normQ.includes('simular') || normQ.includes('factura') ||
+        normQ.includes('pago') || normQ.includes('comprobante') || normQ.includes('ficha') || normQ.includes('imprimir') ||
+        normQ.includes('resumen') || normQ.includes('actualizar') || normQ.includes('si vendo') || normQ.includes('vendo') ||
+        normQ.includes('movimiento') || normQ.includes('liquidar') || normQ.includes('ayuda') || normQ.includes('gracias')
+      );
+    }
+
+    function isQueryingOtherOwner(query, lockedOwner, contracts) {
+      if (!lockedOwner || !lockedOwner.arrendador) return false;
+      var normQ = normalizeText(query);
+
+      // Si es una pregunta de contrato operativo, no es búsqueda de otro dueño
+      if (isContractQuestion(normQ)) return false;
+
+      // Si coincide con el dueño vinculado o con alguno de sus propios campos
+      var myContracts = contracts.filter(function (c) {
+        return isSameOwner(c.arrendador, lockedOwner.arrendador);
+      });
+      var matchesMyField = myContracts.some(function (c) {
+        return matchContract(query, c).match;
+      });
+      if (matchesMyField) return false;
+
+      // Si coincide con algún otro contrato ajeno
+      for (var i = 0; i < contracts.length; i++) {
+        var c = contracts[i];
+        if (!isSameOwner(c.arrendador, lockedOwner.arrendador)) {
+          if (matchContract(query, c).match) return true;
+        }
+      }
+
+      // Si no es pregunta de contrato ni coincide con los propios, es intento de buscar otro titular
+      return true;
+    }
+
+    function getMyOwnerQuickChips(c, myContracts) {
+      var chips = [
+        { label: '🌾 Kilos Pendientes', action: 'kilos pendientes' },
+        { label: '🧮 Simular venta por Kg', action: 'simular venta' },
+        { label: '📅 ¿Cuándo cobro?', action: 'fecha de pago' },
+        { label: '💵 Monto a Cobrar', action: 'monto a cobrar' }
+      ];
+      if (myContracts && myContracts.length > 1) {
+        chips.push({ label: '🔄 Cambiar a otro de mis campos', action: 'cambiar campo' });
+      } else {
+        chips.push({ label: '🔄 Actualizar datos', action: 'actualizar' });
+      }
+      return chips;
+    }
+
     function initConversation() {
       loadTerminalData();
+      var locked = getDeviceLockedOwner();
+
+      if (locked && locked.arrendador) {
+        state.lockedOwner = locked;
+        updateDeviceBadge();
+
+        var myContracts = state.contracts.filter(function (c) {
+          return isSameOwner(c.arrendador, locked.arrendador);
+        });
+
+        if (myContracts.length > 0) {
+          showTypingIndicator(function () {
+            if (myContracts.length === 1) {
+              addBotMessage(
+                '<strong>¡Bienvenido nuevamente! 🌾</strong><br><br>' +
+                '📱 <strong>Dispositivo Reconocido y Vinculado:</strong><br>' +
+                '• 👤 <strong>Titular:</strong> ' + escapeHtml(locked.arrendador) + '<br>' +
+                '• 🏡 <strong>Establecimiento:</strong> ' + escapeHtml(myContracts[0].establecimiento) + ' (' + myContracts[0].cultivoPactado + ')<br><br>' +
+                '🔒 <em>Por seguridad y privacidad, este dispositivo se encuentra asociado exclusivamente a sus registros.</em><br><br>' +
+                '👉 <em>Accediendo a la información de su campo...</em>'
+              );
+              setTimeout(function () {
+                selectContract(myContracts[0]);
+              }, 700);
+            } else {
+              state.matchedContracts = myContracts;
+              state.currentStep = 'SELECTING_FIELD';
+              var chips = myContracts.map(function (c) {
+                return {
+                  label: '🏡 ' + c.establecimiento + ' (' + c.cultivoPactado + ')',
+                  action: c.establecimiento,
+                  isField: true
+                };
+              });
+              addBotMessage(
+                '<strong>¡Bienvenido nuevamente! 🌾</strong><br><br>' +
+                '📱 <strong>Dispositivo Reconocido y Vinculado:</strong><br>' +
+                '• 👤 <strong>Titular:</strong> ' + escapeHtml(locked.arrendador) + '<br><br>' +
+                '🔒 <em>Este dispositivo está vinculado exclusivamente a sus registros.</em><br>' +
+                'Posee <strong>' + myContracts.length + ' establecimientos</strong> a su nombre.<br><br>' +
+                '👉 <strong>Seleccione cuál de sus campos desea consultar:</strong>',
+                chips
+              );
+            }
+          }, 500);
+          return;
+        }
+      }
+
+      // Si no hay vinculación previa
+      updateDeviceBadge();
       showTypingIndicator(function () {
         addBotMessage(
           '<strong>¡Hola! Bienvenido al Asistente Virtual para Propietarios Rurales de la Terminal Agropecuaria. 🌾</strong><br><br>' +
@@ -1085,7 +1278,7 @@
           '• <strong>Cuándo recibirá su pago</strong> (fecha de vencimiento y vigencia de contrato).<br>' +
           '• <strong>El monto exacto a cobrar</strong> valuado con los precios oficiales de la <em>Bolsa de Comercio de Rosario ($ ARS)</em> y Dólar BNA.<br>' +
           '• <strong>Simulador de venta</strong> para saber cuánto dinero cobraría por una cantidad específica de Kg.<br><br>' +
-          '🔒 <em>Por razones de estricta confidencialidad entre propietarios, cada titular accede exclusivamente a la información de su campo.</em><br><br>' +
+          '🔒 <em>Por razones de estricta confidencialidad, este dispositivo quedará vinculado exclusivamente al propietario que consulte.</em><br><br>' +
           '👉 <strong>Para comenzar, por favor escriba su apellido o el nombre de su establecimiento:</strong>'
         );
       }, 500);
@@ -1109,17 +1302,32 @@
     function processUserMessage(rawQuery) {
       var norm = normalizeText(rawQuery);
 
-      // Comandos directos de reinicio o cambio de campo
-      if (norm === 'cambiar' || norm === 'otro' || norm === 'otro campo' || norm === 'inicio' || norm === 'reiniciar' || norm === 'hola') {
-        state.currentStep = 'WAITING_APELLIDO';
+      // Comando de desvinculación por clave de administrador
+      if (norm === 'admin123' || norm === 'desvincular admin123' || norm === 'reset device') {
+        clearDeviceLockedOwner();
         state.selectedContract = null;
         state.pendingContract = null;
-        state.matchedContracts = [];
+        state.currentStep = 'WAITING_APELLIDO';
         showTypingIndicator(function () {
           addBotMessage(
-            '¡Entendido! Volvamos a buscar.<br><br>👉 <strong>Por favor, escriba el apellido del propietario o el nombre del campo a consultar:</strong>'
+            '🔓 <strong>Dispositivo Desvinculado:</strong><br><br>' +
+            'Se ha retirado la vinculación de este dispositivo con éxito.<br>' +
+            'Ahora puede registrar o consultar un nuevo propietario.<br><br>' +
+            '👉 <strong>Por favor escriba el apellido o nombre de campo a consultar:</strong>'
           );
-        }, 400);
+        }, 300);
+        return;
+      }
+
+      // Si el usuario escribe desvincular sin clave
+      if (norm === 'desvincular' || norm === 'desvincular dispositivo') {
+        showTypingIndicator(function () {
+          addBotMessage(
+            '🔐 <strong>Desvinculación de Dispositivo:</strong><br><br>' +
+            'Para desvincular este dispositivo debe ser administrador.<br>' +
+            'Escriba la clave de administrador para proceder (o haga clic en el botón superior <em>[Desvincular]</em>).'
+          );
+        }, 300);
         return;
       }
 
@@ -1129,7 +1337,108 @@
           addBotMessage(
             '🔒 <strong>Acceso Restringido por Privacidad:</strong><br><br>' +
             'Por estrictas razones de seguridad y confidencialidad entre arrendadores, <strong>no está permitido consultar ni listar todos los campos juntos</strong>.<br><br>' +
-            '👉 <strong>Debe escribir obligatoriamente su apellido o el nombre de su establecimiento</strong> para consultar únicamente sus datos registrados.'
+            '👉 <strong>Debe consultar exclusivamente sobre su propio establecimiento</strong>.'
+          );
+        }, 400);
+        return;
+      }
+
+      // Si el dispositivo ya está vinculado a un propietario:
+      if (state.lockedOwner && state.lockedOwner.arrendador) {
+        var myContracts = state.contracts.filter(function (c) {
+          return isSameOwner(c.arrendador, state.lockedOwner.arrendador);
+        });
+        var myFieldNames = myContracts.map(function (c) { return c.establecimiento; }).join(', ');
+
+        // Si intenta consultar por otro propietario o campo ajeno
+        if (isQueryingOtherOwner(rawQuery, state.lockedOwner, state.contracts)) {
+          showTypingIndicator(function () {
+            addBotMessage(
+              '🔒 <strong>Acceso Denegado por Seguridad:</strong><br><br>' +
+              'Este dispositivo ya se encuentra registrado y vinculado exclusivamente al titular:<br>' +
+              '👤 <strong>' + escapeHtml(state.lockedOwner.arrendador) + '</strong>.<br><br>' +
+              '🚫 <strong>Por estrictas razones de confidencialidad y protección de datos, no está permitido consultar por otros apellidos o campos ajenos desde este dispositivo.</strong><br><br>' +
+              '👉 <em>Usted puede consultar únicamente sus campos registrados (' + escapeHtml(myFieldNames) + ').</em>',
+              getMyOwnerQuickChips(state.selectedContract || myContracts[0], myContracts)
+            );
+          }, 400);
+          return;
+        }
+
+        // Si solicita cambiar de campo:
+        if (norm === 'cambiar' || norm === 'otro' || norm === 'otro campo' || norm === 'cambiar campo') {
+          showTypingIndicator(function () {
+            if (myContracts.length > 1) {
+              state.matchedContracts = myContracts;
+              state.currentStep = 'SELECTING_FIELD';
+              var chips = myContracts.map(function (c) {
+                return {
+                  label: '🏡 ' + c.establecimiento + ' (' + c.cultivoPactado + ')',
+                  action: c.establecimiento,
+                  isField: true
+                };
+              });
+              addBotMessage(
+                '🌾 <strong>Sus Establecimientos Registrados:</strong><br><br>' +
+                'Como titular de <strong>' + escapeHtml(state.lockedOwner.arrendador) + '</strong>, usted posee ' + myContracts.length + ' campos a su nombre.<br><br>' +
+                '👉 <strong>Seleccione a cuál de sus campos desea cambiar:</strong>',
+                chips
+              );
+            } else {
+              addBotMessage(
+                'ℹ️ <strong>Establecimiento Único:</strong><br><br>' +
+                'Usted cuenta con un único establecimiento registrado a su nombre: <strong>' + escapeHtml(myContracts[0].establecimiento) + '</strong>.<br><br>' +
+                '🔒 <em>Este dispositivo no tiene habilitada la consulta de campos de otros propietarios.</em>',
+                getMyOwnerQuickChips(myContracts[0], myContracts)
+              );
+            }
+          }, 400);
+          return;
+        }
+
+        // Si solicita actualizar datos
+        if (norm === 'actualizar' || norm === 'refrescar') {
+          if (state.selectedContract) {
+            selectContract(state.selectedContract);
+          } else if (myContracts.length > 0) {
+            selectContract(myContracts[0]);
+          }
+          return;
+        }
+
+        // Si está en selección de campo entre varios propios
+        if (state.currentStep === 'SELECTING_FIELD') {
+          var foundOwn = myContracts.find(function (c) {
+            var estNorm = normalizeText(c.establecimiento);
+            var codNorm = normalizeText(c.codigo);
+            return estNorm.includes(norm) || norm.includes(estNorm) || codNorm.includes(norm) || norm.includes(codNorm);
+          });
+          if (foundOwn) {
+            selectContract(foundOwn);
+            return;
+          }
+        }
+
+        // Si tiene un campo activo, procesar sus preguntas de contrato
+        if (state.selectedContract) {
+          handleContractQuestions(rawQuery, norm);
+          return;
+        } else if (myContracts.length > 0) {
+          selectContract(myContracts[0]);
+          return;
+        }
+      }
+
+      // Si el dispositivo NO está vinculado todavía:
+      // Comandos directos de reinicio
+      if (norm === 'cambiar' || norm === 'otro' || norm === 'otro campo' || norm === 'inicio' || norm === 'reiniciar' || norm === 'hola') {
+        state.currentStep = 'WAITING_APELLIDO';
+        state.selectedContract = null;
+        state.pendingContract = null;
+        state.matchedContracts = [];
+        showTypingIndicator(function () {
+          addBotMessage(
+            '¡Entendido! Volvamos a buscar.<br><br>👉 <strong>Por favor, escriba el apellido del propietario o el nombre del campo a consultar:</strong>'
           );
         }, 400);
         return;
@@ -1182,6 +1491,10 @@
       if (isAffirmative && state.pendingContract) {
         var c = state.pendingContract;
         state.pendingContract = null;
+
+        // VINCULAR Y GUARDAR DISPOSITIVO PARA ESTE PROPIETARIO
+        saveDeviceLockedOwner(c, state.originalQuery);
+
         showTypingIndicator(function () {
           selectContract(c);
         }, 300);
@@ -1293,7 +1606,7 @@
               '• 👤 <strong>Propietario:</strong> ' + escapeHtml(c.arrendador) + '<br>' +
               '• 🏡 <strong>Establecimiento:</strong> ' + escapeHtml(c.establecimiento) + ' (' + c.cultivoPactado + ')<br>' +
               '• 📍 <strong>Ubicación:</strong> ' + escapeHtml(c.ubicacion) + '<br><br>' +
-              '👉 <strong>Por favor confirme si es correcto para acceder a sus datos:</strong>',
+              '👉 <strong>Por favor confirme si es correcto para acceder y vincular este dispositivo:</strong>',
               [
                 { label: '✅ Sí, es correcto', action: 'si, es correcto' },
                 { label: '❌ No, volver a escribir', action: 'no, cancelar' }
@@ -1306,7 +1619,7 @@
               '• 👤 <strong>Propietario:</strong> ' + escapeHtml(c.arrendador) + '<br>' +
               '• 🏡 <strong>Establecimiento:</strong> ' + escapeHtml(c.establecimiento) + ' (' + c.cultivoPactado + ')<br>' +
               '• 📍 <strong>Ubicación:</strong> ' + escapeHtml(c.ubicacion) + '<br><br>' +
-              '👉 <strong>¿Confirma que desea consultar la información de este campo?</strong>',
+              '👉 <strong>¿Confirma que desea consultar la información de este campo y vincular este dispositivo?</strong>',
               [
                 { label: '✅ Sí, consultar este campo', action: 'si, consultar este campo' },
                 { label: '❌ No, escribir otro apellido', action: 'no, cancelar' }
@@ -1354,7 +1667,17 @@
       // Calcular fecha y días restantes
       var vencInfo = getVigenciaDetail(c.fechaVencimiento);
 
+      var myContracts = (state.lockedOwner && state.contracts.filter(function(x) {
+        return isSameOwner(x.arrendador, state.lockedOwner.arrendador);
+      })) || [c];
+
+      var deviceNotice = state.lockedOwner ?
+        '<div style="display:inline-flex; align-items:center; gap:0.35rem; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; font-size:0.75rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:12px; margin-bottom:0.5rem;">' +
+          '📱 Dispositivo vinculado a ' + escapeHtml(state.lockedOwner.arrendador) +
+        '</div><br>' : '';
+
       var cardHtml =
+        deviceNotice +
         '<strong>✅ Campo Confirmado: ' + escapeHtml(c.establecimiento) + '</strong><br>' +
         '<span style="font-size:0.78rem; color:#64748b;">Código: ' + c.codigo + ' • Arrendador: <strong>' + escapeHtml(c.arrendador) + '</strong></span>' +
         '<div class="data-summary-card">' +
@@ -1397,9 +1720,14 @@
         { label: '📅 ¿Cuándo recibo el pago?', action: 'fecha de pago' },
         { label: '💵 Monto de todo el saldo', action: 'monto a cobrar' },
         { label: '📑 Pagos y facturas', action: 'historial de pagos' },
-        { label: '📄 Ficha Imprimible', action: 'ficha imprimible' },
-        { label: '🔄 Consultar otro campo', action: 'cambiar' }
+        { label: '📄 Ficha Imprimible', action: 'ficha imprimible' }
       ];
+
+      if (myContracts.length > 1) {
+        chips.push({ label: '🔄 Cambiar a otro de mis campos', action: 'cambiar campo' });
+      } else {
+        chips.push({ label: '🔄 Actualizar datos', action: 'actualizar' });
+      }
 
       addBotMessage(cardHtml, chips);
     }
