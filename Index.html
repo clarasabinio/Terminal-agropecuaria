@@ -1526,7 +1526,7 @@
       <!-- Widget de Fondo Fotográfico de Campo -->
       <div class="bg-photo-widget" id="bg-photo-widget" title="Fotos de campo y cultivos en rotación automática cada 5 minutos">
         <div class="bg-photo-info">
-          <span class="bg-photo-title" id="bg-photo-title">🌾 Campo de Soja</span>
+          <span class="bg-photo-title" id="bg-photo-title">🌾 Fotos de mi Campo</span>
           <span class="bg-photo-timer" id="bg-photo-timer" title="Tiempo restante para el próximo cambio automático">⏱️ 5:00</span>
         </div>
         <div class="bg-photo-nav">
@@ -3979,43 +3979,38 @@
 
     /* ==========================================================================
        SISTEMA DE FONDOS ROTATIVOS DE CAMPO Y CULTIVOS (5 MINUTOS)
+       Utiliza las fotos reales de la carpeta mi-proyecto-antigravity/Fotos/
        ========================================================================== */
     var agroBackgrounds = [
       {
-        url: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1920&q=80',
-        title: '🌾 Cultivo de Soja en Crecimiento',
-        crop: 'Soja',
-        desc: 'Lote tecnificado de oleaginosas'
+        url: 'Fotos/IMG_0441.jpg',
+        title: '🌾 Establecimiento - Lote Principal',
+        crop: 'Campo',
+        desc: 'Fotos/IMG_0441'
       },
       {
-        url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80',
-        title: '🌾 Campo de Trigo Dorado',
-        crop: 'Trigo',
-        desc: 'Espigas maduras listas para cosecha'
+        url: 'Fotos/IMG_0442.jpg',
+        title: '🚜 Campo y Cultivos en Desarrollo',
+        crop: 'Cultivos',
+        desc: 'Fotos/IMG_0442'
       },
       {
-        url: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=1920&q=80',
-        title: '🚜 Cosechadora en Faena Agrícola',
+        url: 'Fotos/IMG_2852.JPG',
+        title: '🌱 Lote Agrícola en Producción',
+        crop: 'Producción',
+        desc: 'Fotos/IMG_2852'
+      },
+      {
+        url: 'Fotos/IMG_2863.JPG',
+        title: '🌾 Panorámica del Campo',
+        crop: 'Panorámica',
+        desc: 'Fotos/IMG_2863'
+      },
+      {
+        url: 'Fotos/IMG_5654.jpg',
+        title: '🌻 Horizonte y Cosecha',
         crop: 'Cosecha',
-        desc: 'Operación de recolección de granos'
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=1920&q=80',
-        title: '🌻 Lote de Girasoles en Floración',
-        crop: 'Girasol',
-        desc: 'Cultivo oleaginoso en pleno desarrollo'
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80',
-        title: '🌅 Atardecer en la Pampa Húmeda',
-        crop: 'Paisaje',
-        desc: 'Horizonte rural agrícola'
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1920&q=80',
-        title: '🌱 Siembra y Lotes de Precisión',
-        crop: 'Siembra',
-        desc: 'Agricultura de precisión y monitoreo'
+        desc: 'Fotos/IMG_5654'
       }
     ];
 
@@ -4025,12 +4020,59 @@
     var bgSecondsRemaining = 300;
     var bgCountdownTimerId = null;
 
-    function initBackgroundCarousel() {
-      // Pre-cargar imágenes para evitar parpadeos
+    function preloadBackgroundImages() {
       agroBackgrounds.forEach(function (item) {
         var img = new Image();
         img.src = item.url;
       });
+    }
+
+    function scanLocalFotosFolder() {
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        fetch('Fotos/')
+          .then(function (res) {
+            if (!res.ok) return null;
+            return res.text();
+          })
+          .then(function (html) {
+            if (!html) return;
+            var regex = /href="([^"?#]+\.(?:jpe?g|png|webp))"/gi;
+            var detected = [];
+            var match;
+            var count = 1;
+            while ((match = regex.exec(html)) !== null) {
+              var filename = decodeURIComponent(match[1]).replace(/^\.?\/*Fotos\/?/i, '');
+              var cleanName = filename.split('/').pop();
+              if (cleanName && !cleanName.startsWith('.')) {
+                var photoUrl = 'Fotos/' + cleanName;
+                if (!detected.some(function (p) { return p.url.toLowerCase() === photoUrl.toLowerCase(); })) {
+                  detected.push({
+                    url: photoUrl,
+                    title: '🌾 Foto ' + count + ' (' + cleanName.replace(/\.[^/.]+$/, '') + ')',
+                    crop: 'Campo',
+                    desc: 'Carpeta Fotos/' + cleanName
+                  });
+                  count++;
+                }
+              }
+            }
+            if (detected.length > 0) {
+              agroBackgrounds = detected;
+              preloadBackgroundImages();
+              if (currentBgIndex >= agroBackgrounds.length) currentBgIndex = 0;
+              applyBackground(currentBgIndex, false);
+            }
+          })
+          .catch(function () {});
+      }
+    }
+
+    function initBackgroundCarousel() {
+      // Auto-escanear carpeta Fotos/ si corre en servidor web local
+      scanLocalFotosFolder();
+
+      // Pre-cargar imágenes para transiciones suaves
+      preloadBackgroundImages();
 
       // Aplicar primera imagen inmediatamente
       applyBackground(0, true);

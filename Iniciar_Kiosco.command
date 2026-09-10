@@ -25,7 +25,20 @@ echo "=========================================================="
 echo "🌾 INICIANDO TERMINAL AGROPECUARIA EN MODO KIOSCO"
 echo "=========================================================="
 
-# 1. Comprobar y levantar el servidor local en puerto 8080 si no está activo
+# 1. Optimizar y convertir automáticamente fotos HEIC de iPhone en Fotos/ a JPG
+if [ -d "$DIR/Fotos" ]; then
+  for heic in "$DIR/Fotos"/*.heic "$DIR/Fotos"/*.HEIC; do
+    if [ -f "$heic" ]; then
+      base="${heic%.*}"
+      if [ ! -f "${base}.jpg" ] && [ ! -f "${base}.JPG" ]; then
+        echo "📷 Optimizando foto nueva: $(basename "$heic")..."
+        sips -s format jpeg "$heic" --out "${base}.jpg" >/dev/null 2>&1
+      fi
+    fi
+  done
+fi
+
+# 2. Comprobar y levantar el servidor local en puerto 8080 si no está activo
 SERVER_PORT=8080
 if ! lsof -i :$SERVER_PORT -sTCP:LISTEN >/dev/null 2>&1; then
   echo "🚀 Iniciando servidor local en el puerto $SERVER_PORT..."

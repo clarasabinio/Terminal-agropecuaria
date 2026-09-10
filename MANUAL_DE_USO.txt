@@ -118,13 +118,18 @@ Cada contrato posee una etiqueta indicadora de vigencia con código de color:
 - NARANJA (CRÍTICO): Quedan menos de 30 días para el vencimiento.
 - ROJO (VENCIDO): La fecha de vigencia ya caducó y requiere renovación.
 
-2.6. FONDOS FOTOGRÁFICOS ROTATIVOS DE CAMPO (CADA 5 MINUTOS)
-De fondo en la pantalla se reproducen fotografías de alta definición de campos y
-cultivos argentinos (Soja, Trigo maduro, Cosechadoras, Girasoles, Pampa Húmeda).
+2.6. FONDOS FOTOGRÁFICOS ROTATIVOS DE LA CARPETA 'Fotos' (CADA 5 MINUTOS)
+De fondo en la pantalla se proyectan las fotografías reales de sus propios campos y
+cultivos, cargadas directamente desde la carpeta `Fotos` de su proyecto:
+- Origen de las imágenes: Carpeta `mi-proyecto-antigravity/Fotos/` en su Escritorio.
 - Rotación automática: Cambian solas cada 5 minutos con un suave efecto de fundido.
 - Temporizador en el encabezado: Muestra la cuenta regresiva en vivo (ej. ⏱️ 4:45).
-- Botones de navegación [⏮️] y [⏭️]: Permiten cambiar de foto al instante si se
-  desea apreciar otra imagen sin esperar los 5 minutos.
+- Botones de navegación [⏮️] y [⏭️]: Permiten pasar a la foto anterior o siguiente
+  al instante sin esperar los 5 minutos.
+- CÓMO AGREGAR MÁS FOTOS EN CUALQUIER MOMENTO:
+  Simplemente arrastre o copie sus fotos (en formato JPG, PNG, WEBP o fotos de iPhone
+  en HEIC) dentro de la carpeta `Fotos`. Al iniciar el sistema o recargar la página,
+  la aplicación las detectará e integrará automáticamente a la rotación de fondos.
 
 
 ================================================================================
