@@ -289,14 +289,48 @@ financiero y físico de sus contratos de arrendamiento.
 - Posee sincronización en tiempo real: si un administrador registra un pago en la
   Terminal, el Chatbot actualiza automáticamente los saldos sin recargar.
 
-6.2. PRIMERA PREGUNTA: BÚSQUEDA POR APELLIDO O ESTABLECIMIENTO
-Al iniciar la conversación, el asistente saluda cordialmente y formula su primera
-pregunta obligatoria:
-  👉 "¿Cuál es su apellido? (o el nombre de su establecimiento/sociedad)"
-- Búsqueda Inteligente: El propietario solo debe escribir su apellido (ej: Morales,
-  Fernández, Sabinio, etc.) o el nombre de su campo (ej: La Posta, Los Aromos).
-- Múltiples Campos: Si el apellido posee más de un campo a su nombre, el asistente
-  le presentará botones interactivos para elegir cuál desea consultar.
+6.2. PRIVACIDAD ESTRICTA, BÚSQUEDA OBLIGATORIA Y CONFIRMACIÓN DE IDENTIDAD
+Para garantizar la confidencialidad absoluta entre diferentes propietarios rurales:
+
+1. RESTRICCIÓN DE PRIVACIDAD ("NO VER TODOS LOS CAMPOS"):
+   - Por razones de seguridad entre arrendadores, el chatbot NO permite consultar,
+     listar ni ver todos los campos juntos.
+   - Si un usuario escribe "todos", "ver todos los campos" o "listar", el asistente
+     bloquea la solicitud recordando que debe identificarse con su propio apellido.
+
+2. ESCRITURA OBLIGATORIA DEL APELLIDO O NOMBRE DEL CAMPO:
+   - Al iniciar la conversación, el asistente formula su pregunta obligatoria:
+     👉 "¿Cuál es su apellido? (o el nombre de su establecimiento/sociedad)"
+   - El propietario debe escribir obligatoriamente su apellido (ej: Morales, Fernández,
+     Ombúes) o el nombre del campo (ej: La Posta, Los Aromos, Santa María).
+   - No se muestran botones de acceso directo a otros campos ni se sugiere información
+     de terceros ante búsquedas no encontradas.
+
+3. TOLERANCIA A VARIACIONES Y PEQUEÑOS ERRORES DE ESCRITURA (FUZZY MATCHING):
+   - El chatbot cuenta con un algoritmo de similitud difusa (Damerau-Levenshtein y
+     normalización fonética para el castellano argentino).
+   - Si el propietario comete un error tipográfico menor o pequeña variación:
+     * "Moralez" o "Moraels" en lugar de "Morales"
+     * "Fernandz", "Fernandes" o "Fernades" en lugar de "Fernández"
+     * "Los Aroma" en lugar de "Los Aromos"
+     * "La Pota" en lugar de "La Posta"
+     * "Ombuez" en lugar de "Ombúes"
+     El sistema lo reconoce y lo toma como una coincidencia válida.
+
+4. CONFIRMACIÓN OBLIGATORIA ANTES DE DESPLEGAR LOS DATOS:
+   - Para máxima seguridad, el chatbot NUNCA abre los números financieros sin
+     confirmación previa:
+     * Si hubo un error leve de escritura: El bot informa amablemente que detectó
+       una pequeña variación, muestra el propietario y campo detectado, y solicita:
+       "¿Se refiere al propietario X (Establecimiento Y)? Por favor confirme si es correcto."
+       Botones interactivos: [✅ Sí, es correcto]  [❌ No, volver a escribir].
+     * Si la coincidencia fue directa: Pide confirmación igualmente:
+       "¿Confirma que desea consultar la información de este campo?"
+       Botones interactivos: [✅ Sí, consultar este campo]  [❌ No, escribir otro apellido].
+     * Si un apellido tiene múltiples campos: Presenta botones claros para que el dueño
+       elija y confirme cuál de sus establecimientos desea consultar.
+   - Solo al recibir la confirmación afirmativa del propietario se presentan los
+     saldos de kilos, valuaciones en pesos/dólares, fechas y opciones de simulación.
 
 6.3. CONSULTAS PRINCIPALES DEL PROPIETARIO
 Una vez seleccionado el campo, el chatbot responde con precisión a las tres dudas

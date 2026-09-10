@@ -650,10 +650,13 @@
         chicago: { soja: 382.5, maiz: 176.4, trigo: 215.0, girasol: 310.0 },
         dolarBNA: { venta: 1535, mayorista: 1514, compra: 1485 }
       },
-      currentStep: 'WAITING_APELLIDO', // 'WAITING_APELLIDO' | 'SELECTING_FIELD' | 'ACTIVE_FIELD'
+      currentStep: 'WAITING_APELLIDO', // 'WAITING_APELLIDO' | 'WAITING_CONFIRMATION' | 'SELECTING_FIELD' | 'ACTIVE_FIELD'
       currentOwnerQuery: '',
       matchedContracts: [],
       selectedContract: null,
+      pendingContract: null,
+      pendingIsFuzzy: false,
+      originalQuery: '',
       soundEnabled: true
     };
 
@@ -805,11 +808,11 @@
     function refreshTerminalData(showNotification) {
       loadTerminalData();
       if (showNotification) {
-        addBotMessage('🔄 Se han sincronizado los datos más recientes desde la Terminal Agropecuaria (' + state.contracts.length + ' contratos disponibles).');
+        addBotMessage('🔄 Se han sincronizado los datos más recientes desde la Terminal Agropecuaria.');
         playChime(520);
       }
       var badge = document.getElementById('data-status-badge');
-      if (badge) badge.textContent = '🟢 Conectado (' + state.contracts.length + ' campos)';
+      if (badge) badge.textContent = '🟢 Conectado a Terminal';
     }
 
     function updateMiniMarketBar() {
@@ -951,24 +954,139 @@
     }
 
     /* ==========================================================================
-       LÓGICA CONVERSACIONAL Y BÚSQUEDA DE PROPIETARIOS
+       LÓGICA CONVERSACIONAL, PRIVACIDAD Y BÚSQUEDA DE PROPIETARIOS
        ========================================================================== */
+    var genericFarmWords = new Set([
+      'de', 'del', 'la', 'las', 'el', 'los', 'sa', 's.a.', 'srl', 's.r.l.', 'don', 'dona',
+      'san', 'sta', 'santa', 'santo', 'y', 'en', 'por', 'campo', 'lote', 'estancia',
+      'establecimiento', 'chacra', 'fideicomiso', 'sociedad', 'agricola', 'ganadera',
+      'arrendador', 'propietario', 'sector', 'paraje'
+    ]);
+
+    function levenshteinDistance(a, b) {
+      if (a === b) return 0;
+      if (!a.length) return b.length;
+      if (!b.length) return a.length;
+
+      var matrix = [];
+      for (var i = 0; i <= b.length; i++) matrix[i] = [i];
+      for (var j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+      for (var i = 1; i <= b.length; i++) {
+        for (var j = 1; j <= a.length; j++) {
+          var cost = (a.charAt(j - 1) === b.charAt(i - 1)) ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + cost
+          );
+          if (i > 1 && j > 1 && a.charAt(j - 1) === b.charAt(i - 2) && a.charAt(j - 2) === b.charAt(i - 1)) {
+            matrix[i][j] = Math.min(matrix[i][j], matrix[i - 2][j - 2] + cost);
+          }
+        }
+      }
+      return matrix[b.length][a.length];
+    }
+
+    function phoneticNormalize(str) {
+      var s = normalizeText(str);
+      s = s.replace(/z/g, 's');
+      s = s.replace(/c([ei])/g, 's$1');
+      s = s.replace(/v/g, 'b');
+      s = s.replace(/ll/g, 'y');
+      s = s.replace(/h/g, '');
+      s = s.replace(/qu([ei])/g, 'k$1');
+      s = s.replace(/(.)\1+/g, '$1');
+      return s;
+    }
+
+    function isAllFieldsQuery(norm) {
+      var clean = (norm || '').trim();
+      return clean === 'todos' ||
+             clean === 'todo' ||
+             clean === 'todos los campos' ||
+             clean === 'ver todos' ||
+             clean === 'ver todos los campos' ||
+             clean === 'mostrar todos' ||
+             clean === 'mostrar todos los campos' ||
+             clean === 'cuales son los campos' ||
+             clean === 'cuales son todos los campos' ||
+             clean === 'cuales son todos' ||
+             clean === 'listar campos' ||
+             clean === 'lista de campos' ||
+             clean === 'ver campos' ||
+             clean === 'campos' ||
+             clean === 'dame todos' ||
+             clean === 'todos los contratos' ||
+             clean === 'listado';
+    }
+
+    function matchContract(query, c) {
+      var normQ = normalizeText(query);
+      var phonQ = phoneticNormalize(query);
+      var normArr = normalizeText(c.arrendador);
+      var normEst = normalizeText(c.establecimiento);
+      var normCod = normalizeText(c.codigo);
+
+      // Si la consulta contiene únicamente palabras genéricas
+      var isGenericOnly = normQ.split(/\s+/).every(function (w) { return genericFarmWords.has(w); });
+      if (isGenericOnly) return { match: false, reason: 'generic' };
+
+      // 1. Coincidencia directa (subcadena exacta)
+      if (normArr.includes(normQ) || normEst.includes(normQ) || normCod.includes(normQ) ||
+          (normQ.length >= 4 && (normQ.includes(normArr) || normQ.includes(normEst)))) {
+        return { match: true, isFuzzy: false, reason: 'direct' };
+      }
+
+      // 2. Coincidencia fonética (s/z, b/v, etc.)
+      if (phonQ.length >= 4) {
+        var phonArr = phoneticNormalize(c.arrendador);
+        var phonEst = phoneticNormalize(c.establecimiento);
+        if (phonArr.includes(phonQ) || phonEst.includes(phonQ)) {
+          return { match: true, isFuzzy: true, reason: 'phonetic' };
+        }
+      }
+
+      // 3. Coincidencia difusa por tokens (Levenshtein con tolerancia a pequeños errores de escritura)
+      var qTokens = normQ.split(/\s+/).filter(function (t) { return t.length >= 3 && !genericFarmWords.has(t); });
+      var targetTokens = (normArr + ' ' + normEst).split(/\s+/).filter(function (t) { return t.length >= 3 && !genericFarmWords.has(t); });
+
+      for (var i = 0; i < qTokens.length; i++) {
+        var qT = qTokens[i];
+        for (var j = 0; j < targetTokens.length; j++) {
+          var tT = targetTokens[j];
+          var dist = levenshteinDistance(qT, tT);
+          var minLen = Math.min(qT.length, tT.length);
+
+          if (minLen <= 4 && dist <= 1) {
+            return { match: true, isFuzzy: true, reason: 'levenshtein' };
+          } else if (minLen >= 5 && dist <= 2) {
+            return { match: true, isFuzzy: true, reason: 'levenshtein' };
+          }
+
+          var pQ = phoneticNormalize(qT);
+          var pT = phoneticNormalize(tT);
+          if (Math.min(pQ.length, pT.length) >= 4 && levenshteinDistance(pQ, pT) <= 1) {
+            return { match: true, isFuzzy: true, reason: 'phonetic-dist' };
+          }
+        }
+      }
+
+      return { match: false };
+    }
+
     function initConversation() {
       loadTerminalData();
       showTypingIndicator(function () {
         addBotMessage(
           '<strong>¡Hola! Bienvenido al Asistente Virtual para Propietarios Rurales de la Terminal Agropecuaria. 🌾</strong><br><br>' +
           'Aquí podrá consultar en tiempo real:<br>' +
-          '• <strong>Cuántos Kg</strong> le quedan por vender/entregar.<br>' +
-          '• <strong>Cuándo recibirá su pago</strong> (fecha de vencimiento y vigencia).<br>' +
-          '• <strong>El monto exacto a cobrar</strong> valuado con los precios oficiales de la <em>Bolsa de Comercio de Rosario ($ ARS)</em> y en dólares.<br><br>' +
-          '👉 <strong>Para comenzar, ¿cuál es su apellido?</strong> <em>(o el nombre de su establecimiento/sociedad)</em>',
-          [
-            { label: '🌿 Fernández', action: 'Fernández' },
-            { label: '🌱 Morales', action: 'Morales' },
-            { label: '🌾 Ombúes', action: 'Ombúes' },
-            { label: '🏛️ Agro del Sud', action: 'Agro del Sud' }
-          ]
+          '• <strong>Cuántos Kg</strong> le quedan por vender o fijar.<br>' +
+          '• <strong>Cuándo recibirá su pago</strong> (fecha de vencimiento y vigencia de contrato).<br>' +
+          '• <strong>El monto exacto a cobrar</strong> valuado con los precios oficiales de la <em>Bolsa de Comercio de Rosario ($ ARS)</em> y Dólar BNA.<br>' +
+          '• <strong>Simulador de venta</strong> para saber cuánto dinero cobraría por una cantidad específica de Kg.<br><br>' +
+          '🔒 <em>Por razones de estricta confidencialidad entre propietarios, cada titular accede exclusivamente a la información de su campo.</em><br><br>' +
+          '👉 <strong>Para comenzar, por favor escriba su apellido o el nombre de su establecimiento:</strong>'
         );
       }, 500);
     }
@@ -991,45 +1109,127 @@
     function processUserMessage(rawQuery) {
       var norm = normalizeText(rawQuery);
 
-      // Comandos directos de reinicio o ayuda
+      // Comandos directos de reinicio o cambio de campo
       if (norm === 'cambiar' || norm === 'otro' || norm === 'otro campo' || norm === 'inicio' || norm === 'reiniciar' || norm === 'hola') {
         state.currentStep = 'WAITING_APELLIDO';
         state.selectedContract = null;
+        state.pendingContract = null;
         state.matchedContracts = [];
         showTypingIndicator(function () {
           addBotMessage(
-            '¡Entendido! Volvamos a buscar.<br>👉 <strong>Por favor, indíqueme el apellido del propietario o el nombre del campo a consultar:</strong>'
+            '¡Entendido! Volvamos a buscar.<br><br>👉 <strong>Por favor, escriba el apellido del propietario o el nombre del campo a consultar:</strong>'
           );
         }, 400);
         return;
       }
 
-      // 1. Paso: Esperando Apellido
+      // Bloqueo estricto de consultas que intenten ver todos los campos
+      if (isAllFieldsQuery(norm)) {
+        showTypingIndicator(function () {
+          addBotMessage(
+            '🔒 <strong>Acceso Restringido por Privacidad:</strong><br><br>' +
+            'Por estrictas razones de seguridad y confidencialidad entre arrendadores, <strong>no está permitido consultar ni listar todos los campos juntos</strong>.<br><br>' +
+            '👉 <strong>Debe escribir obligatoriamente su apellido o el nombre de su establecimiento</strong> para consultar únicamente sus datos registrados.'
+          );
+        }, 400);
+        return;
+      }
+
+      // 1. Paso: Esperando Apellido o Nombre de campo
       if (state.currentStep === 'WAITING_APELLIDO') {
         findOwnerContracts(rawQuery);
         return;
       }
 
-      // 2. Paso: Seleccionando campo entre varios encontrados
-      if (state.currentStep === 'SELECTING_FIELD') {
-        var found = state.matchedContracts.find(function (c) {
-          var estNorm = normalizeText(c.establecimiento);
-          var codNorm = normalizeText(c.codigo);
-          return estNorm.includes(norm) || codNorm.includes(norm) || norm.includes(codNorm);
-        });
-
-        if (found) {
-          selectContract(found);
-        } else {
-          // Intentar si ingresó un nuevo apellido
-          findOwnerContracts(rawQuery);
-        }
+      // 2. Paso: Esperando Confirmación del Propietario/Campo Encontrado
+      if (state.currentStep === 'WAITING_CONFIRMATION') {
+        handleConfirmationStep(rawQuery, norm);
         return;
       }
 
-      // 3. Paso: Campo Activo - Preguntas sobre el contrato
+      // 3. Paso: Seleccionando campo entre varios encontrados
+      if (state.currentStep === 'SELECTING_FIELD') {
+        handleFieldSelectionStep(rawQuery, norm);
+        return;
+      }
+
+      // 4. Paso: Campo Activo - Preguntas sobre el contrato
       if (state.currentStep === 'ACTIVE_FIELD' && state.selectedContract) {
         handleContractQuestions(rawQuery, norm);
+      }
+    }
+
+    function handleConfirmationStep(rawQuery, norm) {
+      var isAffirmative =
+        norm.startsWith('si') ||
+        norm.includes('correcto') ||
+        norm.includes('confirmar') ||
+        norm.includes('confirmo') ||
+        norm.includes('es mi campo') ||
+        norm.includes('consultar') ||
+        norm === 'ok' ||
+        norm === 'dale' ||
+        norm === 'adelante';
+
+      var isNegative =
+        norm.startsWith('no') ||
+        norm.includes('cancelar') ||
+        norm.includes('incorrecto') ||
+        norm.includes('no es') ||
+        norm.includes('volver') ||
+        norm.includes('otro');
+
+      if (isAffirmative && state.pendingContract) {
+        var c = state.pendingContract;
+        state.pendingContract = null;
+        showTypingIndicator(function () {
+          selectContract(c);
+        }, 300);
+        return;
+      }
+
+      if (isNegative) {
+        state.currentStep = 'WAITING_APELLIDO';
+        state.pendingContract = null;
+        showTypingIndicator(function () {
+          addBotMessage(
+            'Entendido. No se abrió ningún registro.<br><br>' +
+            '👉 <strong>Por favor escriba nuevamente su apellido o el nombre del campo a consultar:</strong>'
+          );
+        }, 400);
+        return;
+      }
+
+      // Si el usuario ingresó un nuevo apellido o término en lugar de sí/no
+      findOwnerContracts(rawQuery);
+    }
+
+    function handleFieldSelectionStep(rawQuery, norm) {
+      if (norm.startsWith('no') || norm.includes('cancelar') || norm.includes('ninguno')) {
+        state.currentStep = 'WAITING_APELLIDO';
+        state.matchedContracts = [];
+        showTypingIndicator(function () {
+          addBotMessage(
+            'Entendido.<br><br>👉 <strong>Por favor escriba nuevamente el apellido o nombre de su campo:</strong>'
+          );
+        }, 400);
+        return;
+      }
+
+      var found = state.matchedContracts.find(function (c) {
+        var estNorm = normalizeText(c.establecimiento);
+        var codNorm = normalizeText(c.codigo);
+        return estNorm.includes(norm) || norm.includes(estNorm) || codNorm.includes(norm) || norm.includes(codNorm);
+      });
+
+      if (found) {
+        state.matchedContracts = [];
+        showTypingIndicator(function () {
+          selectContract(found);
+        }, 300);
+      } else {
+        // Intentar si ingresó otro apellido
+        findOwnerContracts(rawQuery);
       }
     }
 
@@ -1037,61 +1237,109 @@
       var norm = normalizeText(queryText);
       state.currentOwnerQuery = queryText;
 
-      // Buscar por arrendador, por nombre del establecimiento (campo) o ubicación
-      var matches = state.contracts.filter(function (c) {
-        var arrendadorNorm = normalizeText(c.arrendador);
-        var campoNorm = normalizeText(c.establecimiento);
-        var ubicacionNorm = normalizeText(c.ubicacion);
-        var codigoNorm = normalizeText(c.codigo);
+      // Validación de longitud mínima obligatoria
+      if (norm.length < 3) {
+        showTypingIndicator(function () {
+          addBotMessage(
+            '👉 <strong>Por favor escriba al menos 3 letras</strong> del apellido del propietario o del nombre del campo para realizar la búsqueda.'
+          );
+        }, 400);
+        return;
+      }
 
-        return arrendadorNorm.includes(norm) ||
-               campoNorm.includes(norm) ||
-               ubicacionNorm.includes(norm) ||
-               codigoNorm.includes(norm);
+      // Validación contra términos exclusivamente genéricos
+      var isGenericOnly = norm.split(/\s+/).every(function (w) { return genericFarmWords.has(w); });
+      if (isGenericOnly) {
+        showTypingIndicator(function () {
+          addBotMessage(
+            '👉 <strong>Por favor escriba el apellido del titular o el nombre específico del campo</strong> (ej: Morales, Fernández, La Posta, etc.) para que pueda buscarlo.'
+          );
+        }, 400);
+        return;
+      }
+
+      // Buscar con tolerancia a variaciones y pequeños cambios en la escritura
+      var matches = [];
+      state.contracts.forEach(function (c) {
+        var res = matchContract(queryText, c);
+        if (res.match) {
+          matches.push({ contract: c, isFuzzy: res.isFuzzy, reason: res.reason });
+        }
       });
 
       showTypingIndicator(function () {
         if (matches.length === 0) {
-          var chips = [];
-          state.contracts.slice(0, 4).forEach(function (c) {
-            chips.push({ label: '📍 ' + c.establecimiento, action: c.establecimiento });
-          });
-          chips.push({ label: '🔄 Intentar con otro apellido', action: 'cambiar' });
-
+          // No se exponen nombres ni datos de ningún otro propietario
           addBotMessage(
-            '⚠️ No encontré ningún contrato registrado con el término <strong>"' + escapeHtml(queryText) + '"</strong>.<br><br>' +
-            '💡 <em>Sugerencias:</em><br>' +
-            '• Ingrese únicamente el apellido (ej: <code>Fernández</code>, <code>Morales</code>).<br>' +
-            '• O pruebe con el nombre del establecimiento (ej: <code>La Posta</code>, <code>Los Aromos</code>, <code>Santa María</code>).',
-            chips
+            '⚠️ No encontré ningún contrato registrado para <strong>“' + escapeHtml(queryText) + '”</strong>.<br><br>' +
+            '💡 <em>Tenga en cuenta:</em><br>' +
+            '• El sistema reconoce automáticamente pequeños cambios de escritura o errores ortográficos leves.<br>' +
+            '• Por motivos de privacidad no es posible ver la lista de campos de terceros.<br><br>' +
+            '👉 <strong>Por favor verifique y vuelva a escribir su apellido o el nombre de su establecimiento:</strong>'
           );
         } else if (matches.length === 1) {
-          state.matchedContracts = matches;
-          selectContract(matches[0]);
+          var m = matches[0];
+          var c = m.contract;
+          state.pendingContract = c;
+          state.pendingIsFuzzy = m.isFuzzy;
+          state.currentStep = 'WAITING_CONFIRMATION';
+
+          if (m.isFuzzy) {
+            // Se detectó una pequeña variación o error en la escritura -> Pide confirmación explícita
+            addBotMessage(
+              '🔍 <strong>Detecté una pequeña diferencia en la escritura:</strong><br><br>' +
+              'Usted escribió: <em>“' + escapeHtml(queryText) + '”</em>.<br><br>' +
+              '¿Se refiere al siguiente registro?<br>' +
+              '• 👤 <strong>Propietario:</strong> ' + escapeHtml(c.arrendador) + '<br>' +
+              '• 🏡 <strong>Establecimiento:</strong> ' + escapeHtml(c.establecimiento) + ' (' + c.cultivoPactado + ')<br>' +
+              '• 📍 <strong>Ubicación:</strong> ' + escapeHtml(c.ubicacion) + '<br><br>' +
+              '👉 <strong>Por favor confirme si es correcto para acceder a sus datos:</strong>',
+              [
+                { label: '✅ Sí, es correcto', action: 'si, es correcto' },
+                { label: '❌ No, volver a escribir', action: 'no, cancelar' }
+              ]
+            );
+          } else {
+            // Coincidencia exacta/directa -> También pide confirmación previa de seguridad
+            addBotMessage(
+              '🔍 <strong>Registro localizado:</strong><br><br>' +
+              '• 👤 <strong>Propietario:</strong> ' + escapeHtml(c.arrendador) + '<br>' +
+              '• 🏡 <strong>Establecimiento:</strong> ' + escapeHtml(c.establecimiento) + ' (' + c.cultivoPactado + ')<br>' +
+              '• 📍 <strong>Ubicación:</strong> ' + escapeHtml(c.ubicacion) + '<br><br>' +
+              '👉 <strong>¿Confirma que desea consultar la información de este campo?</strong>',
+              [
+                { label: '✅ Sí, consultar este campo', action: 'si, consultar este campo' },
+                { label: '❌ No, escribir otro apellido', action: 'no, cancelar' }
+              ]
+            );
+          }
         } else {
-          // Múltiples campos encontrados para este apellido
-          state.matchedContracts = matches;
+          // Múltiples campos encontrados para este apellido o búsqueda
+          state.matchedContracts = matches.map(function (m) { return m.contract; });
           state.currentStep = 'SELECTING_FIELD';
 
-          var chips = matches.map(function (c) {
+          var chips = matches.map(function (m) {
+            var c = m.contract;
             return {
-              label: '🏡 ' + c.establecimiento + ' (' + c.cultivoPactado + ')',
+              label: '🏡 Confirmar: ' + c.establecimiento + ' (' + c.cultivoPactado + ')',
               action: c.establecimiento,
               isField: true
             };
           });
+          chips.push({ label: '❌ Ninguno, escribir de nuevo', action: 'no, cancelar' });
 
           addBotMessage(
-            '¡He localizado <strong>' + matches.length + ' campos</strong> vinculados con <strong>"' + escapeHtml(queryText) + '"</strong>!<br>' +
-            '👉 <em>Seleccione a continuación cuál de sus establecimientos desea consultar:</em>',
+            '🔍 He localizado <strong>' + matches.length + ' campos</strong> vinculados con su búsqueda <em>“' + escapeHtml(queryText) + '”</em>.<br><br>' +
+            '👉 <strong>Por favor confirme cuál de sus establecimientos desea consultar:</strong>',
             chips
           );
         }
-      }, 600);
+      }, 500);
     }
 
     function selectContract(c) {
       state.selectedContract = c;
+      state.pendingContract = null;
       state.currentStep = 'ACTIVE_FIELD';
 
       var crop = (c.cultivoPactado || 'Soja').toLowerCase();
@@ -1107,7 +1355,7 @@
       var vencInfo = getVigenciaDetail(c.fechaVencimiento);
 
       var cardHtml =
-        '<strong>✅ Campo Localizado: ' + escapeHtml(c.establecimiento) + '</strong><br>' +
+        '<strong>✅ Campo Confirmado: ' + escapeHtml(c.establecimiento) + '</strong><br>' +
         '<span style="font-size:0.78rem; color:#64748b;">Código: ' + c.codigo + ' • Arrendador: <strong>' + escapeHtml(c.arrendador) + '</strong></span>' +
         '<div class="data-summary-card">' +
           '<div class="data-card-header">' +
