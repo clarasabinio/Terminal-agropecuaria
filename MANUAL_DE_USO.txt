@@ -12,20 +12,21 @@ Repositorio GitHub: https://github.com/clarasabinio/Terminal-agropecuaria
 ÍNDICE GENERAL
 --------------------------------------------------------------------------------
 1. INTRODUCCIÓN Y PROPÓSITO DEL SISTEMA
-2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA)
+2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA ESTRICTA / SOLO LECTURA)
    2.1. Barra Superior de Cotizaciones en Vivo (Chicago, Rosario y Dólar BNA)
    2.2. Tarjetas de Métricas Globales (Consolidadas y por Municipio)
    2.3. Buscador Inteligente y Filtros (Filtro por Municipio)
    2.4. Tarjetas de Contratos y Distintivos por Municipio
    2.5. Semáforos de Vigencia y Alertas de Vencimiento
    2.6. Fondos Fotográficos Rotativos de Campo (Cada 5 Minutos)
-   2.7. Pestaña "➕ Cargar Nuevo Contrato" y Botón de Carga a Google Sheets
-3. MODO ADMINISTRADOR (GESTIÓN Y CONTROL TOTAL)
-   3.1. Cómo Iniciar Sesión de Administrador
-   3.2. Carga de un Nuevo Contrato Agrícola con Asignación de Municipio
-   3.3. Modificación de Contratos Existentes
+   2.7. Restricciones Estrictas de Seguridad en Modo Invitado (Sin Modificaciones)
+3. MODO ADMINISTRADOR (GESTIÓN, EDICIÓN Y CARGA TOTAL)
+   3.1. Cómo Iniciar Sesión de Administrador (Clave admin123 o PIN 1234)
+   3.2. Pestaña "➕ Cargar Nuevo Contrato" y Botón de Carga a Google Sheets
+   3.3. Modificación y Edición de Contratos Existentes
    3.4. Registro de Entregas y Liquidación de Pagos con Precio Rosario (BCR)
    3.5. Formas de Pago, Facturación y Comprobantes
+   3.6. Ajuste Manual de Cotizaciones de Pizarra
 4. BASES DE DATOS MUNICIPALES (GOOGLE SHEETS FEDERADAS)
    4.1. Las 3 Hojas de Cálculo (Exaltación de la Cruz, Salto, Giles)
    4.2. Visualizador Multi-Base y Solapa Master
@@ -59,11 +60,12 @@ arrendadores y administradores rurales. Permite:
 
 
 ================================================================================
-2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA)
+2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA ESTRICTA / SOLO LECTURA)
 ================================================================================
 Cuando cualquier persona abre la aplicación, entra en "MODO INVITADO (Solo Lectura)".
-En este modo, toda la información puede consultarse y filtrarse libremente, pero no
-se pueden alterar los datos ni registrar pagos sin la clave de Administrador.
+En este modo, toda la información puede consultarse y filtrarse libremente, pero
+NO SE PUEDE MODIFICAR NADA ("Solo lectura"). Ningún operador o visitante puede
+alterar datos, crear contratos, modificar campos ni registrar liquidaciones.
 
 2.1. BARRA SUPERIOR DE COTIZACIONES EN VIVO (3 RENGLONES FIJOS)
 En el borde superior de la pantalla se muestran las cotizaciones oficiales de los mercados:
@@ -73,7 +75,7 @@ En el borde superior de la pantalla se muestran las cotizaciones oficiales de lo
   * Maíz (USD/Tn)
   * Trigo (USD/Tn)
   * Girasol (USD/Tn)
-  Al hacer clic en cualquiera de estos granos, se abre la calculadora de liquidación.
+  Al hacer clic en cualquiera de estos granos, se abre la calculadora informativa de liquidación.
 - RENGLÓN 2 (BOLSA DE COMERCIO DE ROSARIO - BCR PIZARRA):
   Ubicado fijo directamente debajo de los precios de Chicago. Muestra las cotizaciones
   locales oficiales de la Cámara Arbitral de Rosario en Pesos por Tonelada ($ ARS/Tn)
@@ -82,8 +84,6 @@ En el borde superior de la pantalla se muestran las cotizaciones oficiales de lo
   * Maíz Rosario ($ ARS/Tn)
   * Trigo Rosario ($ ARS/Tn)
   * Girasol Rosario ($ ARS/Tn)
-  Al hacer clic sobre cualquiera de los granos de Rosario, se abre la liquidación de alquiler
-  cargando automáticamente dicho precio oficial.
 - RENGLÓN 3 (DÓLAR BANCO NACIÓN - BNA):
   Muestra las cotizaciones oficiales del Banco de la Nación Argentina:
   * Venta BNA (Billete Vendedor Oficial de Referencia)
@@ -91,8 +91,8 @@ En el borde superior de la pantalla se muestran las cotizaciones oficiales de lo
   * Compra BNA (Billete Comprador Oficial)
 - BOTONES DE LA BARRA:
   * [🔄]: Actualiza las cotizaciones conectándose a los servicios en vivo.
-  * [⚙️]: Permite al administrador ajustar o fijar manualmente las cotizaciones de la
-    Bolsa de Comercio de Rosario, Chicago y Dólar BNA.
+  * [⚙️]: Oculto para invitados. Solo el administrador puede ajustar o fijar
+    manualmente las cotizaciones de pizarra y tipo de cambio.
 
 2.2. TARJETAS DE MÉTRICAS GLOBALES
 En la parte superior de la vista de contratos se aprecian 4 indicadores consolidados:
@@ -104,6 +104,7 @@ En la parte superior de la vista de contratos se aprecian 4 indicadores consolid
 2.3. BUSCADOR INTELIGENTE Y FILTROS
 Permite localizar contratos al instante mediante:
 - Caja de búsqueda en vivo: Busca por nombre de campo, arrendatario o código.
+- Filtro por Municipio: Permite aislar los campos de Exaltación de la Cruz, Salto o Giles.
 - Filtro por Cultivo: Filtra por Soja, Maíz, Trigo o Girasol.
 - Filtro por Campaña: Selecciona campañas específicas (ej. 2024/2025).
 - Filtro por Estado: Muestra contratos Activos, Pendientes, Al Día o Vencidos.
@@ -115,7 +116,8 @@ Cada contrato se visualiza en una tarjeta individual donde se detalla:
 - Superficie (Ha) y quintales/ha pactados.
 - Barra de progreso porcentual del cumplimiento de entregas.
 - Saldo pendiente de pago en Kg y en USD.
-- Botón [🔍 Ver Ficha Técnica]: Despliega la ficha agronómica completa del lote.
+- Botón [🔍 Ver Ficha Técnica]: Despliega la ficha agronómica completa del lote y su
+  historial de movimientos de Google Sheets.
 
 2.5. SEMÁFOROS DE VIGENCIA Y ALERTAS DE VENCIMIENTO
 Cada contrato posee una etiqueta indicadora de vigencia con código de color:
@@ -137,12 +139,38 @@ cultivos, cargadas directamente desde la carpeta `Fotos` de su proyecto:
   en HEIC) dentro de la carpeta `Fotos`. Al iniciar el sistema o recargar la página,
   la aplicación las detectará e integrará automáticamente a la rotación de fondos.
 
-2.7. PESTAÑA "➕ CARGAR NUEVO CONTRATO" Y BOTÓN DE CARGA A HOJAS DE CÁLCULO
-En la barra de navegación principal se incorporó una solapa de acceso directo:
-[ ➕ Cargar Nuevo Contrato ]
+2.7. RESTRICCIONES ESTRICTAS DE SEGURIDAD EN MODO INVITADO (SIN MODIFICACIÓN)
+Para proteger la integridad de los datos en puntos públicos o terminales de consulta:
+- Ocultamiento de Acciones: La solapa "➕ Cargar Nuevo Contrato", los botones de
+  "✏️ Modificar", "🗑️ Eliminar", "📦 Registrar Entrega / Kg" y "⚙️ Ajuste de Mercado"
+  están completamente deshabilitados y ocultos.
+- Bloqueo de Facturación: Las insignias de estado de factura no son clickeables en
+  modo invitado, impidiendo cambios accidentales de estado.
+- Guardián en Capa Lógica: Cualquier intento de invocar funciones de modificación
+  detiene la operación inmediatamente y abre el modal de autenticación solicitando
+  la clave de administrador.
 
-Esta solapa permite a cualquier operador en la terminal cargar un contrato sin necesidad
-de abrir ventanas modales ni iniciar sesión con contraseña de administrador:
+
+================================================================================
+3. MODO ADMINISTRADOR (GESTIÓN, EDICIÓN Y CARGA TOTAL)
+================================================================================
+
+3.1. CÓMO INICIAR SESIÓN DE ADMINISTRADOR
+1. En la esquina superior derecha, haga clic en el botón: [🔐 Acceso Administrador].
+2. Ingrese la contraseña de administrador:
+   Clave: admin123  (o PIN: 1234)
+   (Puede presionar Enter directamente en el campo de texto).
+3. Al ingresar, la cabecera cambiará a color dorado indicando "👑 MODO ADMINISTRADOR",
+   el botón se transformará en [Cerrar Sesión Admin] y se habilitarán:
+   - La pestaña de carga directa "➕ Cargar Nuevo Contrato".
+   - La barra de gestión con botones [➕ Nuevo Contrato] y [📦 Registrar Entrega / Kg].
+   - Los botones de [✏️ Modificar] y [🗑️ Eliminar] en cada tarjeta de contrato.
+   - El botón [✏️ Modificar este Contrato] en la ficha técnica detallada.
+   - La edición interactiva de facturas recibidas (clic en la insignia).
+   - El botón de configuración de cotizaciones de pizarra [⚙️].
+
+3.2. PESTAÑA "➕ CARGAR NUEVO CONTRATO" Y BOTÓN DE CARGA A HOJAS DE CÁLCULO
+Al estar en Modo Administrador, la pestaña [ ➕ Cargar Nuevo Contrato ] se hace visible:
 1. SELECTOR DE BASE DE DATOS / MUNICIPIO:
    Permite elegir a cuál de las 3 hojas de Google Drive se enviará el contrato:
    * 🏛️ Exaltación de la Cruz (ID: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ)
@@ -177,37 +205,15 @@ de abrir ventanas modales ni iniciar sesión con contraseña de administrador:
      a [📊 Ver en Planilla], [📋 Ver en Contratos] y [🔗 Abrir Hoja en Drive].
    - Limpia el formulario dejándolo listo para la próxima carga.
 
-
-================================================================================
-3. MODO ADMINISTRADOR (GESTIÓN Y CONTROL TOTAL)
-================================================================================
-
-3.1. CÓMO INICIAR SESIÓN DE ADMINISTRADOR
-1. En la esquina superior derecha, haga clic en el botón: [🔐 Acceso Administrador].
-2. Ingrese la contraseña de administrador:
-   Clave: admin123  (o PIN: 1234)
-3. Al ingresar, la cabecera cambiará a color dorado indicando "👑 MODO ADMINISTRADOR"
-   y se activará la barra negra de gestión con botones de acción.
-
-3.2. CARGA DE UN NUEVO CONTRATO AGRÍCOLA
-1. En la barra de gestión, haga clic en [➕ Nuevo Contrato].
-2. Complete los datos del formulario:
-   - Establecimiento / Campo: Nombre del lote o estancia.
-   - Código de Contrato: Identificador único (ej. CT-2025-004).
-   - Arrendador / Propietario y Arrendatario.
-   - Superficie en Hectáreas (Ha).
-   - Cultivo Pactado (Soja, Maíz, Trigo, Girasol).
-   - Modalidad (Quintales Fijos por Ha o Porcentaje a Cosecha).
-   - Quintales por Ha o Kg pactados.
-   - Fecha de Firma y Fecha de Vencimiento de la vigencia.
-3. Haga clic en [Guardar Contrato]. Los datos se actualizarán en pantalla y se
-   generará automáticamente la solapa correspondiente en la hoja de cálculo.
-
-3.3. MODIFICACIÓN DE CONTRATOS EXISTENTES
-1. En la tarjeta del contrato, haga clic en [✏️ Modificar].
-2. Se abrirá el formulario cargado con la información actual.
-3. La fecha de modificación se fijará automáticamente con el día actual.
-4. Aplique los cambios y haga clic en [Guardar Cambios].
+3.3. MODIFICACIÓN Y EDICIÓN DE CONTRATOS EXISTENTES
+1. Inicie sesión de Administrador.
+2. En la tarjeta del campo deseado, haga clic en [✏️ Modificar] (o bien abra la
+   ficha técnica con [🔍 Ver Ficha Técnica] y pulse [✏️ Modificar este Contrato]).
+3. Se abrirá el formulario cargado con la información actual del contrato.
+4. Modifique cualquiera de los valores necesarios (hectáreas, quintales/ha, arrendatario, cultivo, fechas).
+5. Haga clic en [💾 Guardar Cambios en Google Sheets]. El backend actualizará la
+   fila correspondiente en la hoja del municipio correspondiente preservando
+   el historial, y los datos se actualizarán en pantalla.
 
 3.4. REGISTRO DE ENTREGAS Y LIQUIDACIÓN DE PAGOS CON PRECIO ROSARIO (BCR)
 Para registrar un pago de alquiler en base a la Bolsa de Comercio de Rosario:

@@ -463,6 +463,50 @@
       display: flex;
     }
 
+    /* =========================================================================
+       REGLAS ESTRICTAS DE SEGURIDAD: MODO INVITADO (SOLO LECTURA) VS ADMIN
+       ========================================================================= */
+    /* En Modo Invitado (por defecto): ocultar toda acción de edición y carga */
+    #nav-btn-tab-new-contract,
+    .btn-card-edit,
+    .btn-card-delete,
+    #btn-detail-edit-contract,
+    #btn-config-market {
+      display: none !important;
+    }
+
+    /* En Modo Invitado: el badge de factura no reacciona a clics */
+    body:not(.admin-mode) .invoice-badge {
+      cursor: default !important;
+      pointer-events: none !important;
+    }
+
+    /* En Modo Administrador (body.admin-mode): activar botones de carga y edición */
+    body.admin-mode #nav-btn-tab-new-contract {
+      display: inline-flex !important;
+    }
+
+    body.admin-mode .btn-card-edit {
+      display: inline-block !important;
+    }
+
+    body.admin-mode #btn-detail-edit-contract {
+      display: inline-block !important;
+    }
+
+    body.admin-mode .btn-card-delete {
+      display: inline-block !important;
+    }
+
+    body.admin-mode #btn-config-market {
+      display: inline-flex !important;
+    }
+
+    body.admin-mode .invoice-badge {
+      cursor: pointer !important;
+      pointer-events: auto !important;
+    }
+
     .live-clock-card {
       display: flex;
       flex-direction: column;
@@ -3223,6 +3267,11 @@
     };
 
     window.editContract = function (id) {
+      if (!state.isAdmin) {
+        openModal('modal-login');
+        showToast('🔒 Inicie sesión como Administrador para modificar contratos');
+        return;
+      }
       var c = state.contracts.find(function (item) { return item.id == id; });
       if (!c) return;
 
@@ -3447,6 +3496,11 @@
     };
 
     window.openRatesConfig = function () {
+      if (!state.isAdmin) {
+        openModal('modal-login');
+        showToast('🔒 Requiere acceso de Administrador para ajustar cotizaciones');
+        return;
+      }
       document.getElementById('config-chicago-soja').value = marketRates.chicago.soja;
       document.getElementById('config-chicago-maiz').value = marketRates.chicago.maiz;
       document.getElementById('config-chicago-trigo').value = marketRates.chicago.trigo;
@@ -3465,6 +3519,11 @@
     };
 
     window.saveRatesConfig = function () {
+      if (!state.isAdmin) {
+        openModal('modal-login');
+        showToast('🔒 Requiere acceso de Administrador para guardar cotizaciones');
+        return;
+      }
       marketRates.chicago.soja = parseFloat(document.getElementById('config-chicago-soja').value) || marketRates.chicago.soja;
       marketRates.chicago.maiz = parseFloat(document.getElementById('config-chicago-maiz').value) || marketRates.chicago.maiz;
       marketRates.chicago.trigo = parseFloat(document.getElementById('config-chicago-trigo').value) || marketRates.chicago.trigo;
@@ -3999,7 +4058,8 @@
 
     window.toggleInvoice = function (id) {
       if (!state.isAdmin) {
-        showToast('Inicie sesión como Administrador para cambiar la factura.');
+        openModal('modal-login');
+        showToast('🔒 Inicie sesión como Administrador para cambiar el estado de factura');
         return;
       }
       showToast('Actualizando factura...');
@@ -4013,7 +4073,11 @@
     };
 
     window.deleteContract = function (id, nombre) {
-      if (!state.isAdmin) return;
+      if (!state.isAdmin) {
+        openModal('modal-login');
+        showToast('🔒 Inicie sesión como Administrador para eliminar contratos');
+        return;
+      }
       if (confirm('¿Está seguro de que desea eliminar el campo "' + nombre + '"?\nSe archivará su solapa en Google Sheets.')) {
         showToast('Eliminando...');
         google.script.run
@@ -4069,6 +4133,11 @@
     // CONTROLADOR DE PESTAÑA: CARGA DE NUEVO CONTRATO A GOOGLE SHEETS
     // =========================================================================
     window.switchToTab = function (tabId) {
+      if (tabId === 'tab-new-contract' && !state.isAdmin) {
+        openModal('modal-login');
+        showToast('🔒 Requiere inicio de sesión como Administrador para cargar nuevos contratos');
+        return;
+      }
       document.querySelectorAll('.nav-tab-btn').forEach(function (b) {
         b.classList.toggle('active', b.dataset.tab === tabId);
       });
@@ -4225,6 +4294,11 @@
     };
 
     window.handleTabContractSubmit = function () {
+      if (!state.isAdmin) {
+        openModal('modal-login');
+        showToast('🔒 Requiere inicio de sesión como Administrador para cargar contratos');
+        return;
+      }
       var estab = (document.getElementById('tab-form-establecimiento').value || '').trim();
       if (!estab) {
         alert('⚠️ Por favor ingrese el Establecimiento / Nombre del Campo.');
@@ -4489,6 +4563,10 @@
           document.getElementById('btn-auth-toggle').classList.remove('is-admin');
           document.getElementById('auth-btn-text').textContent = 'Acceso Administrador';
           showToast('Modo Invitado (Solo Lectura) activado');
+          var newContractTab = document.getElementById('tab-new-contract');
+          if (newContractTab && newContractTab.classList.contains('active')) {
+            window.switchToTab('tab-contracts');
+          }
           renderContracts();
         } else {
           openModal('modal-login');
@@ -4496,18 +4574,29 @@
       });
 
       document.getElementById('btn-submit-login').addEventListener('click', function () {
-        if (document.getElementById('login-password').value === 'admin123') {
+        var pwd = (document.getElementById('login-password').value || '').trim();
+        if (pwd === 'admin123' || pwd === '1234') {
           state.isAdmin = true;
           document.body.classList.add('admin-mode');
           document.getElementById('btn-auth-toggle').classList.add('is-admin');
           document.getElementById('auth-btn-text').textContent = 'Cerrar Sesión Admin';
           closeModal('modal-login');
-          showToast('Sesión de Administrador iniciada');
+          document.getElementById('login-password').value = '';
+          showToast('👑 Sesión de Administrador iniciada: Edición y Carga habilitadas');
           renderContracts();
         } else {
-          alert('Clave incorrecta. Use: admin123');
+          alert('Clave incorrecta. Use: admin123 (o PIN: 1234)');
         }
       });
+
+      var loginPwdInput = document.getElementById('login-password');
+      if (loginPwdInput) {
+        loginPwdInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            document.getElementById('btn-submit-login').click();
+          }
+        });
+      }
 
       var btnUnlockKiosk = document.getElementById('btn-unlock-kiosk-normal');
       if (btnUnlockKiosk) {
@@ -4529,10 +4618,20 @@
       });
 
       document.getElementById('admin-btn-new-contract').addEventListener('click', function () {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para cargar contratos');
+          return;
+        }
         window.switchToTab('tab-new-contract');
       });
 
       document.getElementById('admin-btn-record-payment').addEventListener('click', function () {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para registrar entregas y pagos');
+          return;
+        }
         var select = document.getElementById('payment-contract-select');
         var html = '';
         state.contracts.forEach(function (c) {
@@ -4571,6 +4670,11 @@
       });
 
       document.getElementById('btn-save-contract').addEventListener('click', function () {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para modificar o guardar contratos');
+          return;
+        }
         var fechaVal = document.getElementById('form-fecha').value;
         if (!fechaVal) {
           alert('⚠️ La fecha de modificación o carga es obligatoria.');
@@ -4627,6 +4731,11 @@
       });
 
       document.getElementById('btn-save-payment').addEventListener('click', function () {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para registrar pagos');
+          return;
+        }
         var contractId = document.getElementById('payment-contract-select').value;
         var kg = parseInt(document.getElementById('payment-kg').value, 10) || 0;
         var fechaVal = document.getElementById('payment-fecha').value;
@@ -4742,6 +4851,11 @@
       var btnDetailEdit = document.getElementById('btn-detail-edit-contract');
       if (btnDetailEdit) {
         btnDetailEdit.addEventListener('click', function () {
+          if (!state.isAdmin) {
+            openModal('modal-login');
+            showToast('🔒 Inicie sesión como Administrador para modificar contratos');
+            return;
+          }
           if (window.currentDetailContractId) {
             editContract(window.currentDetailContractId);
           }
