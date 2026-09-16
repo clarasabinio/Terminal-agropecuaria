@@ -216,11 +216,14 @@ Al estar en Modo Administrador, la pestaña [ ➕ Cargar Nuevo Contrato ] se hac
    el historial, y los datos se actualizarán en pantalla.
 
 3.4. REGISTRO DE ENTREGAS Y LIQUIDACIÓN DE PAGOS CON PRECIO ROSARIO (BCR)
-Para registrar un pago de alquiler en base a la Bolsa de Comercio de Rosario:
-1. Haga clic en el botón [📦 Registrar Entrega / Kg] en la barra de gestión, o haga
-   clic en cualquier grano de la fila de Rosario en la barra superior.
+Para registrar una entrega de granos y su liquidación de pago en un contrato:
+1. Formas de abrir el formulario de entrega:
+   - Haga clic en el botón directo [📦 Entrega] en la tarjeta del contrato deseado.
+   - O abra la ficha técnica y presione [📦 Cargar Entrega].
+   - O haga clic en el botón [📦 Registrar Entrega / Kg] en la barra superior de administración.
+   - O haga clic sobre cualquier grano en la barra superior de cotizaciones de Rosario.
 2. Complete los datos de liquidación del formulario:
-   - Seleccione el Contrato a liquidar.
+   - Seleccione el Contrato a liquidar (se autoselecciona si abrió desde la tarjeta).
    - Ingrese la Fecha de la operación / fijación.
    - Ingrese los Kg netos de cereal a liquidar.
    - FÓRMULA DE CÁLCULO APLICADA:
@@ -244,8 +247,12 @@ Para registrar un pago de alquiler en base a la Bolsa de Comercio de Rosario:
 5. Marque si se recibió la Factura correspondiente [Factura Recibida: SÍ / NO] e
    ingrese el N° de Factura.
 6. Opcional: Suba el archivo del comprobante (PDF o imagen).
-7. Haga clic en [Registrar Liquidación y Pago]. El saldo del contrato se descontará
-   automáticamente y se guardará el movimiento en la solapa correspondiente.
+7. BOTÓN DE ACEPTAR:
+   - Haga clic en el botón verde [ ✓ Aceptar ] (o presione Enter en cualquier campo).
+   - El sistema registrará la entrega y el movimiento en Google Sheets.
+   - Al finalizar, se abrirá una ventana emergente de confirmación detallando los
+     kilos entregados, monto liquidado y nuevo saldo, con su correspondiente
+     botón [ ✓ Aceptar ] para volver a la terminal.
 
 
 ================================================================================
