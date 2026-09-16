@@ -40,6 +40,7 @@ El visualizador muestra:
 - Resumen consolidado federando las 3 bases de datos (3.440 Ha totales).
 
 ### 2. Terminal Web Kiosco Interactiva (`Index.html`)
+- **Pestaña de Carga Directa a Google Sheets (`➕ Cargar Nuevo Contrato`)**: Accesible directamente desde la barra de navegación de la terminal. Permite seleccionar la base de datos de destino (Exaltación de la Cruz, Salto o San Andrés de Giles), autogenerar códigos, calcular en tiempo real los kilos a pagar y valorización en USD y ARS (cotización BNA), y cuenta con el **Botón de Carga `[ 🚀 CARGAR CONTRATO A HOJAS DE CÁLCULO ]`** para enviar e impactar el registro inmediatamente en la hoja de cálculo de Google Drive correspondiente.
 - **Filtro Dinámico por Municipio**: Selector en la barra de herramientas para filtrar los campos por *Todos*, *Exaltación de la Cruz*, *Salto* o *San Andrés de Giles*.
 - **Insignias / Badges Visuales**: Cada tarjeta de contrato exhibe una etiqueta distintiva con el color y escudo de su municipio (`badge-municipio-exaltacion`, `badge-municipio-salto`, `badge-municipio-giles`).
 - **Planilla Master Multi-Base**: En la solapa de Planilla de Cálculo, se puede conmutar la vista para inspeccionar cada base de datos municipal o ver la consolidación global.

@@ -19,6 +19,7 @@ Repositorio GitHub: https://github.com/clarasabinio/Terminal-agropecuaria
    2.4. Tarjetas de Contratos y Distintivos por Municipio
    2.5. Semáforos de Vigencia y Alertas de Vencimiento
    2.6. Fondos Fotográficos Rotativos de Campo (Cada 5 Minutos)
+   2.7. Pestaña "➕ Cargar Nuevo Contrato" y Botón de Carga a Google Sheets
 3. MODO ADMINISTRADOR (GESTIÓN Y CONTROL TOTAL)
    3.1. Cómo Iniciar Sesión de Administrador
    3.2. Carga de un Nuevo Contrato Agrícola con Asignación de Municipio
@@ -135,6 +136,46 @@ cultivos, cargadas directamente desde la carpeta `Fotos` de su proyecto:
   Simplemente arrastre o copie sus fotos (en formato JPG, PNG, WEBP o fotos de iPhone
   en HEIC) dentro de la carpeta `Fotos`. Al iniciar el sistema o recargar la página,
   la aplicación las detectará e integrará automáticamente a la rotación de fondos.
+
+2.7. PESTAÑA "➕ CARGAR NUEVO CONTRATO" Y BOTÓN DE CARGA A HOJAS DE CÁLCULO
+En la barra de navegación principal se incorporó una solapa de acceso directo:
+[ ➕ Cargar Nuevo Contrato ]
+
+Esta solapa permite a cualquier operador en la terminal cargar un contrato sin necesidad
+de abrir ventanas modales ni iniciar sesión con contraseña de administrador:
+1. SELECTOR DE BASE DE DATOS / MUNICIPIO:
+   Permite elegir a cuál de las 3 hojas de Google Drive se enviará el contrato:
+   * 🏛️ Exaltación de la Cruz (ID: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ)
+   * 🌾 Salto (ID: 1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc)
+   * 🌻 San Andrés de Giles (ID: 1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic)
+   Muestra un enlace directo para abrir y verificar la hoja en Google Drive.
+2. FORMULARIO COMPLETO:
+   - Establecimiento / Campo (obligatorio).
+   - Código identificador (autogenerado con prefijo municipal si se deja vacío).
+   - Fecha de Carga y Fecha de Vencimiento de la vigencia.
+   - Campaña Agrícola (2024/2025, 2025/2026, 2026/2027, etc.).
+   - Arrendador (Dueño) y Arrendatario (Productor).
+   - Ubicación del Lote y Hectáreas.
+   - Cultivo Pactado (Soja, Maíz, Trigo, Girasol).
+   - Modalidad en Quintales / Ha y Precio de Referencia (USD / Tonelada).
+   - Observaciones de Acopio y Checkbox de ¿Factura Recibida?.
+3. PANEL DE CÁLCULO ESTIMADO EN TIEMPO REAL:
+   A medida que se escriben las hectáreas y quintales, el sistema calcula al instante:
+   - Kilos Totales a Pagar (Ha * Qq * 100).
+   - Estimación en Camiones de 30 Toneladas.
+   - Monto Total en Dólares (USD).
+   - Monto Equivalente en Pesos Argentinos ($ ARS) tomando el Dólar Oficial BNA.
+4. EL BOTÓN DE CARGA:
+   [ 🚀 CARGAR CONTRATO A HOJAS DE CÁLCULO ]
+   Al presionar este botón:
+   - Valida que los campos obligatorios estén completos.
+   - Activa el indicador de progreso (spinner y texto de guardado).
+   - Envía el contrato a Google Sheets a través de `saveContractToSheet`.
+   - Agrega la fila con todas sus fórmulas en la base de datos municipal seleccionada.
+   - Crea la solapa individual de seguimiento y registra el movimiento de ALTA.
+   - Notifica con una tarjeta de confirmación en verde que incluye accesos directos
+     a [📊 Ver en Planilla], [📋 Ver en Contratos] y [🔗 Abrir Hoja en Drive].
+   - Limpia el formulario dejándolo listo para la próxima carga.
 
 
 ================================================================================

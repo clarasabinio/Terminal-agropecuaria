@@ -1404,6 +1404,50 @@
       font-size: 0.85rem;
       font-weight: 600;
     }
+
+    /* Estilos para Pestaña de Carga Directa a Google Sheets */
+    .tab-new-contract-container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+
+    .btn-load-sheets-contract {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      color: white;
+      border: none;
+      font-weight: 800;
+      font-size: 1.08rem;
+      padding: 0.95rem 2.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-load-sheets-contract:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+
+    .btn-load-sheets-contract:active {
+      transform: translateY(0);
+    }
+
+    .btn-load-sheets-contract:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 
@@ -1606,11 +1650,15 @@
   </div>
 
   <nav class="kiosk-nav-tabs">
-    <button class="nav-tab-btn active" data-tab="tab-contracts">
+    <button class="nav-tab-btn active" data-tab="tab-contracts" id="nav-btn-tab-contracts">
       📋 Contratos de Alquiler Agrícola <span class="nav-tab-count" id="tab-contracts-count">0</span>
     </button>
-    <button class="nav-tab-btn" data-tab="tab-sheet-viewer">
+    <button class="nav-tab-btn" data-tab="tab-sheet-viewer" id="nav-btn-tab-sheet-viewer">
       📊 Planilla de Cálculo Consolidada (Sheet)
+    </button>
+    <button class="nav-tab-btn" data-tab="tab-new-contract" id="nav-btn-tab-new-contract" style="display:inline-flex; align-items:center; gap:0.45rem;">
+      <span>➕ Cargar Nuevo Contrato</span>
+      <span style="background:#dcfce7; color:#15803d; font-size:0.7rem; padding:2px 7px; border-radius:10px; font-weight:800;">Sheets</span>
     </button>
   </nav>
 
@@ -1743,6 +1791,207 @@
           </div>
         </div>
         <div class="sheet-table-scroll allow-select" id="consolidated-sheet-container"></div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA: CARGAR NUEVO CONTRATO DESDE LA TERMINAL A GOOGLE SHEETS -->
+    <div class="tab-view" id="tab-new-contract">
+      <div class="tab-new-contract-container">
+        
+        <!-- Encabezado de la Pestaña -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); display: flex; align-items: center; justify-content: center; font-size: 1.85rem; color: white; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+              🚜
+            </div>
+            <div>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--corp-navy); margin: 0 0 0.25rem 0;">
+                ➕ Cargar Nuevo Contrato Agrícola a Google Sheets
+              </h2>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0;">
+                Alta directa desde la Terminal Kiosco. El contrato se sincronizará e impactará inmediatamente en la base de datos de Google Drive.
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: 20px; display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span>🟢</span> 3 Hojas Google Drive Vinculadas
+            </span>
+            <a href="https://drive.google.com/drive/u/0/folders/1gXI7vPM-fuukfDzZcf6ot9urGgU4xxbc" target="_blank" style="text-decoration: none; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem;">
+              📁 Abrir Carpeta Drive ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- Contenedor Dinámico de Notificaciones de Estado y Éxito -->
+        <div id="tab-contract-status-alert" style="display: none; margin-bottom: 1.5rem;"></div>
+
+        <!-- Tarjeta Principal del Formulario -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); padding: 2rem; margin-bottom: 2rem;">
+          
+          <form id="tab-contract-upload-form" onsubmit="return false;">
+            
+            <!-- Selector Destino: Base de Datos / Municipio -->
+            <div style="background: #f0f9ff; border: 1.5px solid #7dd3fc; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem;">
+                <label for="tab-form-municipio" style="font-size: 0.95rem; font-weight: 800; color: #0369a1; display: flex; align-items: center; gap: 0.5rem;">
+                  <span>🏛️</span> BASE DE DATOS / MUNICIPIO (HOJA DE CÁLCULO DE DESTINO) *
+                </label>
+                <span id="tab-form-destination-badge" style="font-size: 0.78rem; font-weight: 700; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 6px;">
+                  Google Sheet: Exaltación de la Cruz
+                </span>
+              </div>
+              <select id="tab-form-municipio" class="form-select" style="font-size: 1rem; font-weight: 700; padding: 0.75rem 1rem; border: 1.5px solid #38bdf8; background: white; width: 100%; border-radius: 8px; cursor: pointer;">
+                <option value="exaltacion" selected>🏛️ Exaltación de la Cruz (ID: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ)</option>
+                <option value="salto">🌾 Salto (ID: 1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc)</option>
+                <option value="giles">🌻 San Andrés de Giles (ID: 1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic)</option>
+              </select>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.65rem; font-size: 0.82rem; color: #0369a1;">
+                <span id="tab-form-sheet-url-preview">
+                  📄 Archivo destino: <strong>Exaltación de la Cruz</strong> (ID: <code style="font-size:0.75rem; background:#e0f2fe; padding:2px 5px; border-radius:4px;">14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ</code>)
+                </span>
+                <a id="tab-form-direct-sheet-link" href="https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: underline;">
+                  Abrir hoja en pestaña nueva ↗
+                </a>
+              </div>
+            </div>
+
+            <!-- Datos Principales del Contrato -->
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--corp-navy); margin: 0 0 1rem 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📋</span> Datos Contractuales y Agronómicos
+            </h3>
+
+            <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+              
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Establecimiento / Nombre del Campo *</label>
+                <input type="text" id="tab-form-establecimiento" class="form-input" placeholder="Ej: La Posta del Toro" required style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Código de Contrato</label>
+                <input type="text" id="tab-form-codigo" class="form-input" placeholder="Ej: AGRO-EX-04 (Autogenerado si está vacío)" style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Fecha de Carga / Firma *</label>
+                <input type="date" id="tab-form-fecha" class="form-input" required style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Fecha de Vigencia / Vencimiento *</label>
+                <input type="date" id="tab-form-fecha-vencimiento" class="form-input" required style="padding: 0.7rem; font-size: 0.95rem;">
+                <div id="tab-form-vencimiento-hint" style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--text-muted); font-weight: 600;">
+                  Indique hasta qué fecha rige el contrato
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Campaña Agrícola *</label>
+                <input type="text" id="tab-form-campana" class="form-input" list="tab-campanas-list" value="2025/2026" required style="padding: 0.7rem; font-size: 0.95rem;">
+                <datalist id="tab-campanas-list">
+                  <option value="2023/2024">
+                  <option value="2024/2025">
+                  <option value="2025/2026">
+                  <option value="2026/2027">
+                  <option value="2027/2028">
+                </datalist>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Arrendador (Propietario de la Tierra) *</label>
+                <input type="text" id="tab-form-arrendador" class="form-input" placeholder="Nombre completo o Razón Social" required style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Arrendatario (Empresa / Productor) *</label>
+                <input type="text" id="tab-form-arrendatario" class="form-input" value="Administración Rural" required style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label" style="font-weight: 700;">Ubicación del Lote / Paraje / Acceso *</label>
+                <input type="text" id="tab-form-ubicacion" class="form-input" placeholder="Ej: Ruta 8 Km 74, Capilla del Señor" required style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Superficie (Hectáreas) *</label>
+                <input type="number" step="0.1" id="tab-form-ha" class="form-input" placeholder="Ej: 320" required style="padding: 0.7rem; font-size: 0.95rem; font-weight: 600;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Cultivo Pactado *</label>
+                <select id="tab-form-cultivo" class="form-select" style="padding: 0.7rem; font-size: 0.95rem; font-weight: 600;">
+                  <option value="Soja" selected>Soja</option>
+                  <option value="Maíz">Maíz</option>
+                  <option value="Trigo">Trigo</option>
+                  <option value="Girasol">Girasol</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Modalidad de Pago (Quintales / Ha) *</label>
+                <input type="number" step="0.1" id="tab-form-qq-ha" class="form-input" value="14.0" required style="padding: 0.7rem; font-size: 0.95rem; font-weight: 600;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700;">Precio de Referencia (USD / Tonelada) *</label>
+                <input type="number" step="1" id="tab-form-precio-tn" class="form-input" value="295" required style="padding: 0.7rem; font-size: 0.95rem; font-weight: 600;">
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label" style="font-weight: 700;">Observaciones / Logística de Acopio</label>
+                <input type="text" id="tab-form-observaciones" class="form-input" placeholder="Ej: Acopio Cooperativa Agrícola, entrega de camiones pactada" style="padding: 0.7rem; font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <input type="checkbox" id="tab-form-factura" style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="tab-form-factura" style="font-size: 0.9rem; font-weight: 700; color: var(--corp-navy); cursor: pointer;">
+                  ¿Factura Recibida / Registrada al momento de la carga?
+                </label>
+              </div>
+
+            </div>
+
+            <!-- Panel de Cálculo en Vivo -->
+            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1.5px solid #86efac; border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 1.75rem;">
+              <div style="font-size: 0.85rem; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🌾</span> Liquidación y Valorización Estimada en Tiempo Real
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                  <div style="font-size: 0.75rem; color: #166534; font-weight: 600;">KILOS TOTALES A PAGAR</div>
+                  <div id="tab-calc-kilos" style="font-size: 1.35rem; font-weight: 800; color: #15803d;">0 Kg</div>
+                  <div id="tab-calc-camiones" style="font-size: 0.75rem; color: #166534;">~0 camiones de 30 Tn</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; color: #166534; font-weight: 600;">TOTAL ESTIMADO EN DÓLARES</div>
+                  <div id="tab-calc-usd" style="font-size: 1.35rem; font-weight: 800; color: #15803d;">$0 USD</div>
+                  <div id="tab-calc-precio-unit" style="font-size: 0.75rem; color: #166534;">A USD 295/Tn</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; color: #166534; font-weight: 600;">EQUIVALENTE ESTIMADO ARS (BNA)</div>
+                  <div id="tab-calc-ars" style="font-size: 1.35rem; font-weight: 800; color: #047857;">$0 ARS</div>
+                  <div id="tab-calc-tc-ref" style="font-size: 0.75rem; color: #047857;">T.C. Oficial</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BARRA DE ACCIÓN: BOTÓN DE CARGA A HOJAS DE CÁLCULO -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1.5px solid #e2e8f0; padding-top: 1.5rem;">
+              <button type="button" class="btn-secondary" id="btn-tab-reset-contract" style="padding: 0.85rem 1.4rem; font-weight: 700; color: #475569; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                🔄 Limpiar Formulario
+              </button>
+
+              <button type="button" class="btn-load-sheets-contract" id="btn-tab-submit-contract">
+                <span id="btn-tab-submit-icon" style="font-size: 1.3rem;">🚀</span>
+                <span id="btn-tab-submit-text">CARGAR CONTRATO A HOJAS DE CÁLCULO</span>
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
       </div>
     </div>
   </main>
@@ -3816,6 +4065,265 @@
       }
     };
 
+    // =========================================================================
+    // CONTROLADOR DE PESTAÑA: CARGA DE NUEVO CONTRATO A GOOGLE SHEETS
+    // =========================================================================
+    window.switchToTab = function (tabId) {
+      document.querySelectorAll('.nav-tab-btn').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-view').forEach(function (v) {
+        v.classList.toggle('active', v.id === tabId);
+      });
+      if (tabId === 'tab-sheet-viewer') {
+        renderConsolidatedSheet();
+      }
+      if (tabId === 'tab-new-contract') {
+        window.initTabNewContractDefaults();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.initTabNewContractDefaults = function () {
+      var dateEl = document.getElementById('tab-form-fecha');
+      if (dateEl && !dateEl.value) {
+        dateEl.value = new Date().toISOString().split('T')[0];
+      }
+      var dateVencEl = document.getElementById('tab-form-fecha-vencimiento');
+      if (dateVencEl && !dateVencEl.value) {
+        var defVenc = new Date();
+        defVenc.setFullYear(defVenc.getFullYear() + 1);
+        dateVencEl.value = defVenc.toISOString().split('T')[0];
+      }
+      window.updateTabMunicipioDetails();
+      window.updateTabCalc();
+    };
+
+    window.updateTabMunicipioDetails = function () {
+      var munSelect = document.getElementById('tab-form-municipio');
+      if (!munSelect) return;
+      var munKey = munSelect.value || 'exaltacion';
+      var munObj = MUNICIPIOS_DB[munKey] || MUNICIPIOS_DB.exaltacion;
+
+      var badge = document.getElementById('tab-form-destination-badge');
+      if (badge) badge.textContent = 'Google Sheet: ' + munObj.nombre;
+
+      var preview = document.getElementById('tab-form-sheet-url-preview');
+      if (preview) {
+        preview.innerHTML = '📄 Archivo destino: <strong>' + munObj.nombre + '</strong> (ID: <code style="font-size:0.75rem; background:#e0f2fe; padding:2px 5px; border-radius:4px;">' + munObj.id.slice(0, 12) + '...</code>)';
+      }
+
+      var directLink = document.getElementById('tab-form-direct-sheet-link');
+      if (directLink) {
+        directLink.href = munObj.url;
+        directLink.title = 'Abrir Google Sheet de ' + munObj.nombre;
+      }
+
+      var codInput = document.getElementById('tab-form-codigo');
+      if (codInput && (!codInput.value || /^AGRO-[A-Z]{2}-\d+$/.test(codInput.value))) {
+        var prefix = munKey === 'exaltacion' ? 'EX' : (munKey === 'salto' ? 'SA' : 'GI');
+        var existingCount = (state.contracts || []).filter(function (c) { return c.municipioKey === munKey; }).length;
+        var nextNum = ('0' + (existingCount + 1)).slice(-2);
+        codInput.placeholder = 'Ej: AGRO-' + prefix + '-' + nextNum;
+      }
+    };
+
+    window.updateTabCalc = function () {
+      var haInput = document.getElementById('tab-form-ha');
+      var qqInput = document.getElementById('tab-form-qq-ha');
+      var precioInput = document.getElementById('tab-form-precio-tn');
+      if (!haInput || !qqInput || !precioInput) return;
+
+      var ha = parseFloat(haInput.value) || 0;
+      var qq = parseFloat(qqInput.value) || 0;
+      var precioTn = parseFloat(precioInput.value) || 0;
+      var kilos = Math.round(ha * qq * 100);
+      var totalUSD = kilos * (precioTn / 1000);
+      var camiones = (kilos / 30000).toFixed(1);
+      var tc = (marketRates && marketRates.dolarBNA && marketRates.dolarBNA.venta) ? marketRates.dolarBNA.venta : 1535;
+      var totalARS = Math.round(totalUSD * tc);
+
+      var elKilos = document.getElementById('tab-calc-kilos');
+      if (elKilos) elKilos.textContent = formatNum(kilos) + ' Kg';
+
+      var elCamiones = document.getElementById('tab-calc-camiones');
+      if (elCamiones) elCamiones.textContent = '~' + camiones + ' camiones de 30 Tn';
+
+      var elUSD = document.getElementById('tab-calc-usd');
+      if (elUSD) elUSD.textContent = '$' + formatNum(Math.round(totalUSD)) + ' USD';
+
+      var elUnit = document.getElementById('tab-calc-precio-unit');
+      if (elUnit) elUnit.textContent = 'A USD ' + precioTn + '/Tn';
+
+      var elARS = document.getElementById('tab-calc-ars');
+      if (elARS) elARS.textContent = '$' + formatNum(totalARS) + ' ARS';
+
+      var elTC = document.getElementById('tab-calc-tc-ref');
+      if (elTC) elTC.textContent = 'T.C. BNA: $' + Number(tc).toFixed(2);
+    };
+
+    window.resetTabContractForm = function () {
+      var estab = document.getElementById('tab-form-establecimiento');
+      if (estab) estab.value = '';
+      var codigo = document.getElementById('tab-form-codigo');
+      if (codigo) codigo.value = '';
+      var arrendador = document.getElementById('tab-form-arrendador');
+      if (arrendador) arrendador.value = '';
+      var arrendatario = document.getElementById('tab-form-arrendatario');
+      if (arrendatario) arrendatario.value = 'Administración Rural';
+      var ubicacion = document.getElementById('tab-form-ubicacion');
+      if (ubicacion) ubicacion.value = '';
+      var ha = document.getElementById('tab-form-ha');
+      if (ha) ha.value = '';
+      var obs = document.getElementById('tab-form-observaciones');
+      if (obs) obs.value = '';
+      var fac = document.getElementById('tab-form-factura');
+      if (fac) fac.checked = false;
+
+      var dateEl = document.getElementById('tab-form-fecha');
+      if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+      var dateVencEl = document.getElementById('tab-form-fecha-vencimiento');
+      if (dateVencEl) {
+        var defVenc = new Date();
+        defVenc.setFullYear(defVenc.getFullYear() + 1);
+        dateVencEl.value = defVenc.toISOString().split('T')[0];
+      }
+
+      window.updateTabCalc();
+      window.updateTabMunicipioDetails();
+    };
+
+    window.showTabSuccessBanner = function (cData, munObj) {
+      var alertEl = document.getElementById('tab-contract-status-alert');
+      if (!alertEl) return;
+
+      var kilos = Math.round(cData.superficieHa * cData.modalidad * 100);
+      var usd = Math.round(kilos * (cData.precioTn / 1000));
+
+      alertEl.innerHTML = '<div style="background:#ecfdf5; border:1.5px solid #34d399; border-radius:12px; padding:1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 4px 14px rgba(16,185,129,0.12);">' +
+        '<div style="display:flex; align-items:center; gap:0.9rem;">' +
+          '<div style="width:44px; height:44px; border-radius:50%; background:#d1fae5; display:flex; align-items:center; justify-content:center; font-size:1.6rem;">✅</div>' +
+          '<div>' +
+            '<div style="font-weight:800; color:#065f46; font-size:1.05rem;">' +
+              '¡Contrato ' + cData.codigo + ' cargado exitosamente en Google Sheets!' +
+            '</div>' +
+            '<div style="font-size:0.85rem; color:#047857; margin-top:2px;">' +
+              '<strong>' + cData.establecimiento + '</strong> (' + munObj.nombre + ') — ' + cData.superficieHa + ' Ha (' + cData.cultivoPactado + ') — ' + formatNum(kilos) + ' Kg pactados ($' + formatNum(usd) + ' USD)' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">' +
+          '<button type="button" class="btn-primary" onclick="window.switchToTab(\'tab-sheet-viewer\')" style="background:#059669; font-size:0.82rem; padding:0.55rem 0.95rem; border-radius:6px; font-weight:700; cursor:pointer;">📊 Ver en Planilla</button>' +
+          '<button type="button" class="btn-secondary" onclick="window.switchToTab(\'tab-contracts\')" style="font-size:0.82rem; padding:0.55rem 0.95rem; border-radius:6px; font-weight:700; cursor:pointer;">📋 Ver en Contratos</button>' +
+          '<a href="' + munObj.url + '" target="_blank" style="text-decoration:none; background:white; border:1px solid #6ee7b7; color:#065f46; font-weight:700; font-size:0.82rem; padding:0.55rem 0.95rem; border-radius:6px; display:inline-flex; align-items:center; gap:0.3rem;">🔗 Abrir en Drive ↗</a>' +
+          '<button type="button" onclick="document.getElementById(\'tab-contract-status-alert\').style.display=\'none\';" style="background:none; border:none; color:#059669; font-weight:700; font-size:1.1rem; cursor:pointer; padding:0 0.4rem;" title="Cerrar">✕</button>' +
+        '</div>' +
+      '</div>';
+      alertEl.style.display = 'block';
+      alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    window.handleTabContractSubmit = function () {
+      var estab = (document.getElementById('tab-form-establecimiento').value || '').trim();
+      if (!estab) {
+        alert('⚠️ Por favor ingrese el Establecimiento / Nombre del Campo.');
+        document.getElementById('tab-form-establecimiento').focus();
+        return;
+      }
+
+      var fecha = document.getElementById('tab-form-fecha').value;
+      if (!fecha) {
+        alert('⚠️ La fecha de carga / firma es obligatoria.');
+        document.getElementById('tab-form-fecha').focus();
+        return;
+      }
+
+      var fechaVenc = document.getElementById('tab-form-fecha-vencimiento').value;
+      if (!fechaVenc) {
+        alert('⚠️ La fecha de vigencia / vencimiento es obligatoria.');
+        document.getElementById('tab-form-fecha-vencimiento').focus();
+        return;
+      }
+
+      var arrendador = (document.getElementById('tab-form-arrendador').value || '').trim();
+      if (!arrendador) {
+        alert('⚠️ Por favor ingrese el Arrendador (Dueño de la tierra).');
+        document.getElementById('tab-form-arrendador').focus();
+        return;
+      }
+
+      var ha = parseFloat(document.getElementById('tab-form-ha').value) || 0;
+      if (ha <= 0) {
+        alert('⚠️ Ingrese una superficie válida en Hectáreas (mayor a 0).');
+        document.getElementById('tab-form-ha').focus();
+        return;
+      }
+
+      var munKey = document.getElementById('tab-form-municipio').value || 'exaltacion';
+      var munObj = MUNICIPIOS_DB[munKey] || MUNICIPIOS_DB.exaltacion;
+      var prefix = munKey === 'exaltacion' ? 'EX' : (munKey === 'salto' ? 'SA' : 'GI');
+      var existingCount = (state.contracts || []).filter(function (c) { return c.municipioKey === munKey; }).length;
+      var autoCodigo = 'AGRO-' + prefix + '-' + ('0' + (existingCount + 1)).slice(-2);
+
+      var cData = {
+        rowIndex: 0,
+        codigo: (document.getElementById('tab-form-codigo').value || '').trim() || autoCodigo,
+        establecimiento: estab,
+        municipioKey: munKey,
+        municipio: munObj.nombre,
+        municipioId: munObj.id,
+        sheetUrl: munObj.url,
+        arrendador: arrendador,
+        arrendatario: (document.getElementById('tab-form-arrendatario').value || '').trim() || 'Administración Rural',
+        ubicacion: (document.getElementById('tab-form-ubicacion').value || '').trim() || (munObj.nombre + ', Bs. As.'),
+        campana: (document.getElementById('tab-form-campana').value || '').trim() || '2025/2026',
+        superficieHa: ha,
+        cultivoPactado: document.getElementById('tab-form-cultivo').value,
+        modalidad: parseFloat(document.getElementById('tab-form-qq-ha').value) || 12.0,
+        precioTn: parseFloat(document.getElementById('tab-form-precio-tn').value) || 0,
+        facturaRecibida: document.getElementById('tab-form-factura').checked,
+        observaciones: (document.getElementById('tab-form-observaciones').value || '').trim(),
+        fecha: fecha,
+        fechaVencimiento: fechaVenc
+      };
+
+      var btnSubmit = document.getElementById('btn-tab-submit-contract');
+      var btnText = document.getElementById('btn-tab-submit-text');
+      var btnIcon = document.getElementById('btn-tab-submit-icon');
+
+      btnSubmit.disabled = true;
+      btnText.textContent = 'CARGANDO EN GOOGLE SHEETS (' + munObj.nombre.toUpperCase() + ')...';
+      btnIcon.innerHTML = '<span style="display:inline-block; width:16px; height:16px; border:2px solid white; border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></span>';
+      btnSubmit.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+
+      showToast('⏳ Cargando contrato en Google Sheets (' + munObj.nombre + ')...');
+
+      google.script.run
+        .withSuccessHandler(function (data) {
+          state.contracts = data;
+          updateCampaignsDropdown();
+          renderAll();
+
+          btnSubmit.disabled = false;
+          btnText.textContent = 'CARGAR CONTRATO A HOJAS DE CÁLCULO';
+          btnIcon.textContent = '🚀';
+          btnSubmit.style.background = '';
+
+          window.showTabSuccessBanner(cData, munObj);
+          showToast('✅ ¡Contrato ' + cData.codigo + ' cargado en Google Sheets (' + munObj.nombre + ')!');
+          window.resetTabContractForm();
+        })
+        .withFailureHandler(function (err) {
+          btnSubmit.disabled = false;
+          btnText.textContent = 'CARGAR CONTRATO A HOJAS DE CÁLCULO';
+          btnIcon.textContent = '🚀';
+          btnSubmit.style.background = '';
+          alert('❌ Error al cargar en Google Sheets: ' + (err.message || err));
+        })
+        .saveContractToSheet(cData);
+    };
+
     function setupEventListeners() {
       var updateCalc = function () {
         var ha = parseFloat(document.getElementById('form-ha').value) || 0;
@@ -3944,13 +4452,35 @@
 
       document.querySelectorAll('.nav-tab-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          document.querySelectorAll('.nav-tab-btn').forEach(function (b) { b.classList.remove('active'); });
-          document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
-          btn.classList.add('active');
-          document.getElementById(btn.dataset.tab).classList.add('active');
-          if (btn.dataset.tab === 'tab-sheet-viewer') renderConsolidatedSheet();
+          window.switchToTab(btn.dataset.tab);
         });
       });
+
+      // Inputs y botón de carga de la pestaña Cargar Nuevo Contrato
+      var tabHa = document.getElementById('tab-form-ha');
+      if (tabHa) tabHa.addEventListener('input', window.updateTabCalc);
+      var tabQq = document.getElementById('tab-form-qq-ha');
+      if (tabQq) tabQq.addEventListener('input', window.updateTabCalc);
+      var tabPrecio = document.getElementById('tab-form-precio-tn');
+      if (tabPrecio) tabPrecio.addEventListener('input', window.updateTabCalc);
+      var tabCultivo = document.getElementById('tab-form-cultivo');
+      if (tabCultivo) tabCultivo.addEventListener('change', window.updateTabCalc);
+
+      var tabMun = document.getElementById('tab-form-municipio');
+      if (tabMun) {
+        tabMun.addEventListener('change', function () {
+          window.updateTabMunicipioDetails();
+          window.updateTabCalc();
+        });
+      }
+
+      var btnTabSubmit = document.getElementById('btn-tab-submit-contract');
+      if (btnTabSubmit) btnTabSubmit.addEventListener('click', window.handleTabContractSubmit);
+
+      var btnTabReset = document.getElementById('btn-tab-reset-contract');
+      if (btnTabReset) btnTabReset.addEventListener('click', window.resetTabContractForm);
+
+      window.initTabNewContractDefaults();
 
       document.getElementById('btn-auth-toggle').addEventListener('click', function () {
         if (state.isAdmin) {
@@ -3999,29 +4529,7 @@
       });
 
       document.getElementById('admin-btn-new-contract').addEventListener('click', function () {
-        var titleEl = document.getElementById('modal-contract-form-title');
-        if (titleEl) titleEl.textContent = '➕ Cargar Nuevo Contrato Agrícola';
-        document.getElementById('form-row-index').value = '';
-        document.getElementById('form-establecimiento').value = '';
-        document.getElementById('form-codigo').value = '';
-        var munSel = document.getElementById('form-municipio');
-        if (munSel) {
-          munSel.value = (state.selectedMunicipio && state.selectedMunicipio !== 'all') ? state.selectedMunicipio : 'exaltacion';
-        }
-        document.getElementById('form-arrendador').value = '';
-        document.getElementById('form-ubicacion').value = '';
-        document.getElementById('form-ha').value = '';
-        document.getElementById('form-factura').checked = false;
-        document.getElementById('form-fecha').value = new Date().toISOString().split('T')[0];
-
-        var defVenc = new Date();
-        defVenc.setFullYear(defVenc.getFullYear() + 1);
-        var defVencStr = defVenc.toISOString().split('T')[0];
-        document.getElementById('form-fecha-vencimiento').value = defVencStr;
-        updateExpirationHint(defVencStr);
-
-        updateCalc();
-        openModal('modal-contract-form');
+        window.switchToTab('tab-new-contract');
       });
 
       document.getElementById('admin-btn-record-payment').addEventListener('click', function () {
