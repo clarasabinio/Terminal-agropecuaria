@@ -877,6 +877,47 @@
       border-color: #ffedd5;
     }
 
+    .badge-municipio {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-municipio-exaltacion {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .badge-municipio-salto {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-municipio-giles {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .btn-sheet-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-sheet-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
     .contract-expiration-bar {
       padding: 0.55rem 1.25rem;
       background: #f8fafc;
@@ -1628,6 +1669,12 @@
               placeholder="Buscar por campo, arrendador, zona...">
           </div>
           <div class="filter-select-group">
+            <select id="filter-municipio-select" class="filter-select" title="Filtrar por Municipio / Hoja de Cálculo">
+              <option value="all">📍 Todos los Municipios (3 Hojas)</option>
+              <option value="exaltacion">🏛️ Exaltación de la Cruz</option>
+              <option value="salto">🌾 Salto</option>
+              <option value="giles">🌻 San Andrés de Giles</option>
+            </select>
             <select id="filter-campaign-select" class="filter-select" title="Filtrar por Campaña">
               <option value="all">📅 Todas las Campañas</option>
             </select>
@@ -1661,15 +1708,39 @@
 
     <div class="tab-view" id="tab-sheet-viewer">
       <div class="sheet-viewer-container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem; background:white; padding:1rem 1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-light); box-shadow:var(--shadow-sm);">
-          <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
-            <span style="font-weight:700; font-size:0.82rem; color:var(--corp-navy);">📑 NAVEGAR SOLAPAS:</span>
-            <button class="sheet-subtab-btn active" id="btn-subtab-master" onclick="switchSheetSubtab('master')">📊 Master Consolidada</button>
-            <select id="sheet-subtab-contract-select" class="filter-select" onchange="switchSheetSubtab(this.value)" title="Elegir solapa por contrato">
-              <option value="">📂 Solapa Individual por Contrato...</option>
-            </select>
+        <!-- Selector de Base de Datos y Enlaces Directos a Google Sheets -->
+        <div style="background:white; padding:1.1rem 1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-light); box-shadow:var(--shadow-sm); margin-bottom:1rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.85rem; border-bottom:1px solid #f1f5f9; padding-bottom:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span style="font-size:1.15rem;">🗂️</span>
+              <div>
+                <strong style="color:var(--corp-navy); font-size:0.92rem;">BASES DE DATOS VINCULADAS EN GOOGLE DRIVE</strong>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Hojas de cálculo federadas por municipio</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <a href="https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit" target="_blank" class="btn-sheet-link badge-municipio-exaltacion" style="text-decoration:none; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; font-weight:700;">🏛️ Abrir Exaltación</a>
+              <a href="https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit" target="_blank" class="btn-sheet-link badge-municipio-salto" style="text-decoration:none; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; font-weight:700;">🌾 Abrir Salto</a>
+              <a href="https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit" target="_blank" class="btn-sheet-link badge-municipio-giles" style="text-decoration:none; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; font-weight:700;">🌻 Abrir S.A. de Giles</a>
+              <a href="https://drive.google.com/drive/u/0/folders/1gXI7vPM-fuukfDzZcf6ot9urGgU4xxbc" target="_blank" style="text-decoration:none; background:#f8fafc; border:1px solid #cbd5e1; color:#334155; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; font-weight:700;">📁 Carpeta Drive</a>
+            </div>
           </div>
-          <button class="btn-sheet-export" id="btn-export-active-sheet" onclick="exportActiveSheetTab()">📥 Descargar esta Solapa (CSV)</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+              <span style="font-weight:700; font-size:0.8rem; color:var(--corp-navy);">📍 FILTRAR PLANILLA POR:</span>
+              <button class="sheet-subtab-btn active" id="btn-subtab-db-all" onclick="switchSheetDatabase('all')">🌐 Todas Consolidadas</button>
+              <button class="sheet-subtab-btn" id="btn-subtab-db-exaltacion" onclick="switchSheetDatabase('exaltacion')">🏛️ Exaltación de la Cruz</button>
+              <button class="sheet-subtab-btn" id="btn-subtab-db-salto" onclick="switchSheetDatabase('salto')">🌾 Salto</button>
+              <button class="sheet-subtab-btn" id="btn-subtab-db-giles" onclick="switchSheetDatabase('giles')">🌻 San Andrés de Giles</button>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+              <button class="sheet-subtab-btn" id="btn-subtab-master" onclick="switchSheetSubtab('master')">📊 Master</button>
+              <select id="sheet-subtab-contract-select" class="filter-select" onchange="switchSheetSubtab(this.value)" title="Elegir solapa por contrato">
+                <option value="">📂 Solapa Individual por Contrato...</option>
+              </select>
+              <button class="btn-sheet-export" id="btn-export-active-sheet" onclick="exportActiveSheetTab()">📥 Descargar CSV</button>
+            </div>
+          </div>
         </div>
         <div class="sheet-table-scroll allow-select" id="consolidated-sheet-container"></div>
       </div>
@@ -1702,6 +1773,14 @@
       <form id="contract-form" onsubmit="return false;">
         <div class="modal-body">
           <input type="hidden" id="form-row-index">
+          <div class="form-group-full" style="margin-bottom:1rem; background:#f0f9ff; border:1px solid #bae6fd; padding:0.75rem; border-radius:8px;">
+            <label class="form-label" style="color:#0369a1; font-weight:700;">🏛️ Base de Datos / Municipio (Google Sheet de Destino) *</label>
+            <select id="form-municipio" class="form-select" style="font-weight:600;" required>
+              <option value="exaltacion">🏛️ Exaltación de la Cruz (ID: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ)</option>
+              <option value="salto">🌾 Salto (ID: 1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc)</option>
+              <option value="giles">🌻 San Andrés de Giles (ID: 1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic)</option>
+            </select>
+          </div>
           <div class="form-grid">
             <div class="form-group"><label class="form-label">Establecimiento / Campo *</label><input type="text"
                 id="form-establecimiento" class="form-input" required></div>
@@ -2052,244 +2131,341 @@
     // Emulación para ejecución y previsualización en navegador local (fuera de Google Apps Script)
     if (typeof google === 'undefined' || !google.script || !google.script.run) {
       (function () {
-        var STORAGE_KEY = 'agro_contracts_persistent_sheet_v3';
-        var STORAGE_MOVEMENTS_KEY = 'agro_contracts_movements_v3';
+        var STORAGE_KEY = 'agro_contracts_multi_municipios_v4';
+        var STORAGE_MOVEMENTS_KEY = 'agro_contracts_movements_v4';
         var todayStr = new Date().toISOString().split('T')[0];
 
+        var MUNIS_MAP = {
+          exaltacion: {
+            nombre: 'Exaltación de la Cruz',
+            id: '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ',
+            url: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit'
+          },
+          salto: {
+            nombre: 'Salto',
+            id: '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc',
+            url: 'https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit'
+          },
+          giles: {
+            nombre: 'San Andrés de Giles',
+            id: '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic',
+            url: 'https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit'
+          }
+        };
+
         var defaultContracts = [
+          // 1. EXALTACIÓN DE LA CRUZ (ID: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ)
           {
             rowIndex: 2,
-            id: 'CTR-2025-001',
-            codigo: 'AGRO-LP-01',
-            establecimiento: 'Establecimiento La Posta',
-            ubicacion: 'Pergamino, Bs. As.',
-            arrendador: 'Agrícola Ganadera Los Ombúes S.A.',
+            id: 'CTR-EX-001',
+            codigo: 'AGRO-EX-01',
+            establecimiento: 'Establecimiento La Negrita',
+            ubicacion: 'Capilla del Señor, Exaltación de la Cruz',
+            arrendador: 'Agropecuaria Capilla S.A.',
             arrendatario: 'Administración Rural',
-            superficieHa: 450,
+            superficieHa: 350,
             cultivoPactado: 'Soja',
-            modalidad: '12.0 qq/ha',
-            kgPactados: 540000,
-            kgPagados: 360000,
-            saldoKg: 180000,
-            precioTn: 295,
-            totalUSD: 159300,
-            pagadoUSD: 106200,
-            saldoUSD: 53100,
+            modalidad: '14.0 qq/ha',
+            kgPactados: 490000,
+            kgPagados: 320000,
+            saldoKg: 170000,
+            precioTn: 298,
+            totalUSD: 146020,
+            pagadoUSD: 95360,
+            saldoUSD: 50660,
             facturaRecibida: true,
             campana: '2024/2025',
-            porcentajeCumplimiento: 66.7,
+            porcentajeCumplimiento: 65.3,
             estado: 'PARCIAL',
-            observaciones: 'Entrega en acopio Pergamino',
+            observaciones: 'Acopio Cooperativa Capilla del Señor',
             fechaModificacion: todayStr,
-            fechaVencimiento: '2026-09-25'
+            fechaVencimiento: '2026-10-15',
+            municipio: 'Exaltación de la Cruz',
+            municipioKey: 'exaltacion',
+            municipioId: '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit'
           },
           {
             rowIndex: 3,
-            id: 'CTR-2025-002',
-            codigo: 'AGRO-VT-02',
-            establecimiento: 'Campo Los Aromos',
-            ubicacion: 'Venado Tuerto, Sta. Fe',
-            arrendador: 'Sucesión Fernández',
+            id: 'CTR-EX-002',
+            codigo: 'AGRO-EX-02',
+            establecimiento: 'Campo Los Cardales',
+            ubicacion: 'Los Cardales, Exaltación de la Cruz',
+            arrendador: 'Sucesión Cardales',
             arrendatario: 'Cresud S.A.',
-            superficieHa: 600,
+            superficieHa: 280,
             cultivoPactado: 'Maíz',
-            modalidad: '40.0 qq/ha',
-            kgPactados: 2400000,
-            kgPagados: 2400000,
+            modalidad: '38.0 qq/ha',
+            kgPactados: 1064000,
+            kgPagados: 1064000,
             saldoKg: 0,
-            precioTn: 180,
-            totalUSD: 432000,
-            pagadoUSD: 432000,
+            precioTn: 185,
+            totalUSD: 196840,
+            pagadoUSD: 196840,
             saldoUSD: 0,
             facturaRecibida: true,
             campana: '2024/2025',
             porcentajeCumplimiento: 100,
             estado: 'PAGADO',
-            observaciones: 'Cancelado 100%',
+            observaciones: 'Liquidación total finalizada 100%',
             fechaModificacion: todayStr,
-            fechaVencimiento: '2026-08-31'
+            fechaVencimiento: '2026-08-31',
+            municipio: 'Exaltación de la Cruz',
+            municipioKey: 'exaltacion',
+            municipioId: '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit'
           },
           {
             rowIndex: 4,
-            id: 'CTR-2025-003',
-            codigo: 'AGRO-BAL-03',
-            establecimiento: 'Estancia Santa María',
-            ubicacion: 'Balcarce, Bs. As.',
-            arrendador: 'Fideicomiso Agro del Sud',
+            id: 'CTR-EX-003',
+            codigo: 'AGRO-EX-03',
+            establecimiento: 'Chacra El Pavón',
+            ubicacion: 'Pavón, Exaltación de la Cruz',
+            arrendador: 'Fideicomiso Ruta 8 Norte',
             arrendatario: 'Cerealera del Plata',
-            superficieHa: 320,
+            superficieHa: 190,
             cultivoPactado: 'Trigo',
-            modalidad: '25.0 qq/ha',
-            kgPactados: 800000,
-            kgPagados: 400000,
-            saldoKg: 400000,
-            precioTn: 215,
-            totalUSD: 172000,
-            pagadoUSD: 86000,
-            saldoUSD: 86000,
+            modalidad: '24.0 qq/ha',
+            kgPactados: 456000,
+            kgPagados: 150000,
+            saldoKg: 306000,
+            precioTn: 218,
+            totalUSD: 99408,
+            pagadoUSD: 32700,
+            saldoUSD: 66708,
             facturaRecibida: false,
             campana: '2025/2026',
-            porcentajeCumplimiento: 50,
+            porcentajeCumplimiento: 32.9,
             estado: 'PARCIAL',
-            observaciones: 'Entrega Puerto Quequén',
+            observaciones: 'Entrega a granel planta Pavón',
             fechaModificacion: todayStr,
-            fechaVencimiento: '2026-10-31'
+            fechaVencimiento: '2026-11-30',
+            municipio: 'Exaltación de la Cruz',
+            municipioKey: 'exaltacion',
+            municipioId: '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit'
           },
+
+          // 2. SALTO (ID: 1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc)
           {
             rowIndex: 5,
-            id: 'CTR-2025-004',
-            codigo: 'AGRO-RC-04',
-            establecimiento: 'Lote Las Palmeras',
-            ubicacion: 'Río Cuarto, Cba.',
-            arrendador: 'Don Héctor Morales',
-            arrendatario: 'Cooperativa Central',
-            superficieHa: 200,
-            cultivoPactado: 'Girasol',
-            modalidad: '10.0 qq/ha',
-            kgPactados: 200000,
+            id: 'CTR-SA-001',
+            codigo: 'AGRO-SA-01',
+            establecimiento: 'Estancia La Invencible',
+            ubicacion: 'Inés Indart, Salto',
+            arrendador: 'Agrícola Ganadera Indart S.A.',
+            arrendatario: 'Los Grobo Agropecuaria',
+            superficieHa: 650,
+            cultivoPactado: 'Maíz',
+            modalidad: '42.0 qq/ha',
+            kgPactados: 2730000,
+            kgPagados: 1800000,
+            saldoKg: 930000,
+            precioTn: 182,
+            totalUSD: 496860,
+            pagadoUSD: 327600,
+            saldoUSD: 169260,
+            facturaRecibida: true,
+            campana: '2024/2025',
+            porcentajeCumplimiento: 65.9,
+            estado: 'PARCIAL',
+            observaciones: 'Planta Silos Salto Central',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-09-28',
+            municipio: 'Salto',
+            municipioKey: 'salto',
+            municipioId: '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit'
+          },
+          {
+            rowIndex: 6,
+            id: 'CTR-SA-002',
+            codigo: 'AGRO-SA-02',
+            establecimiento: 'Lote Arroyo Dulce',
+            ubicacion: 'Arroyo Dulce, Salto',
+            arrendador: 'Familia Rossi Hnos.',
+            arrendatario: 'Administración Rural',
+            superficieHa: 520,
+            cultivoPactado: 'Soja',
+            modalidad: '15.0 qq/ha',
+            kgPactados: 780000,
+            kgPagados: 780000,
+            saldoKg: 0,
+            precioTn: 295,
+            totalUSD: 230100,
+            pagadoUSD: 230100,
+            saldoUSD: 0,
+            facturaRecibida: true,
+            campana: '2024/2025',
+            porcentajeCumplimiento: 100,
+            estado: 'PAGADO',
+            observaciones: 'Cancelado 100% campaña gruesa',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-07-31',
+            municipio: 'Salto',
+            municipioKey: 'salto',
+            municipioId: '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit'
+          },
+          {
+            rowIndex: 7,
+            id: 'CTR-SA-003',
+            codigo: 'AGRO-SA-03',
+            establecimiento: 'Campo El Rincón de Berdier',
+            ubicacion: 'Berdier, Salto',
+            arrendador: 'Don Valerio Berdier',
+            arrendatario: 'Cooperativa Agrícola de Salto',
+            superficieHa: 310,
+            cultivoPactado: 'Trigo',
+            modalidad: '26.0 qq/ha',
+            kgPactados: 806000,
             kgPagados: 0,
-            saldoKg: 200000,
-            precioTn: 310,
-            totalUSD: 62000,
+            saldoKg: 806000,
+            precioTn: 215,
+            totalUSD: 173290,
             pagadoUSD: 0,
-            saldoUSD: 62000,
+            saldoUSD: 173290,
             facturaRecibida: false,
             campana: '2025/2026',
             porcentajeCumplimiento: 0,
             estado: 'PENDIENTE',
-            observaciones: 'Cosecha gruesa',
+            observaciones: 'Lote de fina próximo a cosecha',
             fechaModificacion: todayStr,
-            fechaVencimiento: '2027-05-31'
+            fechaVencimiento: '2026-12-15',
+            municipio: 'Salto',
+            municipioKey: 'salto',
+            municipioId: '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit'
+          },
+
+          // 3. SAN ANDRÉS DE GILES (ID: 1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic)
+          {
+            rowIndex: 8,
+            id: 'CTR-GI-001',
+            codigo: 'AGRO-GI-01',
+            establecimiento: 'Establecimiento Cucullú',
+            ubicacion: 'Cucullú, San Andrés de Giles',
+            arrendador: 'Agropecuaria Cucullú S.R.L.',
+            arrendatario: 'Administración Rural',
+            superficieHa: 420,
+            cultivoPactado: 'Soja',
+            modalidad: '13.5 qq/ha',
+            kgPactados: 567000,
+            kgPagados: 350000,
+            saldoKg: 217000,
+            precioTn: 295,
+            totalUSD: 167265,
+            pagadoUSD: 103250,
+            saldoUSD: 64015,
+            facturaRecibida: true,
+            campana: '2024/2025',
+            porcentajeCumplimiento: 61.7,
+            estado: 'PARCIAL',
+            observaciones: 'Entrega en acopio Giles Ruta 7',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-10-20',
+            municipio: 'San Andrés de Giles',
+            municipioKey: 'giles',
+            municipioId: '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit'
+          },
+          {
+            rowIndex: 9,
+            id: 'CTR-GI-002',
+            codigo: 'AGRO-GI-02',
+            establecimiento: 'Chacra Villa Ruiz',
+            ubicacion: 'Villa Ruiz, San Andrés de Giles',
+            arrendador: 'Don Horacio Ruiz',
+            arrendatario: 'Molinos Río de la Plata',
+            superficieHa: 240,
+            cultivoPactado: 'Girasol',
+            modalidad: '11.0 qq/ha',
+            kgPactados: 264000,
+            kgPagados: 264000,
+            saldoKg: 0,
+            precioTn: 315,
+            totalUSD: 83160,
+            pagadoUSD: 83160,
+            saldoUSD: 0,
+            facturaRecibida: true,
+            campana: '2024/2025',
+            porcentajeCumplimiento: 100,
+            estado: 'PAGADO',
+            observaciones: 'Liquidado según fijación Rosario',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-08-15',
+            municipio: 'San Andrés de Giles',
+            municipioKey: 'giles',
+            municipioId: '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit'
+          },
+          {
+            rowIndex: 10,
+            id: 'CTR-GI-003',
+            codigo: 'AGRO-GI-03',
+            establecimiento: 'Campo Don Segundo',
+            ubicacion: 'Azcuénaga, San Andrés de Giles',
+            arrendador: 'Fideicomiso Azcuénaga Rural',
+            arrendatario: 'Cerealera del Plata',
+            superficieHa: 480,
+            cultivoPactado: 'Maíz',
+            modalidad: '40.0 qq/ha',
+            kgPactados: 1920000,
+            kgPagados: 800000,
+            saldoKg: 1120000,
+            precioTn: 180,
+            totalUSD: 345600,
+            pagadoUSD: 144000,
+            saldoUSD: 201600,
+            facturaRecibida: false,
+            campana: '2025/2026',
+            porcentajeCumplimiento: 41.7,
+            estado: 'PARCIAL',
+            observaciones: 'Fijación parcial con BCR',
+            fechaModificacion: todayStr,
+            fechaVencimiento: '2026-11-10',
+            municipio: 'San Andrés de Giles',
+            municipioKey: 'giles',
+            municipioId: '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic',
+            sheetUrl: 'https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit'
           }
         ];
 
         var defaultMovements = {
-          'CTR-2025-001': [
-            {
-              fecha: todayStr,
-              tipo: 'ALTA CONTRATO',
-              detalle: 'Creación y firma inicial de contrato',
-              kgMov: 0,
-              kgPagados: 0,
-              saldoKg: 540000,
-              precioChicagoUSD: 295,
-              tipoCambioARS: 1350,
-              usdMov: 0,
-              arsMov: 0,
-              medioPago: '-',
-              nroRef: '-',
-              factura: 'SI',
-              comprobanteUrl: '',
-              observaciones: 'Contrato firmado'
-            },
-            {
-              fecha: todayStr,
-              tipo: 'LIQUIDACION / PAGO',
-              detalle: 'Entrega en acopio Pergamino y fijación Chicago',
-              kgMov: 360000,
-              kgPagados: 360000,
-              saldoKg: 180000,
-              precioChicagoUSD: 295,
-              tipoCambioARS: 1350,
-              usdMov: 106200,
-              arsMov: 106200 * 1350,
-              medioPago: 'Transferencia',
-              nroRef: 'TRF-884920',
-              factura: 'SI (N° 0001-000412)',
-              comprobanteUrl: 'https://drive.google.com/file/d/sample1/view',
-              observaciones: '12 camiones entregados'
-            }
+          'CTR-EX-001': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta de contrato en Exaltación de la Cruz', kgMov: 0, kgPagados: 0, saldoKg: 490000, precioChicagoUSD: 298, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'SI', comprobanteUrl: '', observaciones: 'Firma en Capilla del Señor' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Entrega en acopio Capilla y fijación', kgMov: 320000, kgPagados: 320000, saldoKg: 170000, precioChicagoUSD: 298, tipoCambioARS: 1535, usdMov: 95360, arsMov: 95360 * 1535, medioPago: 'Transferencia', nroRef: 'TRF-EX-0192', factura: 'SI (N° 0001-00234)', comprobanteUrl: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit', observaciones: '11 camiones entregados' }
           ],
-          'CTR-2025-002': [
-            {
-              fecha: todayStr,
-              tipo: 'ALTA CONTRATO',
-              detalle: 'Creación del contrato de maíz',
-              kgMov: 0,
-              kgPagados: 0,
-              saldoKg: 2400000,
-              precioChicagoUSD: 180,
-              tipoCambioARS: 1350,
-              usdMov: 0,
-              arsMov: 0,
-              medioPago: '-',
-              nroRef: '-',
-              factura: 'SI',
-              comprobanteUrl: '',
-              observaciones: 'Contrato por 600 Ha'
-            },
-            {
-              fecha: todayStr,
-              tipo: 'LIQUIDACION / PAGO',
-              detalle: 'Entrega final y liquidación total',
-              kgMov: 2400000,
-              kgPagados: 2400000,
-              saldoKg: 0,
-              precioChicagoUSD: 180,
-              tipoCambioARS: 1350,
-              usdMov: 432000,
-              arsMov: 432000 * 1350,
-              medioPago: 'Echeq',
-              nroRef: 'ECH-0094182',
-              factura: 'SI (N° 0002-000854)',
-              comprobanteUrl: 'https://drive.google.com/file/d/sample2/view',
-              observaciones: 'Liquidación total cancelada'
-            }
+          'CTR-EX-002': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta contrato maíz Los Cardales', kgMov: 0, kgPagados: 0, saldoKg: 1064000, precioChicagoUSD: 185, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'SI', comprobanteUrl: '', observaciones: '280 Ha maiceras' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Cancelación total 100% granos entregados', kgMov: 1064000, kgPagados: 1064000, saldoKg: 0, precioChicagoUSD: 185, tipoCambioARS: 1535, usdMov: 196840, arsMov: 196840 * 1535, medioPago: 'Echeq', nroRef: 'ECH-884910', factura: 'SI (N° 0002-00512)', comprobanteUrl: '', observaciones: 'Contrato cancelado totalmente' }
           ],
-          'CTR-2025-003': [
-            {
-              fecha: todayStr,
-              tipo: 'ALTA CONTRATO',
-              detalle: 'Alta de contrato trigo',
-              kgMov: 0,
-              kgPagados: 0,
-              saldoKg: 800000,
-              precioChicagoUSD: 215,
-              tipoCambioARS: 1350,
-              usdMov: 0,
-              arsMov: 0,
-              medioPago: '-',
-              nroRef: '-',
-              factura: 'NO',
-              comprobanteUrl: '',
-              observaciones: 'Puerto Quequén'
-            },
-            {
-              fecha: todayStr,
-              tipo: 'LIQUIDACION / PAGO',
-              detalle: 'Entrega parcial 50% fijación trigo',
-              kgMov: 400000,
-              kgPagados: 400000,
-              saldoKg: 400000,
-              precioChicagoUSD: 215,
-              tipoCambioARS: 1350,
-              usdMov: 86000,
-              arsMov: 86000 * 1350,
-              medioPago: 'Cheque Físico',
-              nroRef: 'CHQ-7782103',
-              factura: 'NO',
-              comprobanteUrl: '',
-              observaciones: 'Pendiente remito de descarga'
-            }
+          'CTR-EX-003': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta contrato trigo fina El Pavón', kgMov: 0, kgPagados: 0, saldoKg: 456000, precioChicagoUSD: 218, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'NO', comprobanteUrl: '', observaciones: 'Ruta 8 Norte' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Entrega anticipada de trigo', kgMov: 150000, kgPagados: 150000, saldoKg: 306000, precioChicagoUSD: 218, tipoCambioARS: 1535, usdMov: 32700, arsMov: 32700 * 1535, medioPago: 'Transferencia', nroRef: 'TRF-PAV-401', factura: 'NO', comprobanteUrl: '', observaciones: 'Pendiente remito oficial' }
           ],
-          'CTR-2025-004': [
-            {
-              fecha: todayStr,
-              tipo: 'ALTA CONTRATO',
-              detalle: 'Alta de contrato girasol',
-              kgMov: 0,
-              kgPagados: 0,
-              saldoKg: 200000,
-              precioChicagoUSD: 310,
-              tipoCambioARS: 1350,
-              usdMov: 0,
-              arsMov: 0,
-              medioPago: '-',
-              nroRef: '-',
-              factura: 'NO',
-              comprobanteUrl: '',
-              observaciones: 'Siembra en lote'
-            }
+          'CTR-SA-001': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta contrato maíz Salto (Inés Indart)', kgMov: 0, kgPagados: 0, saldoKg: 2730000, precioChicagoUSD: 182, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'SI', comprobanteUrl: '', observaciones: '650 Ha' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Liquidación parcial con BCR Salto', kgMov: 1800000, kgPagados: 1800000, saldoKg: 930000, precioChicagoUSD: 182, tipoCambioARS: 1535, usdMov: 327600, arsMov: 327600 * 1535, medioPago: 'Transferencia', nroRef: 'TRF-SA-9901', factura: 'SI (N° 0004-00109)', comprobanteUrl: '', observaciones: 'Acopio Silos Salto' }
+          ],
+          'CTR-SA-002': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta contrato Soja Arroyo Dulce', kgMov: 0, kgPagados: 0, saldoKg: 780000, precioChicagoUSD: 295, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'SI', comprobanteUrl: '', observaciones: 'Campo Rossi' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Liquidación final 100%', kgMov: 780000, kgPagados: 780000, saldoKg: 0, precioChicagoUSD: 295, tipoCambioARS: 1535, usdMov: 230100, arsMov: 230100 * 1535, medioPago: 'Echeq', nroRef: 'ECH-SA-771', factura: 'SI (N° 0001-00891)', comprobanteUrl: '', observaciones: 'Cancelación definitiva' }
+          ],
+          'CTR-SA-003': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta lote trigo Berdier', kgMov: 0, kgPagados: 0, saldoKg: 806000, precioChicagoUSD: 215, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'NO', comprobanteUrl: '', observaciones: 'Fina 2025/2026' }
+          ],
+          'CTR-GI-001': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta contrato Cucullú (San Andrés de Giles)', kgMov: 0, kgPagados: 0, saldoKg: 567000, precioChicagoUSD: 295, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'SI', comprobanteUrl: '', observaciones: 'Ruta 7 km 98' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Entrega en acopio Giles', kgMov: 350000, kgPagados: 350000, saldoKg: 217000, precioChicagoUSD: 295, tipoCambioARS: 1535, usdMov: 103250, arsMov: 103250 * 1535, medioPago: 'Transferencia', nroRef: 'TRF-GI-441', factura: 'SI (N° 0003-00781)', comprobanteUrl: '', observaciones: 'Entrega certificada' }
+          ],
+          'CTR-GI-002': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta lote girasol Villa Ruiz', kgMov: 0, kgPagados: 0, saldoKg: 264000, precioChicagoUSD: 315, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'SI', comprobanteUrl: '', observaciones: '240 Ha' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Liquidación con Molinos Río de la Plata', kgMov: 264000, kgPagados: 264000, saldoKg: 0, precioChicagoUSD: 315, tipoCambioARS: 1535, usdMov: 83160, arsMov: 83160 * 1535, medioPago: 'Echeq', nroRef: 'ECH-GI-119', factura: 'SI (N° 0001-000412)', comprobanteUrl: '', observaciones: 'Pago cancelado 100%' }
+          ],
+          'CTR-GI-003': [
+            { fecha: todayStr, tipo: 'ALTA CONTRATO', detalle: 'Alta campo Don Segundo (Azcuénaga)', kgMov: 0, kgPagados: 0, saldoKg: 1920000, precioChicagoUSD: 180, tipoCambioARS: 1535, usdMov: 0, arsMov: 0, medioPago: '-', nroRef: '-', factura: 'NO', comprobanteUrl: '', observaciones: '480 Ha' },
+            { fecha: todayStr, tipo: 'LIQUIDACION / PAGO', detalle: 'Fijación parcial con BCR', kgMov: 800000, kgPagados: 800000, saldoKg: 1120000, precioChicagoUSD: 180, tipoCambioARS: 1535, usdMov: 144000, arsMov: 144000 * 1535, medioPago: 'Cheque Físico', nroRef: 'CHQ-GI-882', factura: 'NO', comprobanteUrl: '', observaciones: 'Factura en trámite' }
           ]
         };
 
@@ -2300,16 +2476,6 @@
           var savedC = localStorage.getItem(STORAGE_KEY);
           if (savedC) {
             localSampleContracts = JSON.parse(savedC);
-            // Asegurar que existan fechas de vencimiento de prueba para simular alertas
-            localSampleContracts.forEach(function (c, idx) {
-              if (!c.fechaVencimiento) {
-                if (idx === 0) c.fechaVencimiento = '2026-09-25'; // ~16 días (próximo)
-                else if (idx === 1) c.fechaVencimiento = '2026-08-31'; // Vencido
-                else if (idx === 2) c.fechaVencimiento = '2026-10-31'; // ~52 días
-                else c.fechaVencimiento = '2027-05-31'; // Vigente
-              }
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(localSampleContracts));
           } else {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultContracts));
           }
@@ -2345,10 +2511,22 @@
                 inst._failure = fn;
                 return inst;
               },
-              getContractsFromSheet: function () {
+              getAllContractsAcrossMunicipios: function () {
                 var cb = this._success;
                 setTimeout(function () {
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 150);
+              },
+              getContractsFromSheet: function (optMun) {
+                var cb = this._success;
+                setTimeout(function () {
+                  var list = localSampleContracts;
+                  if (optMun && optMun !== 'all') {
+                    list = list.filter(function (c) {
+                      return c.municipioKey === optMun || (c.municipio && c.municipio.toLowerCase().indexOf(optMun.toLowerCase()) !== -1);
+                    });
+                  }
+                  if (cb) cb(JSON.parse(JSON.stringify(list)));
                 }, 150);
               },
               getContractMovementsFromSheet: function (codigoOrId) {
@@ -2379,6 +2557,8 @@
                   var estado = kgPagados >= kgPactados ? 'PAGADO' : (kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
                   var fecha = c.fecha || todayStr;
                   var fechaVencimiento = c.fechaVencimiento || '';
+                  var mKey = c.municipioKey || c.municipio || 'exaltacion';
+                  var mMeta = MUNIS_MAP[mKey] || MUNIS_MAP.exaltacion;
 
                   var existing = localSampleContracts.find(function (item) { return item.id == c.id; });
                   if (existing) {
@@ -2392,13 +2572,17 @@
                       porcentajeCumplimiento: pct,
                       estado: estado,
                       fechaModificacion: fecha,
-                      fechaVencimiento: fechaVencimiento
+                      fechaVencimiento: fechaVencimiento,
+                      municipio: mMeta.nombre,
+                      municipioKey: mKey,
+                      municipioId: mMeta.id,
+                      sheetUrl: mMeta.url
                     });
                     if (!localMovements[existing.id]) localMovements[existing.id] = [];
                     localMovements[existing.id].push({
                       fecha: fecha,
                       tipo: 'MODIFICACION',
-                      detalle: 'Actualización de condiciones (Vigencia: ' + (fechaVencimiento || 'No definida') + ')',
+                      detalle: 'Actualización en ' + mMeta.nombre + ' (Vigencia: ' + (fechaVencimiento || 'No definida') + ')',
                       kgMov: 0,
                       kgPagados: existing.kgPagados,
                       saldoKg: saldoKg,
@@ -2413,11 +2597,11 @@
                       observaciones: c.observaciones || 'Guardado de modificación'
                     });
                   } else {
-                    var newId = 'CTR-2025-00' + (localSampleContracts.length + 1);
+                    var newId = 'CTR-' + mKey.slice(0, 2).toUpperCase() + '-00' + (localSampleContracts.length + 1);
                     var newContract = {
                       rowIndex: localSampleContracts.length + 2,
                       id: newId,
-                      codigo: c.codigo || ('AGRO-NEW-0' + (localSampleContracts.length + 1)),
+                      codigo: c.codigo || ('AGRO-' + mKey.slice(0, 2).toUpperCase() + '-0' + (localSampleContracts.length + 1)),
                       establecimiento: c.establecimiento,
                       ubicacion: c.ubicacion,
                       arrendador: c.arrendador,
@@ -2433,31 +2617,37 @@
                       pagadoUSD: 0,
                       saldoUSD: totalUSD,
                       facturaRecibida: !!c.facturaRecibida,
-                      campana: c.campana || '2024/2025',
+                      campana: c.campana || '2025/2026',
                       porcentajeCumplimiento: 0,
                       estado: 'PENDIENTE',
                       observaciones: c.observaciones || '',
                       fechaModificacion: fecha,
-                      fechaVencimiento: fechaVencimiento
+                      fechaVencimiento: fechaVencimiento,
+                      municipio: mMeta.nombre,
+                      municipioKey: mKey,
+                      municipioId: mMeta.id,
+                      sheetUrl: mMeta.url
                     };
                     localSampleContracts.push(newContract);
-                    localMovements[newId] = [{
-                      fecha: fecha,
-                      tipo: 'ALTA CONTRATO',
-                      detalle: 'Creación y firma inicial de contrato',
-                      kgMov: 0,
-                      kgPagados: 0,
-                      saldoKg: kgPactados,
-                      precioChicagoUSD: precioTn,
-                      tipoCambioARS: 0,
-                      usdMov: 0,
-                      arsMov: 0,
-                      medioPago: '-',
-                      nroRef: '-',
-                      factura: c.facturaRecibida ? 'SI' : 'NO',
-                      comprobanteUrl: '',
-                      observaciones: c.observaciones || 'Contrato inicial'
-                    }];
+                    localMovements[newId] = [
+                      {
+                        fecha: fecha,
+                        tipo: 'ALTA CONTRATO',
+                        detalle: 'Alta en base de datos de ' + mMeta.nombre,
+                        kgMov: 0,
+                        kgPagados: 0,
+                        saldoKg: kgPactados,
+                        precioChicagoUSD: precioTn,
+                        tipoCambioARS: 0,
+                        usdMov: 0,
+                        arsMov: 0,
+                        medioPago: '-',
+                        nroRef: '-',
+                        factura: c.facturaRecibida ? 'SI' : 'NO',
+                        comprobanteUrl: '',
+                        observaciones: c.observaciones || 'Alta de contrato'
+                      }
+                    ];
                   }
                   persistData();
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
@@ -2465,29 +2655,29 @@
               },
               recordPaymentToSheet: function (payment) {
                 var cb = this._success;
-                var errCb = this._failure;
                 setTimeout(function () {
                   var target = localSampleContracts.find(function (item) { return item.id == payment.contractId; });
                   if (!target) {
-                    if (errCb) errCb(new Error('Contrato no encontrado'));
+                    alert('Error: Contrato no encontrado.');
                     return;
                   }
-                  var nuevosKg = parseInt(payment.kg, 10) || 0;
-                  if (nuevosKg > target.saldoKg) {
-                    if (errCb) errCb(new Error('No se pueden entregar ' + nuevosKg + ' Kg. El saldo máximo es ' + target.saldoKg + ' Kg.'));
-                    return;
-                  }
+
                   var fecha = payment.fechaVenta || payment.fecha || todayStr;
-                  var precioChicago = parseFloat(payment.precioChicagoUSD) || parseFloat(target.precioTn) || 0;
-                  var tipoCambio = parseFloat(payment.tipoCambioARS) || 1350;
-                  var precioKg = precioChicago / 1000;
-                  var usdPagadoMov = (nuevosKg / 1000) * precioChicago;
-                  var arsPagadoMov = usdPagadoMov * tipoCambio;
+                  var nuevosKg = parseInt(payment.kg, 10) || 0;
+                  var precioRosario = parseFloat(payment.precioRosarioARS) || 0;
+                  var tipoCambio = parseFloat(payment.tipoCambioARS) || 1535;
+                  var precioChicago = parseFloat(payment.precioChicagoUSD) || (tipoCambio > 0 && precioRosario > 0 ? (precioRosario / tipoCambio) : target.precioTn);
+
+                  var arsPagadoMov = precioRosario > 0 ? Math.round((nuevosKg / 1000) * precioRosario) : (parseFloat(payment.totalARS) || 0);
+                  var usdPagadoMov = tipoCambio > 0 ? Math.round(arsPagadoMov / tipoCambio) : Math.round(nuevosKg * (precioChicago / 1000));
 
                   target.kgPagados = (target.kgPagados || 0) + nuevosKg;
                   target.saldoKg = Math.max(0, target.kgPactados - target.kgPagados);
+
                   target.pagadoUSD = (target.pagadoUSD || 0) + usdPagadoMov;
-                  target.saldoUSD = target.saldoKg * precioKg;
+                  var precioKgUSD = (tipoCambio > 0 && precioRosario > 0) ? (precioRosario / tipoCambio / 1000) : (precioChicago / 1000);
+                  target.saldoUSD = target.saldoKg * precioKgUSD;
+
                   target.porcentajeCumplimiento = target.kgPactados > 0 ? parseFloat(((target.kgPagados / target.kgPactados) * 100).toFixed(1)) : 0;
                   target.estado = target.kgPagados >= target.kgPactados ? 'PAGADO' : (target.kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
                   target.fechaModificacion = fecha;
@@ -2504,7 +2694,7 @@
                   localMovements[target.id].push({
                     fecha: fecha,
                     tipo: 'LIQUIDACION / PAGO',
-                    detalle: 'Fijación precio Chicago y entrega de granos',
+                    detalle: 'Fijación Rosario BCR y entrega (' + (target.municipio || 'Campo') + ')',
                     kgMov: nuevosKg,
                     saldoKg: target.saldoKg,
                     precioChicagoUSD: precioChicago,
@@ -2515,7 +2705,7 @@
                     nroRef: payment.nroReferencia || payment.nroFactura || '-',
                     factura: (payment.facturaRecibida ? 'SI' : 'NO') + (payment.nroFactura ? ' (N° ' + payment.nroFactura + ')' : ''),
                     comprobanteUrl: comprobanteUrl,
-                    observaciones: payment.observaciones || ('Fijación Chicago: USD ' + precioChicago + '/Tn x $' + tipoCambio + ' ARS')
+                    observaciones: payment.observaciones || ('Fijación Rosario: $' + precioRosario + ' ARS/Tn')
                   });
 
                   persistData();
@@ -2533,7 +2723,7 @@
                     localMovements[target.id].push({
                       fecha: todayStr,
                       tipo: 'CAMBIO FACTURA',
-                      detalle: 'Estado de factura cambiado a: ' + (target.facturaRecibida ? 'RECIBIDA' : 'PENDIENTE'),
+                      detalle: 'Estado de factura: ' + (target.facturaRecibida ? 'RECIBIDA' : 'PENDIENTE'),
                       kgMov: 0,
                       kgPagados: target.kgPagados,
                       saldoKg: target.saldoKg,
@@ -2597,16 +2787,48 @@
       lastUpdated: new Date()
     };
 
+    var MUNICIPIOS_DB = {
+      exaltacion: {
+        key: 'exaltacion',
+        nombre: 'Exaltación de la Cruz',
+        id: '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ',
+        url: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit',
+        cabecera: 'Capilla del Señor',
+        badgeClass: 'badge-municipio-exaltacion',
+        icono: '🏛️'
+      },
+      salto: {
+        key: 'salto',
+        nombre: 'Salto',
+        id: '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc',
+        url: 'https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit',
+        cabecera: 'Salto',
+        badgeClass: 'badge-municipio-salto',
+        icono: '🌾'
+      },
+      giles: {
+        key: 'giles',
+        nombre: 'San Andrés de Giles',
+        id: '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic',
+        url: 'https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit',
+        cabecera: 'San Andrés de Giles',
+        badgeClass: 'badge-municipio-giles',
+        icono: '🌻'
+      }
+    };
+
     var state = {
       contracts: [],
       filteredContracts: [],
       isAdmin: false,
       searchQuery: '',
+      selectedMunicipio: 'all',
       selectedCampaign: 'all',
       selectedCrop: 'all',
       selectedInvoice: 'all',
       selectedExpiration: 'all',
-      selectedSheetTab: 'master'
+      selectedSheetTab: 'master',
+      selectedSheetDatabase: 'all'
     };
 
     function formatDateDisplay(dateStr) {
@@ -2760,6 +2982,8 @@
       document.getElementById('form-row-index').value = c.rowIndex || '';
       document.getElementById('form-codigo').value = c.codigo || '';
       document.getElementById('form-establecimiento').value = c.establecimiento || '';
+      var munSel = document.getElementById('form-municipio');
+      if (munSel) munSel.value = c.municipioKey || 'exaltacion';
       document.getElementById('form-arrendador').value = c.arrendador || '';
       document.getElementById('form-arrendatario').value = c.arrendatario || 'Administración Rural';
       document.getElementById('form-ubicacion').value = c.ubicacion || '';
@@ -3026,16 +3250,21 @@
     }
 
     function loadContractsFromSheet() {
-      document.getElementById('contracts-container').innerHTML = '<div style="padding:3rem; text-align:center; color:var(--text-muted); background:white; border-radius:12px;">⏳ Conectando con Google Sheets...</div>';
+      document.getElementById('contracts-container').innerHTML = '<div style="padding:3rem; text-align:center; color:var(--text-muted); background:white; border-radius:12px;">⏳ Conectando con Google Sheets (3 Municipios)...</div>';
       if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
+        var runner = google.script.run
           .withSuccessHandler(function (data) {
             state.contracts = data || [];
             updateCampaignsDropdown();
             renderAll();
           })
-          .withFailureHandler(function (err) { alert('Error: ' + err.message); })
-          .getContractsFromSheet();
+          .withFailureHandler(function (err) { alert('Error: ' + err.message); });
+
+        if (typeof runner.getAllContractsAcrossMunicipios === 'function') {
+          runner.getAllContractsAcrossMunicipios();
+        } else {
+          runner.getContractsFromSheet();
+        }
       }
     }
 
@@ -3076,7 +3305,15 @@
       var expiredCount = 0;
       var urgentCount = 0;
 
-      state.contracts.forEach(function (c) {
+      var targetList = state.selectedMunicipio && state.selectedMunicipio !== 'all'
+        ? state.contracts.filter(function (c) {
+            return c.municipioKey === state.selectedMunicipio ||
+              (c.municipio && c.municipio.toLowerCase().indexOf(state.selectedMunicipio.toLowerCase()) !== -1) ||
+              c.municipioId === state.selectedMunicipio;
+          })
+        : state.contracts;
+
+      targetList.forEach(function (c) {
         totalHa += parseFloat(c.superficieHa) || 0;
         totalKgPactados += parseInt(c.kgPactados, 10) || 0;
         totalKgPagados += parseInt(c.kgPagados, 10) || 0;
@@ -3095,8 +3332,12 @@
       var saldoUSD = Math.max(0, totalUSDPactado - totalUSDPagado);
       var pct = totalKgPactados > 0 ? ((totalKgPagados / totalKgPactados) * 100).toFixed(1) : 0;
 
+      var mLabel = state.selectedMunicipio && state.selectedMunicipio !== 'all'
+        ? (' en ' + (MUNICIPIOS_DB[state.selectedMunicipio] ? MUNICIPIOS_DB[state.selectedMunicipio].nombre : state.selectedMunicipio))
+        : ' consolidados';
+
       document.getElementById('kpi-total-ha').textContent = formatNum(totalHa) + ' Ha';
-      document.getElementById('kpi-total-contracts').textContent = state.contracts.length + ' contratos activos';
+      document.getElementById('kpi-total-contracts').textContent = targetList.length + ' contratos' + mLabel;
       document.getElementById('kpi-total-kg-pactados').textContent = formatNum(totalKgPactados) + ' Kg';
       document.getElementById('kpi-total-usd-pactados').textContent = '$' + formatNum(Math.round(totalUSDPactado)) + ' USD';
       document.getElementById('kpi-total-kg-pagados').textContent = formatNum(totalKgPagados) + ' Kg';
@@ -3126,11 +3367,19 @@
 
     function filterContracts() {
       var list = state.contracts.slice();
+      if (state.selectedMunicipio && state.selectedMunicipio !== 'all') {
+        list = list.filter(function (c) {
+          return c.municipioKey === state.selectedMunicipio ||
+            (c.municipio && c.municipio.toLowerCase().indexOf(state.selectedMunicipio.toLowerCase()) !== -1) ||
+            c.municipioId === state.selectedMunicipio;
+        });
+      }
       if (state.searchQuery.trim()) {
         var q = state.searchQuery.toLowerCase().trim();
         list = list.filter(function (c) {
           return (c.establecimiento && c.establecimiento.toLowerCase().indexOf(q) !== -1) ||
             (c.arrendador && c.arrendador.toLowerCase().indexOf(q) !== -1) ||
+            (c.municipio && c.municipio.toLowerCase().indexOf(q) !== -1) ||
             (c.codigo && c.codigo.toLowerCase().indexOf(q) !== -1);
         });
       }
@@ -3176,9 +3425,18 @@
         var expInfo = getExpirationStatus(c.fechaVencimiento);
         var cardAlertClass = expInfo.status === 'VENCIDO' ? 'card-alert-expired' : (expInfo.isAlert ? (expInfo.status === 'CRITICO' ? 'card-alert-critical' : 'card-alert-warning') : '');
 
+        var mKey = c.municipioKey || 'exaltacion';
+        var mDef = MUNICIPIOS_DB[mKey] || { nombre: c.municipio || 'Municipio', badgeClass: 'badge-municipio-exaltacion', icono: '🏛️' };
+        var mBadgeClass = mDef.badgeClass || ('badge-municipio-' + mKey);
+        var mIcon = mDef.icono || '🏛️';
+        var mName = c.municipio || mDef.nombre || 'Municipio';
+
         html += '<div class="contract-card ' + cardAlertClass + '">';
         html += '<div class="contract-card-header">';
         html += '<div style="flex:1; min-width:0; padding-right:0.5rem;">';
+        html += '<div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.35rem;">';
+        html += '<span class="badge-municipio ' + mBadgeClass + '" title="Planilla / Base de Datos: ' + escapeHtml(mName) + ' (' + (c.municipioId || '') + ')">' + mIcon + ' ' + escapeHtml(mName) + '</span>';
+        html += '</div>';
         html += '<h3 class="contract-establishment">' + escapeHtml(c.establecimiento) + '</h3>';
         html += '<span class="contract-code-tag">' + escapeHtml(c.codigo) + ' • 📅 ' + escapeHtml(c.campana) + fechaBadge + '</span>';
         html += '</div>';
@@ -3201,8 +3459,10 @@
         html += '</div>';
 
         html += '<div class="contract-card-body">';
-        html += '<div style="font-size:0.8rem; color:var(--text-secondary);">';
+        html += '<div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.6rem;">';
+        html += '<strong>Base / Hoja:</strong> <span style="font-weight:600; color:var(--corp-navy);">' + escapeHtml(mName) + '</span><br>';
         html += '<strong>Arrendador:</strong> ' + escapeHtml(c.arrendador) + '<br>';
+        html += '<strong>Ubicación:</strong> ' + escapeHtml(c.ubicacion || mName) + '<br>';
         html += '<strong>Superficie:</strong> ' + c.superficieHa + ' Ha • ' + c.cultivoPactado + ' (' + c.modalidad + ')';
         html += '</div>';
 
@@ -3228,6 +3488,9 @@
         html += '<div class="contract-card-footer">';
         html += '<span style="font-size:0.75rem; color:var(--text-muted);">Saldo: <strong style="color:#b45309;">' + formatNum(c.saldoKg) + ' Kg (USD ' + formatNum(Math.round(c.saldoUSD)) + ')</strong></span>';
         html += '<div style="display:flex; gap:0.35rem; flex-wrap:wrap;">';
+        if (c.sheetUrl) {
+          html += '<a href="' + escapeHtml(c.sheetUrl) + '" target="_blank" class="btn-card-view btn-sheet-link" title="Abrir Google Sheet de ' + escapeHtml(mName) + '">📊 Hoja</a>';
+        }
         html += '<button class="btn-card-view" onclick="openDetail(\'' + c.id + '\')">👁️ Ficha</button>';
         html += '<button class="btn-card-view btn-card-edit" onclick="editContract(\'' + c.id + '\')" title="Modificar contrato y vigencia">✏️ Editar</button>';
         html += '<button class="btn-card-view" style="background:#f0fdf4; border-color:#86efac; color:#166534;" onclick="viewContractTab(\'' + c.id + '\')" title="Ver Solapa de este contrato">📑 Solapa</button>';
@@ -3239,6 +3502,16 @@
       html += '</div>';
       container.innerHTML = html;
     }
+
+    window.switchSheetDatabase = function (dbKey) {
+      state.selectedSheetDatabase = dbKey || 'all';
+      document.querySelectorAll('#sheet-db-subtabs .sheet-subtab-btn').forEach(function (btn) {
+        btn.classList.remove('active');
+      });
+      var activeBtn = document.getElementById('btn-subtab-db-' + state.selectedSheetDatabase);
+      if (activeBtn) activeBtn.classList.add('active');
+      renderConsolidatedSheet();
+    };
 
     window.switchSheetSubtab = function (tabName) {
       state.selectedSheetTab = tabName || 'master';
@@ -3273,32 +3546,50 @@
 
       if (state.selectedSheetTab === 'master' || !state.selectedSheetTab) {
         // Vista Master Consolidada
+        var listToShow = state.contracts;
+        if (state.selectedSheetDatabase && state.selectedSheetDatabase !== 'all') {
+          listToShow = listToShow.filter(function (c) {
+            return c.municipioKey === state.selectedSheetDatabase ||
+              (c.municipio && c.municipio.toLowerCase().indexOf(state.selectedSheetDatabase.toLowerCase()) !== -1);
+          });
+        }
+
         var html = '<table class="sheet-table">';
-        html += '<thead><tr><th>#</th><th>Código</th><th>Establecimiento</th><th>Campaña</th><th>Vigencia Hasta</th><th>Alerta Vencimiento</th><th>Arrendador</th><th>Has</th><th>Cultivo</th><th>Precio (Tn)</th><th>Kg a Pagar</th><th>Kg Pagados</th><th>Saldo Kg</th><th>Total USD</th><th>Saldo USD</th><th>Factura</th><th>Estado</th><th>Última Modif.</th></tr></thead>';
+        html += '<thead><tr><th>#</th><th>Municipio / Base</th><th>Código</th><th>Establecimiento</th><th>Campaña</th><th>Vigencia Hasta</th><th>Alerta Vencimiento</th><th>Arrendador</th><th>Has</th><th>Cultivo</th><th>Precio (Tn)</th><th>Kg a Pagar</th><th>Kg Pagados</th><th>Saldo Kg</th><th>Total USD</th><th>Saldo USD</th><th>Factura</th><th>Estado</th><th>Hoja Drive</th><th>Última Modif.</th></tr></thead>';
         html += '<tbody>';
-        state.contracts.forEach(function (c, i) {
-          var exp = getExpirationStatus(c.fechaVencimiento);
-          html += '<tr>';
-          html += '<td>' + (i + 1) + '</td>';
-          html += '<td><code>' + escapeHtml(c.codigo) + '</code></td>';
-          html += '<td><strong>' + escapeHtml(c.establecimiento) + '</strong></td>';
-          html += '<td>' + escapeHtml(c.campana) + '</td>';
-          html += '<td><strong style="color:var(--corp-navy);">' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : '-') + '</strong></td>';
-          html += '<td><span class="exp-badge ' + exp.badgeClass + '" style="font-size:0.7rem; padding:0.15rem 0.5rem;">' + exp.shortLabel + '</span></td>';
-          html += '<td>' + escapeHtml(c.arrendador) + '</td>';
-          html += '<td>' + c.superficieHa + '</td>';
-          html += '<td>' + c.cultivoPactado + '</td>';
-          html += '<td>USD ' + c.precioTn + '</td>';
-          html += '<td>' + formatNum(c.kgPactados) + '</td>';
-          html += '<td style="color:var(--agro-green); font-weight:700;">' + formatNum(c.kgPagados) + '</td>';
-          html += '<td style="color:#b45309; font-weight:700;">' + formatNum(c.saldoKg) + '</td>';
-          html += '<td>USD ' + formatNum(Math.round(c.totalUSD)) + '</td>';
-          html += '<td style="color:#b45309; font-weight:700;">USD ' + formatNum(Math.round(c.saldoUSD)) + '</td>';
-          html += '<td>' + (c.facturaRecibida ? 'RECIBIDA ✅' : 'PENDIENTE ⏳') + '</td>';
-          html += '<td>' + c.estado + '</td>';
-          html += '<td><small>' + (c.fechaModificacion || '-') + '</small></td>';
-          html += '</tr>';
-        });
+        if (listToShow.length === 0) {
+          html += '<tr><td colspan="20" style="text-align:center; padding:2rem; color:var(--text-muted);">No hay contratos registrados para la base de datos seleccionada.</td></tr>';
+        } else {
+          listToShow.forEach(function (c, i) {
+            var exp = getExpirationStatus(c.fechaVencimiento);
+            var mKey = c.municipioKey || 'exaltacion';
+            var mDef = MUNICIPIOS_DB[mKey] || { nombre: c.municipio || 'Municipio', badgeClass: 'badge-municipio-exaltacion', icono: '🏛️' };
+            var driveLink = c.sheetUrl ? ('<a href="' + escapeHtml(c.sheetUrl) + '" target="_blank" class="btn-sheet-link" style="font-size:0.7rem; padding:0.15rem 0.45rem;" title="Abrir Google Sheet en Drive">📊 Abrir</a>') : '-';
+
+            html += '<tr>';
+            html += '<td>' + (i + 1) + '</td>';
+            html += '<td><span class="badge-municipio ' + (mDef.badgeClass || '') + '" style="font-size:0.7rem; padding:0.15rem 0.5rem;">' + (mDef.icono || '🏛️') + ' ' + escapeHtml(c.municipio || mDef.nombre) + '</span></td>';
+            html += '<td><code>' + escapeHtml(c.codigo) + '</code></td>';
+            html += '<td><strong>' + escapeHtml(c.establecimiento) + '</strong></td>';
+            html += '<td>' + escapeHtml(c.campana) + '</td>';
+            html += '<td><strong style="color:var(--corp-navy);">' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : '-') + '</strong></td>';
+            html += '<td><span class="exp-badge ' + exp.badgeClass + '" style="font-size:0.7rem; padding:0.15rem 0.5rem;">' + exp.shortLabel + '</span></td>';
+            html += '<td>' + escapeHtml(c.arrendador) + '</td>';
+            html += '<td>' + c.superficieHa + '</td>';
+            html += '<td>' + c.cultivoPactado + '</td>';
+            html += '<td>USD ' + c.precioTn + '</td>';
+            html += '<td>' + formatNum(c.kgPactados) + '</td>';
+            html += '<td style="color:var(--agro-green); font-weight:700;">' + formatNum(c.kgPagados) + '</td>';
+            html += '<td style="color:#b45309; font-weight:700;">' + formatNum(c.saldoKg) + '</td>';
+            html += '<td>USD ' + formatNum(Math.round(c.totalUSD)) + '</td>';
+            html += '<td style="color:#b45309; font-weight:700;">USD ' + formatNum(Math.round(c.saldoUSD)) + '</td>';
+            html += '<td>' + (c.facturaRecibida ? 'RECIBIDA ✅' : 'PENDIENTE ⏳') + '</td>';
+            html += '<td>' + c.estado + '</td>';
+            html += '<td>' + driveLink + '</td>';
+            html += '<td><small>' + (c.fechaModificacion || '-') + '</small></td>';
+            html += '</tr>';
+          });
+        }
         html += '</tbody></table>';
         container.innerHTML = html;
       } else {
@@ -3309,11 +3600,21 @@
           return;
         }
         var expSolapa = getExpirationStatus(c.fechaVencimiento);
+        var mKey = c.municipioKey || 'exaltacion';
+        var mDef = MUNICIPIOS_DB[mKey] || { nombre: c.municipio || 'Municipio', badgeClass: 'badge-municipio-exaltacion', icono: '🏛️' };
+
         var headerHtml = '<div style="background:white; border-bottom:1px solid #e2e8f0; padding:1.25rem; margin-bottom:1rem; border-radius:8px;">';
-        headerHtml += '<div style="background:#0f2744; color:white; padding:0.75rem 1rem; border-radius:6px; font-weight:800; font-size:1.05rem; margin-bottom:1rem;">';
-        headerHtml += '📑 SOLAPA DE SEGUIMIENTO: ' + escapeHtml(c.establecimiento) + ' (' + escapeHtml(c.codigo) + ')';
+        headerHtml += '<div style="display:flex; justify-content:space-between; align-items:center; background:#0f2744; color:white; padding:0.75rem 1rem; border-radius:6px; font-weight:800; font-size:1.05rem; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">';
+        headerHtml += '<div>📑 SOLAPA DE SEGUIMIENTO: ' + escapeHtml(c.establecimiento) + ' (' + escapeHtml(c.codigo) + ')</div>';
+        headerHtml += '<div style="display:flex; gap:0.5rem; align-items:center;">';
+        headerHtml += '<span class="badge-municipio ' + (mDef.badgeClass || '') + '" style="font-size:0.75rem;">' + (mDef.icono || '🏛️') + ' ' + escapeHtml(c.municipio || mDef.nombre) + '</span>';
+        if (c.sheetUrl) {
+          headerHtml += '<a href="' + escapeHtml(c.sheetUrl) + '" target="_blank" class="btn-sheet-link" style="color:white; border-color:rgba(255,255,255,0.4); font-size:0.75rem; padding:0.25rem 0.6rem;">📊 Abrir Hoja Drive</a>';
+        }
+        headerHtml += '</div>';
         headerHtml += '</div>';
         headerHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.75rem; font-size:0.82rem; background:#f8fafc; padding:0.85rem; border-radius:6px; border:1px solid #e2e8f0;">';
+        headerHtml += '<div><span style="color:#64748b;">Municipio / Base:</span><br><strong>' + escapeHtml(c.municipio || mDef.nombre) + '</strong></div>';
         headerHtml += '<div><span style="color:#64748b;">Arrendador:</span><br><strong>' + escapeHtml(c.arrendador) + '</strong></div>';
         headerHtml += '<div><span style="color:#64748b;">Superficie:</span><br><strong>' + c.superficieHa + ' Ha (' + c.cultivoPactado + ')</strong></div>';
         headerHtml += '<div><span style="color:#64748b;">Vigencia Hasta:</span><br><strong>' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : '-') + '</strong> <span class="exp-badge ' + expSolapa.badgeClass + '" style="font-size:0.68rem; padding:0.1rem 0.4rem; margin-top:0.2rem;">' + expSolapa.shortLabel + '</span></div>';
@@ -3332,7 +3633,7 @@
             .withSuccessHandler(function (movements) {
               renderMovementsTable('contract-tab-movements-container', movements);
             })
-            .getContractMovementsFromSheet(c.codigo || c.id);
+            .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey);
         }
       }
     }
@@ -3402,15 +3703,21 @@
       var c = state.contracts.find(function (item) { return item.id == id; });
       if (!c) return;
       window.currentDetailContractId = id;
+      var mKey = c.municipioKey || 'exaltacion';
+      var mDef = MUNICIPIOS_DB[mKey] || { nombre: c.municipio || 'Municipio', badgeClass: 'badge-municipio-exaltacion', icono: '🏛️', id: c.municipioId || '' };
+      var mName = c.municipio || mDef.nombre;
+
       document.getElementById('detail-contract-title').textContent = c.establecimiento + ' (' + c.codigo + ')';
-      document.getElementById('detail-contract-subtitle').textContent = 'Campaña ' + c.campana + ' • ' + c.ubicacion;
+      document.getElementById('detail-contract-subtitle').textContent = 'Campaña ' + c.campana + ' • ' + mName + (c.ubicacion ? ' - ' + c.ubicacion : '');
 
       var exp = getExpirationStatus(c.fechaVencimiento);
+      var driveBtnHtml = c.sheetUrl ? ('<div style="margin-top:0.4rem;"><a href="' + escapeHtml(c.sheetUrl) + '" target="_blank" class="btn-sheet-link" style="font-size:0.75rem; padding:0.25rem 0.6rem; display:inline-block;">📊 Abrir Hoja en Google Drive</a></div>') : '';
+
       var html = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:1rem; margin-bottom:1.25rem;">';
-      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">ARRENDADOR</div><div style="font-weight:700;">' + escapeHtml(c.arrendador) + '</div></div>';
-      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">SUPERFICIE Y CULTIVO</div><div style="font-weight:700;">' + c.superficieHa + ' Ha • ' + c.cultivoPactado + ' (' + c.modalidad + ')</div></div>';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">MUNICIPIO / BASE DE DATOS</div><div style="font-weight:700; margin-top:0.25rem;"><span class="badge-municipio ' + (mDef.badgeClass || '') + '">' + (mDef.icono || '🏛️') + ' ' + escapeHtml(mName) + '</span></div><div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.35rem;">ID: <code>' + (c.municipioId || mDef.id) + '</code></div>' + driveBtnHtml + '</div>';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">ARRENDADOR</div><div style="font-weight:700;">' + escapeHtml(c.arrendador) + '</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">Ubicación: ' + escapeHtml(c.ubicacion || mName) + '</div></div>';
+      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">SUPERFICIE Y CULTIVO</div><div style="font-weight:700;">' + c.superficieHa + ' Ha • ' + c.cultivoPactado + ' (' + c.modalidad + ')</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">Arrendatario: ' + escapeHtml(c.arrendatario || 'Administración Rural') + '</div></div>';
       html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px; border-left:4px solid ' + (exp.isAlert ? '#ef4444' : '#22c55e') + ';"><div style="font-size:0.75rem; color:var(--text-muted);">VIGENCIA / VENCIMIENTO</div><div style="font-weight:700;">' + (c.fechaVencimiento ? formatDateDisplay(c.fechaVencimiento) : 'No definida') + '</div><div style="margin-top:0.25rem;"><span class="exp-badge ' + exp.badgeClass + '" style="font-size:0.7rem; padding:0.15rem 0.5rem;">' + exp.label + '</span></div></div>';
-      html += '<div style="background:var(--bg-subtle); padding:0.85rem; border-radius:8px;"><div style="font-size:0.75rem; color:var(--text-muted);">FECHA DE MODIFICACIÓN</div><div style="font-weight:700;">' + (c.fechaModificacion || 'Hoy') + '</div></div>';
       html += '</div>';
 
       html += '<div class="contract-kg-metrics" style="padding:1rem; margin-bottom:1rem;">';
@@ -3437,7 +3744,7 @@
           .withSuccessHandler(function (movements) {
             renderMovementsTable('detail-modal-movements-container', movements);
           })
-          .getContractMovementsFromSheet(c.codigo || c.id);
+          .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey);
       }
     };
 
@@ -3697,6 +4004,10 @@
         document.getElementById('form-row-index').value = '';
         document.getElementById('form-establecimiento').value = '';
         document.getElementById('form-codigo').value = '';
+        var munSel = document.getElementById('form-municipio');
+        if (munSel) {
+          munSel.value = (state.selectedMunicipio && state.selectedMunicipio !== 'all') ? state.selectedMunicipio : 'exaltacion';
+        }
         document.getElementById('form-arrendador').value = '';
         document.getElementById('form-ubicacion').value = '';
         document.getElementById('form-ha').value = '';
@@ -3717,7 +4028,7 @@
         var select = document.getElementById('payment-contract-select');
         var html = '';
         state.contracts.forEach(function (c) {
-          html += '<option value="' + c.id + '">' + c.establecimiento + ' (Saldo: ' + formatNum(c.saldoKg) + ' Kg)</option>';
+          html += '<option value="' + c.id + '">' + c.establecimiento + ' (' + (c.municipio || '') + ' - Saldo: ' + formatNum(c.saldoKg) + ' Kg)</option>';
         });
         select.innerHTML = html;
         document.getElementById('payment-kg').value = '';
@@ -3766,13 +4077,20 @@
           return;
         }
 
+        var munKey = document.getElementById('form-municipio') ? document.getElementById('form-municipio').value : 'exaltacion';
+        var munObj = MUNICIPIOS_DB[munKey] || MUNICIPIOS_DB['exaltacion'];
+
         var cData = {
           rowIndex: parseInt(document.getElementById('form-row-index').value, 10) || 0,
-          codigo: document.getElementById('form-codigo').value || ('AGRO-' + Date.now().toString().slice(-3)),
+          codigo: document.getElementById('form-codigo').value || ('AGRO-' + munKey.slice(0, 2).toUpperCase() + '-' + Date.now().toString().slice(-3)),
           establecimiento: document.getElementById('form-establecimiento').value,
+          municipioKey: munKey,
+          municipio: munObj.nombre,
+          municipioId: munObj.id,
+          sheetUrl: munObj.url,
           arrendador: document.getElementById('form-arrendador').value,
           arrendatario: document.getElementById('form-arrendatario').value,
-          ubicacion: document.getElementById('form-ubicacion').value,
+          ubicacion: document.getElementById('form-ubicacion').value || (munObj.nombre + ', Bs. As.'),
           campana: document.getElementById('form-campana').value,
           superficieHa: parseFloat(document.getElementById('form-ha').value) || 0,
           cultivoPactado: document.getElementById('form-cultivo').value,
@@ -3788,14 +4106,14 @@
           return;
         }
 
-        showToast('Guardando en Google Sheets...');
+        showToast('Guardando en Google Sheets (' + munObj.nombre + ')...');
         google.script.run
           .withSuccessHandler(function (data) {
             state.contracts = data;
             updateCampaignsDropdown();
             closeModal('modal-contract-form');
             renderAll();
-            showToast('Contrato y Solapa guardados exitosamente');
+            showToast('Contrato guardado en base de ' + munObj.nombre);
           })
           .saveContractToSheet(cData);
       });
@@ -3880,6 +4198,15 @@
         renderContracts();
       });
 
+      var munFilter = document.getElementById('filter-municipio-select');
+      if (munFilter) {
+        munFilter.addEventListener('change', function (e) {
+          state.selectedMunicipio = e.target.value;
+          renderContracts();
+          updateKPIDashboard();
+        });
+      }
+
       document.getElementById('filter-campaign-select').addEventListener('change', function (e) {
         state.selectedCampaign = e.target.value;
         renderContracts();
@@ -3920,17 +4247,19 @@
 
       document.getElementById('btn-export-sheet').addEventListener('click', function () {
         var headers = [
-          'ID', 'Codigo', 'Establecimiento', 'Ubicacion', 'Arrendador',
+          'ID', 'Codigo', 'Municipio', 'ID_Google_Sheet', 'Establecimiento', 'Ubicacion', 'Arrendador',
           'Arrendatario', 'Superficie_Ha', 'Cultivo', 'Modalidad',
           'Kg_Pactados', 'Kg_Pagados', 'Saldo_Kg', 'Precio_USD_Tn',
           'Total_USD_Pagar', 'Total_USD_Pagado', 'Saldo_USD',
-          'Factura_Recibida', 'Campana', 'Porcentaje_Pagado', 'Estado', 'Observaciones', 'Fecha_Modificacion', 'Fecha_Vencimiento'
+          'Factura_Recibida', 'Campana', 'Porcentaje_Pagado', 'Estado', 'Enlace_Drive', 'Observaciones', 'Fecha_Modificacion', 'Fecha_Vencimiento'
         ];
         var csv = "\uFEFF" + headers.join(",") + "\r\n";
         state.contracts.forEach(function (c) {
           var row = [
             c.id,
             c.codigo,
+            '"' + (c.municipio || '').replace(/"/g, '""') + '"',
+            '"' + (c.municipioId || '').replace(/"/g, '""') + '"',
             '"' + (c.establecimiento || '').replace(/"/g, '""') + '"',
             '"' + (c.ubicacion || '').replace(/"/g, '""') + '"',
             '"' + (c.arrendador || '').replace(/"/g, '""') + '"',
@@ -3949,6 +4278,7 @@
             '"' + (c.campana || '') + '"',
             '"' + (c.porcentajeCumplimiento || 0) + '%"',
             c.estado,
+            '"' + (c.sheetUrl || '').replace(/"/g, '""') + '"',
             '"' + (c.observaciones || '').replace(/"/g, '""') + '"',
             '"' + (c.fechaModificacion || '') + '"',
             '"' + (c.fechaVencimiento || '') + '"'

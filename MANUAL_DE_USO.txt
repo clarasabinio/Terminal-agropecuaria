@@ -13,28 +13,33 @@ Repositorio GitHub: https://github.com/clarasabinio/Terminal-agropecuaria
 --------------------------------------------------------------------------------
 1. INTRODUCCIÓN Y PROPÓSITO DEL SISTEMA
 2. PANTALLA PRINCIPAL: MODO INVITADO (CONSULTA PÚBLICA)
-   2.1. Barra Superior de Cotizaciones en Vivo (Chicago y Dólar BNA)
-   2.2. Tarjetas de Métricas Globales
-   2.3. Buscador Inteligente y Filtros
-   2.4. Tarjetas de Contratos y Ficha Técnica Detallada
+   2.1. Barra Superior de Cotizaciones en Vivo (Chicago, Rosario y Dólar BNA)
+   2.2. Tarjetas de Métricas Globales (Consolidadas y por Municipio)
+   2.3. Buscador Inteligente y Filtros (Filtro por Municipio)
+   2.4. Tarjetas de Contratos y Distintivos por Municipio
    2.5. Semáforos de Vigencia y Alertas de Vencimiento
    2.6. Fondos Fotográficos Rotativos de Campo (Cada 5 Minutos)
 3. MODO ADMINISTRADOR (GESTIÓN Y CONTROL TOTAL)
    3.1. Cómo Iniciar Sesión de Administrador
-   3.2. Carga de un Nuevo Contrato Agrícola
+   3.2. Carga de un Nuevo Contrato Agrícola con Asignación de Municipio
    3.3. Modificación de Contratos Existentes
-   3.4. Registro de Entregas y Liquidación de Pagos
+   3.4. Registro de Entregas y Liquidación de Pagos con Precio Rosario (BCR)
    3.5. Formas de Pago, Facturación y Comprobantes
-4. PLANILLA DE CÁLCULO CONSOLIDADA (GOOGLE SHEETS)
-   4.1. Solapa Master y Solapas Individuales por Contrato
-   4.2. Exportación a Formato CSV
-   4.3. Conexión con Google Apps Script (codigo.gs)
-5. MODO KIOSCO BLOQUEADO (SEGURIDAD Y CONTROL DE PANTALLA)
-   5.1. ¿Qué es y qué bloquea el Modo Kiosco?
-   5.2. Cómo Iniciar el Kiosco (Iniciar_Kiosco.command)
-   5.3. Cómo Salir o Desbloquear el Modo Kiosco
-   5.4. Qué hacer ante reinicio o corte de energía
-6. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+4. BASES DE DATOS MUNICIPALES (GOOGLE SHEETS FEDERADAS)
+   4.1. Las 3 Hojas de Cálculo (Exaltación de la Cruz, Salto, Giles)
+   4.2. Visualizador Multi-Base y Solapa Master
+   4.3. Solapas Individuales por Contrato y Exportación CSV
+   4.4. Backend Google Apps Script (codigo.gs) y Router Multi-Hoja
+5. VISUALIZADOR EN LÍNEA DE COMANDOS / TERMINAL MAC
+   5.1. Ejecución con Doble Clic (Ver_Campos_Terminal.command)
+   5.2. Ejecución Directa en Python (ver_campos_terminal.py)
+   5.3. Interpretación de Métricas y Tablas ANSI por Municipio
+6. MODO KIOSCO BLOQUEADO (SEGURIDAD Y CONTROL DE PANTALLA)
+   6.1. ¿Qué es y qué bloquea el Modo Kiosco?
+   6.2. Cómo Iniciar el Kiosco (Iniciar_Kiosco.command)
+   6.3. Cómo Salir o Desbloquear el Modo Kiosco
+   6.4. Qué hacer ante reinicio o corte de energía
+7. RESPALDO Y SINCRONIZACIÓN CON GITHUB
 
 
 ================================================================================
@@ -197,34 +202,92 @@ Para registrar un pago de alquiler en base a la Bolsa de Comercio de Rosario:
 
 
 ================================================================================
-4. PLANILLA DE CÁLCULO CONSOLIDADA (GOOGLE SHEETS)
+4. BASES DE DATOS MUNICIPALES (GOOGLE SHEETS FEDERADAS)
 ================================================================================
 
-4.1. SOLAPA MASTER Y SOLAPAS INDIVIDUALES POR CONTRATO
+4.1. LAS 3 HOJAS DE CÁLCULO MUNICIPALES
+La Terminal Agropecuaria funciona federando las 3 planillas de cálculo de Google Sheets
+almacenadas en la carpeta compartida de Google Drive:
+👉 https://drive.google.com/drive/u/0/folders/1gXI7vPM-fuukfDzZcf6ot9urGgU4xxbc
+
+Cada planilla representa una zona o municipio con su propia base de datos:
+1. 🏛️ EXALTACIÓN DE LA CRUZ
+   - ID de Google Sheet: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ
+   - Enlace Directo: https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit
+   - Localidades: Capilla del Señor, Los Cardales, Pavón.
+   - Color distintivo en la Terminal: Azul institucional.
+
+2. 🌾 SALTO
+   - ID de Google Sheet: 1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc
+   - Enlace Directo: https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit
+   - Localidades: Salto, Inés Indart, Arroyo Dulce, Berdier.
+   - Color distintivo en la Terminal: Ámbar / Dorado cerealero.
+
+3. 🌻 SAN ANDRÉS DE GILES
+   - ID de Google Sheet: 1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic
+   - Enlace Directo: https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit
+   - Localidades: San Andrés de Giles, Cucullú, Villa Ruiz, Azcuénaga.
+   - Color distintivo en la Terminal: Verde agrícola.
+
+4.2. VISUALIZADOR MULTI-BASE Y SOLAPA MASTER
 En la pestaña "📊 Planilla de Cálculo Consolidada (Sheet)":
-- Solapa Master: Muestra una tabla unificada con todos los contratos, sus totales en
-  Kg, importes en USD, estado de facturación y fechas de vencimiento.
+- Barra de Bases de Datos: Puede alternar entre [🌐 Todas Consolidadas],
+  [🏛️ Exaltación de la Cruz], [🌾 Salto] o [🌻 San Andrés de Giles].
+- Columna Municipio: Identifica visualmente con insignia de color a qué hoja pertenece
+  cada campo.
+- Enlace Directo a Drive: Cada fila incluye un botón [📊 Abrir] para ir directamente
+  a la planilla de cálculo en Google Drive.
+
+4.3. SOLAPAS INDIVIDUALES POR CONTRATO Y EXPORTACIÓN CSV
 - Selector de Solapas: Permite desplegar la solapa individual de cada contrato para
-  inspeccionar su historial completo de pagos y entregas registradas.
+  inspeccionar su historial completo de movimientos, pagos y comprobantes.
+- Botón [📥 Descargar esta Solapa (CSV)]: Permite exportar la solapa activa a Excel.
+- Botón [📥 Descargar Planilla Master (CSV)]: Exporta la base completa incluyendo
+  las columnas de Municipio, ID de Google Sheet y enlaces de Drive.
 
-4.2. EXPORTACIÓN A FORMATO CSV
-- Con el botón [📥 Descargar esta Solapa (CSV)] puede bajar el archivo compatible con
-  Microsoft Excel, LibreOffice o Google Sheets con un solo clic.
-
-4.3. CONEXIÓN CON GOOGLE APPS SCRIPT (codigo.gs)
-El archivo `codigo.gs` contiene las funciones para conectar la página con su Google
-Spreadsheet en la nube:
-- `doGet()`: Sirve la aplicación web en Google Apps Script.
-- `guardarContrato()`: Guarda o edita contratos y crea la solapa correspondiente.
-- `registrarPago()`: Agrega la fila de pago en la solapa del contrato y en la Master.
-- `subirComprobante()`: Guarda el comprobante en una carpeta dedicada de Google Drive.
+4.4. BACKEND GOOGLE APPS SCRIPT (codigo.gs) Y ROUTER MULTI-HOJA
+El script `codigo.gs` implementa un router dinámico:
+- `MUNICIPIOS_DB`: Registro maestro con los 3 IDs y URLs de las hojas de cálculo.
+- `resolveSpreadsheet(munKeyOrId)`: Conecta automáticamente con la hoja correspondiente
+  mediante `SpreadsheetApp.openById(id)`.
+- `getAllContractsAcrossMunicipios()`: Consolida en una sola llamada los contratos de
+  las 3 hojas para alimentar la Terminal.
+- `saveContractToSheet(c)`: Guarda el contrato en la hoja de cálculo del municipio
+  seleccionado y genera su solapa de movimientos.
 
 
 ================================================================================
-5. MODO KIOSCO BLOQUEADO (SEGURIDAD Y CONTROL DE PANTALLA)
+5. VISUALIZADOR EN LÍNEA DE COMANDOS / TERMINAL MAC
 ================================================================================
 
-5.1. ¿QUÉ ES Y QUÉ HACE EL MODO KIOSCO?
+Además de la interfaz web, el sistema cuenta con un visor nativo de terminal por consola
+para auditoría y consulta ultra-rápida.
+
+5.1. EJECUCIÓN CON DOBLE CLIC (Ver_Campos_Terminal.command)
+1. En la carpeta `mi-proyecto-antigravity` en su Mac.
+2. Haga DOBLE CLIC sobre:
+   👉 Ver_Campos_Terminal.command
+3. Se abrirá una ventana de Terminal de macOS mostrando las tablas tabuladas de los 3
+   municipios, sus estadísticas y el resumen general.
+
+5.2. EJECUCIÓN DIRECTA EN PYTHON (ver_campos_terminal.py)
+Desde la terminal de comandos:
+   python3 ver_campos_terminal.py
+
+5.3. INTERPRETACIÓN DE MÉTRICAS Y TABLAS ANSI
+El reporte en terminal despliega para cada municipio:
+- Identificador y URL directa de su Google Sheet.
+- Tabla formateada con: Código, Nombre del Campo, Localidad, Cultivo, Hectáreas,
+  Kilos Pactados, Kilos Pagados, Saldo en USD, Factura y Estado.
+- Subtotales por Municipio (Hectáreas, Kilos, % Pagado y Saldo USD).
+- Cuadro resumen consolidado federando las 3 bases de datos (3.440 Ha totales).
+
+
+================================================================================
+6. MODO KIOSCO BLOQUEADO (SEGURIDAD Y CONTROL DE PANTALLA)
+================================================================================
+
+6.1. ¿QUÉ ES Y QUÉ HACE EL MODO KIOSCO?
 El Modo Kiosco está diseñado para colocar una computadora en un punto de consulta
 (oficina comercial, recepción, feria o sala de reuniones) de manera 100% segura:
 - Bloquea el acceso al resto de la computadora: La aplicación ocupa toda la pantalla
@@ -234,7 +297,7 @@ El Modo Kiosco está diseñado para colocar una computadora en un punto de consu
 - Bloqueo de teclado y clic derecho: Se desactiva el menú contextual del mouse y las
   combinaciones de teclas técnicas (F12, inspeccionar elemento, recargar página).
 
-5.2. CÓMO INICIAR EL MODO KIOSCO
+6.2. CÓMO INICIAR EL MODO KIOSCO
 En su computadora Mac:
 1. Abra la carpeta `mi-proyecto-antigravity` en su Escritorio.
 2. Haga DOBLE CLIC sobre el archivo:
@@ -242,7 +305,7 @@ En su computadora Mac:
 3. Automáticamente se iniciará el servidor local y se abrirá Google Chrome en modo
    Kiosco Bloqueado a pantalla completa.
 
-5.3. CÓMO SALIR O DESBLOQUEAR EL MODO KIOSCO
+6.3. CÓMO SALIR O DESBLOQUEAR EL MODO KIOSCO
 Solo el Administrador que conoce la contraseña puede desbloquear o cerrar la pantalla.
 Existen dos formas:
 
@@ -260,7 +323,7 @@ Existen dos formas:
   ⌨️  Cmd + Q
   Esto cerrará inmediatamente la aplicación y devolverá el escritorio normal.
 
-5.4. QUÉ HACER ANTE REINICIO DE LA COMPUTADORA
+6.4. QUÉ HACER ANTE REINICIO DE LA COMPUTADORA
 Si la computadora se apaga o reinicia:
 1. Encienda la máquina e inicie sesión en su usuario.
 2. Vaya a su Escritorio y haga doble clic en `Iniciar_Kiosco.command`.
@@ -268,7 +331,7 @@ Si la computadora se apaga o reinicia:
 
 
 ================================================================================
-6. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+7. RESPALDO Y SINCRONIZACIÓN CON GITHUB
 ================================================================================
 Todo el código y sus manuales se encuentran respaldados en su repositorio de GitHub:
 👉 https://github.com/clarasabinio/Terminal-agropecuaria

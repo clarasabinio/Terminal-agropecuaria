@@ -1,3 +1,41 @@
+/**
+ * ==============================================================================
+ * TERMINAL AGROPECUARIA - BACKEND GOOGLE APPS SCRIPT (codigo.gs)
+ * ==============================================================================
+ * Sistema Multi-Base de Datos para 3 Hojas de Cálculo de Google Drive:
+ * 1. Exaltación de la Cruz (ID: 14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ)
+ * 2. Salto                (ID: 1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc)
+ * 3. San Andrés de Giles  (ID: 1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic)
+ * ==============================================================================
+ */
+
+const MUNICIPIOS_DB = {
+  exaltacion: {
+    key: 'exaltacion',
+    nombre: 'Exaltación de la Cruz',
+    id: '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ',
+    url: 'https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit',
+    cabecera: 'Capilla del Señor',
+    colorHex: '#2563eb'
+  },
+  salto: {
+    key: 'salto',
+    nombre: 'Salto',
+    id: '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc',
+    url: 'https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit',
+    cabecera: 'Salto',
+    colorHex: '#059669'
+  },
+  giles: {
+    key: 'giles',
+    nombre: 'San Andrés de Giles',
+    id: '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic',
+    url: 'https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit',
+    cabecera: 'San Andrés de Giles',
+    colorHex: '#d97706'
+  }
+};
+
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Terminal Kiosco Agropecuaria')
@@ -11,6 +49,63 @@ function getTodayString() {
 
 function sanitizeSheetName(name) {
   return (name || 'CONTRATO').toString().replace(/[\[\]\*\?:\\\/]/g, '-').trim().slice(0, 30);
+}
+
+function getMunicipiosConfig() {
+  return MUNICIPIOS_DB;
+}
+
+/**
+ * Resuelve la hoja de cálculo (Spreadsheet) correspondiente al municipio o ID dado.
+ */
+function resolveSpreadsheet(municipioKeyOrId) {
+  if (!municipioKeyOrId) {
+    try {
+      const active = SpreadsheetApp.getActiveSpreadsheet();
+      if (active) return active;
+    } catch (e) {}
+    return SpreadsheetApp.openById(MUNICIPIOS_DB.exaltacion.id);
+  }
+
+  // Buscar por clave ('exaltacion', 'salto', 'giles')
+  const lower = String(municipioKeyOrId).toLowerCase().trim();
+  if (MUNICIPIOS_DB[lower]) {
+    return SpreadsheetApp.openById(MUNICIPIOS_DB[lower].id);
+  }
+
+  // Buscar por ID exacto o coincidencia de nombre
+  for (const k in MUNICIPIOS_DB) {
+    const item = MUNICIPIOS_DB[k];
+    if (item.id === municipioKeyOrId || item.nombre.toLowerCase() === lower || lower.indexOf(k) !== -1) {
+      return SpreadsheetApp.openById(item.id);
+    }
+  }
+
+  // Si se envió un ID de Google Sheet directamente
+  try {
+    return SpreadsheetApp.openById(municipioKeyOrId);
+  } catch (err) {
+    try {
+      return SpreadsheetApp.getActiveSpreadsheet();
+    } catch (e2) {
+      throw new Error('No se pudo resolver la Hoja de Cálculo para: ' + municipioKeyOrId);
+    }
+  }
+}
+
+/**
+ * Identifica la metadata del municipio a partir del objeto contrato, ID o nombre.
+ */
+function getMunicipioMeta(val) {
+  if (!val) return MUNICIPIOS_DB.exaltacion;
+  const str = String(val).toLowerCase().trim();
+  for (const k in MUNICIPIOS_DB) {
+    const m = MUNICIPIOS_DB[k];
+    if (m.key === str || m.id === val || m.nombre.toLowerCase() === str || str.indexOf(k) !== -1 || str.indexOf(m.cabecera.toLowerCase()) !== -1) {
+      return m;
+    }
+  }
+  return MUNICIPIOS_DB.exaltacion;
 }
 
 function getOrCreatePaymentFolder(contractId) {
@@ -52,8 +147,11 @@ function savePaymentVoucher(fileData, contractId, fecha) {
   }
 }
 
-function getSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+/**
+ * Obtiene la solapa 'Contratos' de la hoja de cálculo del municipio indicado.
+ */
+function getSheet(municipioKeyOrId) {
+  const ss = resolveSpreadsheet(municipioKeyOrId);
   let sheet = ss.getSheetByName('Contratos');
   if (!sheet) {
     sheet = ss.insertSheet('Contratos', 0);
@@ -62,87 +160,27 @@ function getSheet() {
       'Arrendatario', 'Superficie_Ha', 'Cultivo', 'Modalidad', 
       'Kg_Pactados', 'Kg_Pagados', 'Saldo_Kg', 'Precio_USD_Tn', 
       'Total_USD_Pagar', 'Total_USD_Pagado', 'Saldo_USD', 
-      'Factura_Recibida', 'Campana', 'Porcentaje_Pagado', 'Estado', 'Observaciones', 'Fecha_Modificacion', 'Fecha_Vencimiento'
+      'Factura_Recibida', 'Campana', 'Porcentaje_Pagado', 'Estado', 'Observaciones', 
+      'Fecha_Modificacion', 'Fecha_Vencimiento', 'Municipio', 'Municipio_ID'
     ]);
-    sheet.getRange(1, 1, 1, 23).setBackground('#0f2744').setFontColor('#ffffff').setFontWeight('bold');
-    
-    const today = getTodayString();
-    const sampleData = [
-      ['CTR-2025-001', 'AGRO-LP-01', 'Establecimiento La Posta', 'Pergamino, Bs. As.', 'Agrícola Ganadera Los Ombúes S.A.', 'Administración Rural', 450, 'Soja', '12.0 qq/ha', 540000, 360000, 180000, 295, 159300, 106200, 53100, 'SI', '2024/2025', '66.7%', 'PARCIAL', 'Entrega en acopio Pergamino', today, '2026-09-25'],
-      ['CTR-2025-002', 'AGRO-VT-02', 'Campo Los Aromos', 'Venado Tuerto, Sta. Fe', 'Sucesión Fernández', 'Cresud S.A.', 600, 'Maíz', '40.0 qq/ha', 2400000, 2400000, 0, 180, 432000, 432000, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Cancelado 100%', today, '2026-08-31'],
-      ['CTR-2025-003', 'AGRO-BAL-03', 'Estancia Santa María', 'Balcarce, Bs. As.', 'Fideicomiso Agro del Sud', 'Cerealera del Plata', 320, 'Trigo', '25.0 qq/ha', 800000, 400000, 400000, 215, 172000, 86000, 86000, 'NO', '2025/2026', '50.0%', 'PARCIAL', 'Entrega Puerto Quequén', today, '2026-10-31'],
-      ['CTR-2025-004', 'AGRO-RC-04', 'Lote Las Palmeras', 'Río Cuarto, Cba.', 'Don Héctor Morales', 'Cooperativa Central', 200, 'Girasol', '10.0 qq/ha', 200000, 0, 200000, 310, 62000, 0, 62000, 'NO', '2025/2026', '0.0%', 'PENDIENTE', 'Cosecha gruesa', today, '2027-05-31']
-    ];
-    sampleData.forEach(row => {
-      sheet.appendRow(row);
-      const cObj = {
-        id: row[0],
-        codigo: row[1],
-        establecimiento: row[2],
-        ubicacion: row[3],
-        arrendador: row[4],
-        superficieHa: row[6],
-        cultivoPactado: row[7],
-        modalidad: row[8],
-        kgPactados: row[9],
-        kgPagados: row[10],
-        saldoKg: row[11],
-        precioTn: row[12],
-        totalUSD: row[13],
-        pagadoUSD: row[14],
-        saldoUSD: row[15],
-        facturaRecibida: row[16] === 'SI',
-        campana: row[17],
-        observaciones: row[20],
-        fechaModificacion: row[21],
-        fechaVencimiento: row[22]
-      };
-      logContractMovement(cObj, {
-        fecha: today,
-        tipo: 'ALTA CONTRATO',
-        detalle: 'Carga inicial del contrato',
-        kg: 0,
-        precioChicagoUSD: row[12],
-        tipoCambioARS: 1350,
-        totalUSD: 0,
-        totalARS: 0,
-        medioPago: '-',
-        nroRef: '-',
-        factura: row[16],
-        comprobanteUrl: '',
-        observaciones: 'Firma de contrato'
-      });
-      if (row[10] > 0) {
-        logContractMovement(cObj, {
-          fecha: today,
-          tipo: 'LIQUIDACION / PAGO',
-          detalle: 'Entrega de granos y fijación de precio',
-          kg: row[10],
-          precioChicagoUSD: row[12],
-          tipoCambioARS: 1350,
-          totalUSD: row[14],
-          totalARS: row[14] * 1350,
-          medioPago: 'Transferencia',
-          nroRef: 'TRF-INICIAL',
-          factura: row[16],
-          comprobanteUrl: '',
-          observaciones: 'Pago inicial registrado'
-        });
-      }
-    });
+    sheet.getRange(1, 1, 1, 25).setBackground('#0f2744').setFontColor('#ffffff').setFontWeight('bold');
   }
   return sheet;
 }
 
-function getOrCreateContractTab(c) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+function getOrCreateContractTab(c, ssOrMunicipio) {
+  const ss = (ssOrMunicipio && typeof ssOrMunicipio.getSheetByName === 'function') 
+    ? ssOrMunicipio 
+    : resolveSpreadsheet(c.municipioKey || c.municipioId || c.municipio || ssOrMunicipio);
+
   const sheetName = sanitizeSheetName(c.codigo || c.id || 'CONTRATO');
   let tab = ss.getSheetByName(sheetName);
   
   if (!tab) {
     tab = ss.insertSheet(sheetName);
+    const munMeta = getMunicipioMeta(c.municipioKey || c.municipioId || c.municipio);
     tab.getRange('A1:N1').merge()
-      .setValue('SOLAPA DE MOVIMIENTOS Y LIQUIDACIONES: ' + (c.establecimiento || '') + ' (' + (c.codigo || c.id || '') + ')')
+      .setValue('SOLAPA DE MOVIMIENTOS: ' + (c.establecimiento || '') + ' (' + (c.codigo || c.id || '') + ') - ' + munMeta.nombre)
       .setBackground('#0f2744').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11)
       .setHorizontalAlignment('center');
 
@@ -181,9 +219,9 @@ function getOrCreateContractTab(c) {
   return tab;
 }
 
-function logContractMovement(c, mov) {
+function logContractMovement(c, mov, ssOrMunicipio) {
   try {
-    const tab = getOrCreateContractTab(c);
+    const tab = getOrCreateContractTab(c, ssOrMunicipio);
     const dateStr = mov.fecha || getTodayString();
     tab.appendRow([
       dateStr,
@@ -206,14 +244,20 @@ function logContractMovement(c, mov) {
   }
 }
 
-function getContractsFromSheet() {
-  const sheet = getSheet();
+/**
+ * Lee los contratos de una hoja de cálculo dada.
+ */
+function getContractsFromSheet(municipioKeyOrId) {
+  const sheet = getSheet(municipioKeyOrId);
+  const munMeta = getMunicipioMeta(municipioKeyOrId);
   const values = sheet.getDataRange().getValues();
   if (values.length <= 1) return [];
 
   const contracts = [];
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
+    if (!row[0] && !row[2]) continue;
+
     const ha = parseFloat(row[6]) || 0;
     const kgPactados = parseInt(row[9], 10) || 0;
     const kgPagados = parseInt(row[10], 10) || 0;
@@ -225,7 +269,8 @@ function getContractsFromSheet() {
     const saldoUSD = saldoKg * precioKg;
     const pct = kgPactados > 0 ? parseFloat(((kgPagados / kgPactados) * 100).toFixed(1)) : 0;
     const facturaRecibida = String(row[16]).toUpperCase() === 'SI';
-    const fechaMod = row[21] ? Utilities.formatDate(new Date(row[21]), Session.getScriptTimeZone() || 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd') : getTodayString();
+    const fechaMod = row[21] ? (row[21] instanceof Date ? Utilities.formatDate(row[21], Session.getScriptTimeZone() || 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd') : String(row[21]).substring(0, 10)) : getTodayString();
+    
     let fechaVenc = '';
     if (row[22]) {
       if (row[22] instanceof Date) {
@@ -234,7 +279,11 @@ function getContractsFromSheet() {
         fechaVenc = String(row[22]).trim().substring(0, 10);
       }
     }
-    
+
+    const munNombre = row[23] || munMeta.nombre;
+    const munId = row[24] || munMeta.id;
+    const specificMeta = getMunicipioMeta(munId || munNombre);
+
     contracts.push({
       rowIndex: i + 1,
       id: row[0] || ('CTR-' + i),
@@ -254,19 +303,44 @@ function getContractsFromSheet() {
       pagadoUSD: totalPagado,
       saldoUSD: saldoUSD,
       facturaRecibida: facturaRecibida,
-      campana: row[17] || '2024/2025',
+      campana: row[17] || '2025/2026',
       porcentajeCumplimiento: pct,
       estado: pct >= 100 ? 'PAGADO' : (pct > 0 ? 'PARCIAL' : 'PENDIENTE'),
       observaciones: row[20] || '',
       fechaModificacion: fechaMod,
-      fechaVencimiento: fechaVenc
+      fechaVencimiento: fechaVenc,
+      municipio: specificMeta.nombre,
+      municipioKey: specificMeta.key,
+      municipioId: specificMeta.id,
+      sheetUrl: specificMeta.url
     });
   }
   return contracts;
 }
 
-function saveContractToSheet(c) {
-  const sheet = getSheet();
+/**
+ * Lee y consolida los contratos de las 3 hojas de cálculo de Google Drive.
+ */
+function getAllContractsAcrossMunicipios() {
+  let all = [];
+  for (const k in MUNICIPIOS_DB) {
+    try {
+      const list = getContractsFromSheet(k);
+      all = all.concat(list);
+    } catch (err) {
+      Logger.log('Aviso al leer contratos de ' + k + ': ' + err.message);
+    }
+  }
+  return all;
+}
+
+/**
+ * Guarda o modifica un contrato en la hoja de cálculo del municipio respectivo.
+ */
+function saveContractToSheet(c, optMunicipio) {
+  const munMeta = getMunicipioMeta(c.municipioKey || c.municipioId || c.municipio || optMunicipio);
+  const sheet = getSheet(munMeta.key);
+  
   const ha = parseFloat(c.superficieHa) || 0;
   const qq = parseFloat(c.modalidad) || 12.0;
   const kgPactados = Math.round(ha * qq * 100);
@@ -286,11 +360,12 @@ function saveContractToSheet(c) {
   let contractObj = null;
 
   if (c.rowIndex && c.rowIndex > 1) {
-    sheet.getRange(c.rowIndex, 1, 1, 23).setValues([[
+    sheet.getRange(c.rowIndex, 1, 1, 25).setValues([[
       c.id, c.codigo, c.establecimiento, c.ubicacion, c.arrendador,
       c.arrendatario, ha, c.cultivoPactado, (qq.toFixed(1) + ' qq/ha'),
       kgPactados, kgPagados, saldoKg, precioTn, totalUSD, pagadoUSD, saldoUSD,
-      factura, c.campana || '2024/2025', pct, estado, c.observaciones || '', fecha, fechaVencimiento
+      factura, c.campana || '2025/2026', pct, estado, c.observaciones || '', 
+      fecha, fechaVencimiento, munMeta.nombre, munMeta.id
     ]]);
 
     contractObj = Object.assign({}, c, {
@@ -302,13 +377,16 @@ function saveContractToSheet(c) {
       saldoUSD: saldoUSD,
       facturaRecibida: c.facturaRecibida,
       modalidad: qq.toFixed(1) + ' qq/ha',
-      fechaVencimiento: fechaVencimiento
+      fechaVencimiento: fechaVencimiento,
+      municipio: munMeta.nombre,
+      municipioKey: munMeta.key,
+      municipioId: munMeta.id
     });
 
     logContractMovement(contractObj, {
       fecha: fecha,
       tipo: 'MODIFICACION',
-      detalle: 'Actualización de condiciones del contrato (Vigencia: ' + (fechaVencimiento || 'No definida') + ')',
+      detalle: 'Actualización en ' + munMeta.nombre + ' (Vigencia: ' + (fechaVencimiento || 'No definida') + ')',
       kg: 0,
       precioChicagoUSD: precioTn,
       tipoCambioARS: 0,
@@ -319,15 +397,16 @@ function saveContractToSheet(c) {
       factura: factura,
       comprobanteUrl: '',
       observaciones: c.observaciones || ''
-    });
+    }, munMeta.key);
   } else {
-    const id = 'CTR-2025-' + new Date().getTime().toString().slice(-4);
+    const id = 'CTR-' + munMeta.key.slice(0, 3).toUpperCase() + '-' + new Date().getTime().toString().slice(-4);
     const codigo = c.codigo || id;
     sheet.appendRow([
       id, codigo, c.establecimiento, c.ubicacion, c.arrendador,
       c.arrendatario, ha, c.cultivoPactado, (qq.toFixed(1) + ' qq/ha'),
       kgPactados, 0, kgPactados, precioTn, totalUSD, 0, totalUSD,
-      factura, c.campana || '2024/2025', '0%', 'PENDIENTE', c.observaciones || '', fecha, fechaVencimiento
+      factura, c.campana || '2025/2026', '0%', 'PENDIENTE', c.observaciones || '', 
+      fecha, fechaVencimiento, munMeta.nombre, munMeta.id
     ]);
 
     contractObj = {
@@ -348,16 +427,19 @@ function saveContractToSheet(c) {
       pagadoUSD: 0,
       saldoUSD: totalUSD,
       facturaRecibida: !!c.facturaRecibida,
-      campana: c.campana || '2024/2025',
+      campana: c.campana || '2025/2026',
       observaciones: c.observaciones || '',
       fechaModificacion: fecha,
-      fechaVencimiento: fechaVencimiento
+      fechaVencimiento: fechaVencimiento,
+      municipio: munMeta.nombre,
+      municipioKey: munMeta.key,
+      municipioId: munMeta.id
     };
 
     logContractMovement(contractObj, {
       fecha: fecha,
       tipo: 'ALTA CONTRATO',
-      detalle: 'Creación y firma inicial del contrato de arrendamiento',
+      detalle: 'Alta en base de datos de ' + munMeta.nombre,
       kg: 0,
       precioChicagoUSD: precioTn,
       tipoCambioARS: 0,
@@ -368,13 +450,17 @@ function saveContractToSheet(c) {
       factura: factura,
       comprobanteUrl: '',
       observaciones: c.observaciones || ''
-    });
+    }, munMeta.key);
   }
-  return getContractsFromSheet();
+  return getAllContractsAcrossMunicipios();
 }
 
-function recordPaymentToSheet(payment) {
-  const sheet = getSheet();
+/**
+ * Registra un pago / liquidación en la hoja de cálculo del contrato correspondiente.
+ */
+function recordPaymentToSheet(payment, optMunicipio) {
+  const munMeta = getMunicipioMeta(payment.municipioKey || payment.municipioId || optMunicipio);
+  const sheet = getSheet(munMeta.key);
   const values = sheet.getDataRange().getValues();
   const fechaVenta = payment.fechaVenta || payment.fecha || getTodayString();
 
@@ -405,13 +491,11 @@ function recordPaymentToSheet(payment) {
       const estado = nuevoTotalPagado >= kgPactados ? 'PAGADO' : (nuevoTotalPagado > 0 ? 'PARCIAL' : 'PENDIENTE');
       const factura = payment.facturaRecibida ? 'SI' : 'NO';
 
-      // Guardar comprobante en Google Drive si se adjuntó archivo
       let comprobanteUrl = '';
       if (payment.comprobanteFile && payment.comprobanteFile.base64) {
         comprobanteUrl = savePaymentVoucher(payment.comprobanteFile, values[i][1] || values[i][0], fechaVenta);
       }
 
-      // Actualizar hoja maestra
       sheet.getRange(i + 1, 11).setValue(nuevoTotalPagado);
       sheet.getRange(i + 1, 12).setValue(nuevoSaldoKg);
       sheet.getRange(i + 1, 15).setValue(nuevoTotalPagadoUSD);
@@ -435,13 +519,16 @@ function recordPaymentToSheet(payment) {
         saldoKg: nuevoSaldoKg,
         saldoUSD: saldoUSD,
         facturaRecibida: payment.facturaRecibida,
-        observaciones: values[i][20] || ''
+        observaciones: values[i][20] || '',
+        municipio: munMeta.nombre,
+        municipioId: munMeta.id,
+        municipioKey: munMeta.key
       };
 
       logContractMovement(contractObj, {
         fecha: fechaVenta,
         tipo: 'LIQUIDACION / PAGO',
-        detalle: 'Fijación precio Rosario BCR y entrega de granos',
+        detalle: 'Fijación Rosario BCR y entrega de granos (' + munMeta.nombre + ')',
         kg: kgNuevos,
         precioRosarioARS: precioRosario,
         precioChicagoUSD: precioChicago,
@@ -453,15 +540,16 @@ function recordPaymentToSheet(payment) {
         factura: factura + (payment.nroFactura ? ' (N° ' + payment.nroFactura + ')' : ''),
         comprobanteUrl: comprobanteUrl,
         observaciones: payment.observaciones || ('Fijación Rosario a $' + precioRosario + ' ARS/Tn - Total $' + pagadoMovARS + ' ARS')
-      });
+      }, munMeta.key);
       break;
     }
   }
-  return getContractsFromSheet();
+  return getAllContractsAcrossMunicipios();
 }
 
-function toggleInvoiceStatus(contractId, fecha) {
-  const sheet = getSheet();
+function toggleInvoiceStatus(contractId, fecha, optMunicipio) {
+  const munMeta = getMunicipioMeta(optMunicipio);
+  const sheet = getSheet(munMeta.key);
   const values = sheet.getDataRange().getValues();
   const dateStr = fecha || getTodayString();
 
@@ -486,13 +574,15 @@ function toggleInvoiceStatus(contractId, fecha) {
         saldoKg: values[i][11],
         saldoUSD: values[i][15],
         facturaRecibida: nuevo === 'SI',
-        observaciones: values[i][20] || ''
+        observaciones: values[i][20] || '',
+        municipio: munMeta.nombre,
+        municipioId: munMeta.id
       };
 
       logContractMovement(contractObj, {
         fecha: dateStr,
         tipo: 'CAMBIO FACTURA',
-        detalle: 'Estado de factura cambiado a: ' + (nuevo === 'SI' ? 'RECIBIDA' : 'PENDIENTE'),
+        detalle: 'Estado de factura: ' + (nuevo === 'SI' ? 'RECIBIDA' : 'PENDIENTE'),
         kg: 0,
         precioChicagoUSD: values[i][12],
         tipoCambioARS: 0,
@@ -503,15 +593,16 @@ function toggleInvoiceStatus(contractId, fecha) {
         factura: nuevo === 'SI' ? 'SI' : 'NO',
         comprobanteUrl: '',
         observaciones: 'Actualización estado de factura'
-      });
+      }, munMeta.key);
       break;
     }
   }
-  return getContractsFromSheet();
+  return getAllContractsAcrossMunicipios();
 }
 
-function deleteContractFromSheet(contractId) {
-  const sheet = getSheet();
+function deleteContractFromSheet(contractId, optMunicipio) {
+  const munMeta = getMunicipioMeta(optMunicipio);
+  const sheet = getSheet(munMeta.key);
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] == contractId) {
@@ -519,7 +610,7 @@ function deleteContractFromSheet(contractId) {
       sheet.deleteRow(i + 1);
       
       try {
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const ss = resolveSpreadsheet(munMeta.key);
         const tab = ss.getSheetByName(sanitizeSheetName(codigo));
         if (tab) {
           tab.setName(sanitizeSheetName('ARCH-' + codigo));
@@ -528,11 +619,11 @@ function deleteContractFromSheet(contractId) {
       break;
     }
   }
-  return getContractsFromSheet();
+  return getAllContractsAcrossMunicipios();
 }
 
-function getContractMovementsFromSheet(codigoOrId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+function getContractMovementsFromSheet(codigoOrId, optMunicipio) {
+  const ss = resolveSpreadsheet(optMunicipio);
   const tab = ss.getSheetByName(sanitizeSheetName(codigoOrId));
   if (!tab) return [];
   const rows = tab.getDataRange().getValues();
@@ -543,7 +634,7 @@ function getContractMovementsFromSheet(codigoOrId) {
     const r = rows[i];
     if (!r[0] && !r[1]) continue;
     movements.push({
-      fecha: r[0] ? Utilities.formatDate(new Date(r[0]), Session.getScriptTimeZone() || 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd') : '',
+      fecha: r[0] ? (r[0] instanceof Date ? Utilities.formatDate(r[0], Session.getScriptTimeZone() || 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd') : String(r[0]).substring(0, 10)) : '',
       tipo: r[1] || '',
       detalle: r[2] || '',
       kgMov: r[3] || 0,
@@ -560,6 +651,57 @@ function getContractMovementsFromSheet(codigoOrId) {
     });
   }
   return movements;
+}
+
+/**
+ * Función para inicializar y poblar automáticamente las 3 hojas de cálculo
+ * de Google Drive con ejemplos característicos de cada municipio.
+ */
+function initializeSampleDataAllMunicipios() {
+  const today = getTodayString();
+  
+  const sampleExaltacion = [
+    ['CTR-EX-001', 'AGRO-EX-01', 'Establecimiento La Negrita', 'Capilla del Señor, Exaltación de la Cruz', 'Agropecuaria Capilla S.A.', 'Administración Rural', 350, 'Soja', '14.0 qq/ha', 490000, 320000, 170000, 298, 146020, 95360, 50660, 'SI', '2024/2025', '65.3%', 'PARCIAL', 'Acopio Cooperativa Capilla del Señor', today, '2026-10-15', 'Exaltación de la Cruz', MUNICIPIOS_DB.exaltacion.id],
+    ['CTR-EX-002', 'AGRO-EX-02', 'Campo Los Cardales', 'Los Cardales, Exaltación de la Cruz', 'Sucesión Cardales', 'Cresud S.A.', 280, 'Maíz', '38.0 qq/ha', 1064000, 1064000, 0, 185, 196840, 196840, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Liquidación total finalizada', today, '2026-08-31', 'Exaltación de la Cruz', MUNICIPIOS_DB.exaltacion.id],
+    ['CTR-EX-003', 'AGRO-EX-03', 'Chacra El Pavón', 'Pavón, Exaltación de la Cruz', 'Fideicomiso Ruta 8 Norte', 'Cerealera del Plata', 190, 'Trigo', '24.0 qq/ha', 456000, 150000, 306000, 218, 99408, 32700, 66708, 'NO', '2025/2026', '32.9%', 'PARCIAL', 'Entrega a granel planta Pavón', today, '2026-11-30', 'Exaltación de la Cruz', MUNICIPIOS_DB.exaltacion.id]
+  ];
+
+  const sampleSalto = [
+    ['CTR-SA-001', 'AGRO-SA-01', 'Estancia La Invencible', 'Inés Indart, Salto', 'Agrícola Ganadera Indart S.A.', 'Los Grobo Agropecuaria', 650, 'Maíz', '42.0 qq/ha', 2730000, 1800000, 930000, 182, 496860, 327600, 169260, 'SI', '2024/2025', '65.9%', 'PARCIAL', 'Planta Silos Salto Central', today, '2026-09-28', 'Salto', MUNICIPIOS_DB.salto.id],
+    ['CTR-SA-002', 'AGRO-SA-02', 'Lote Arroyo Dulce', 'Arroyo Dulce, Salto', 'Familia Rossi Hnos.', 'Administración Rural', 520, 'Soja', '15.0 qq/ha', 780000, 780000, 0, 295, 230100, 230100, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Cancelado 100% campaña gruesa', today, '2026-07-31', 'Salto', MUNICIPIOS_DB.salto.id],
+    ['CTR-SA-003', 'AGRO-SA-03', 'Campo El Rincón de Berdier', 'Berdier, Salto', 'Don Valerio Berdier', 'Cooperativa Agrícola de Salto', 310, 'Trigo', '26.0 qq/ha', 806000, 0, 806000, 215, 173290, 0, 173290, 'NO', '2025/2026', '0.0%', 'PENDIENTE', 'Lote de fina próximo a cosecha', today, '2026-12-15', 'Salto', MUNICIPIOS_DB.salto.id]
+  ];
+
+  const sampleGiles = [
+    ['CTR-GI-001', 'AGRO-GI-01', 'Establecimiento Cucullú', 'Cucullú, San Andrés de Giles', 'Agropecuaria Cucullú S.R.L.', 'Administración Rural', 420, 'Soja', '13.5 qq/ha', 567000, 350000, 217000, 295, 167265, 103250, 64015, 'SI', '2024/2025', '61.7%', 'PARCIAL', 'Entrega en acopio Giles Ruta 7', today, '2026-10-20', 'San Andrés de Giles', MUNICIPIOS_DB.giles.id],
+    ['CTR-GI-002', 'AGRO-GI-02', 'Chacra Villa Ruiz', 'Villa Ruiz, San Andrés de Giles', 'Don Horacio Ruiz', 'Molinos Río de la Plata', 240, 'Girasol', '11.0 qq/ha', 264000, 264000, 0, 315, 83160, 83160, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Liquidado según fijación Rosario', today, '2026-08-15', 'San Andrés de Giles', MUNICIPIOS_DB.giles.id],
+    ['CTR-GI-003', 'AGRO-GI-03', 'Campo Don Segundo', 'Azcuénaga, San Andrés de Giles', 'Fideicomiso Azcuénaga Rural', 'Cerealera del Plata', 480, 'Maíz', '40.0 qq/ha', 1920000, 800000, 1120000, 180, 345600, 144000, 201600, 'NO', '2025/2026', '41.7%', 'PARCIAL', 'Fijación parcial con BCR', today, '2026-11-10', 'San Andrés de Giles', MUNICIPIOS_DB.giles.id]
+  ];
+
+  const datasets = [
+    { key: 'exaltacion', data: sampleExaltacion },
+    { key: 'salto', data: sampleSalto },
+    { key: 'giles', data: sampleGiles }
+  ];
+
+  datasets.forEach(item => {
+    try {
+      const sheet = getSheet(item.key);
+      // Limpiar filas anteriores si existen más de los encabezados
+      const lastRow = sheet.getLastRow();
+      if (lastRow > 1) {
+        sheet.deleteRows(2, lastRow - 1);
+      }
+      item.data.forEach(row => {
+        sheet.appendRow(row);
+      });
+      Logger.log('Inicializados ejemplos en ' + item.key);
+    } catch (e) {
+      Logger.log('Error inicializando ' + item.key + ': ' + e.message);
+    }
+  });
+
+  return getAllContractsAcrossMunicipios();
 }
 
 function getMarketRates() {
