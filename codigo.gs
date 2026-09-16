@@ -686,6 +686,7 @@ function initializeSampleDataAllMunicipios() {
 
   datasets.forEach(item => {
     try {
+      const ss = resolveSpreadsheet(item.key);
       const sheet = getSheet(item.key);
       // Limpiar filas anteriores si existen más de los encabezados
       const lastRow = sheet.getLastRow();
@@ -694,8 +695,82 @@ function initializeSampleDataAllMunicipios() {
       }
       item.data.forEach(row => {
         sheet.appendRow(row);
+
+        // Crear la solapa individual de seguimiento para este contrato
+        try {
+          const cObj = {
+            id: row[0],
+            codigo: row[1],
+            establecimiento: row[2],
+            ubicacion: row[3],
+            arrendador: row[4],
+            arrendatario: row[5],
+            superficieHa: row[6],
+            cultivoPactado: row[7],
+            modalidad: row[8],
+            kgPactados: row[9],
+            kgPagados: row[10],
+            saldoKg: row[11],
+            precioTn: row[12],
+            totalUSD: row[13],
+            pagadoUSD: row[14],
+            saldoUSD: row[15],
+            facturaRecibida: row[16] === 'SI',
+            campana: row[17],
+            porcentajeCumplimiento: row[18],
+            estado: row[19],
+            observaciones: row[20],
+            fechaModificacion: row[21],
+            fechaVencimiento: row[22],
+            municipio: row[23],
+            municipioId: row[24],
+            municipioKey: item.key
+          };
+
+          const tab = getOrCreateContractTab(cObj, ss);
+          // Si es nueva y solo tiene encabezados (<= 5 filas), poblar movimientos de ejemplo
+          if (tab.getLastRow() <= 5) {
+            tab.appendRow([
+              cObj.fechaModificacion || today,
+              'ALTA CONTRATO',
+              'Alta de contrato en ' + cObj.municipio + ' (' + cObj.establecimiento + ')',
+              0,
+              cObj.kgPactados,
+              cObj.precioTn,
+              1535,
+              0,
+              0,
+              '-',
+              '-',
+              cObj.facturaRecibida ? 'SI' : 'NO',
+              cObj.sheetUrl || '',
+              cObj.observaciones || 'Firma inicial de contrato'
+            ]);
+
+            if (cObj.kgPagados > 0) {
+              tab.appendRow([
+                cObj.fechaModificacion || today,
+                'LIQUIDACION / PAGO',
+                'Entrega y fijación parcial en acopio local',
+                cObj.kgPagados,
+                cObj.saldoKg,
+                cObj.precioTn,
+                1535,
+                cObj.pagadoUSD,
+                Math.round(cObj.pagadoUSD * 1535),
+                'Transferencia',
+                'TRF-' + cObj.codigo,
+                cObj.facturaRecibida ? 'SI' : 'NO',
+                '',
+                'Pago computado según cotización pactada'
+              ]);
+            }
+          }
+        } catch (tabErr) {
+          Logger.log('Error creando solapa individual ' + row[1] + ': ' + tabErr.message);
+        }
       });
-      Logger.log('Inicializados ejemplos en ' + item.key);
+      Logger.log('Inicializados ejemplos y solapas en ' + item.key);
     } catch (e) {
       Logger.log('Error inicializando ' + item.key + ': ' + e.message);
     }

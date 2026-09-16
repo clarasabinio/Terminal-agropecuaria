@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Exporta las 3 bases de datos por Municipio a archivos CSV listos para
+importar o abrir directamente en Google Sheets y Excel.
+"""
+
+import os
+import csv
+from datetime import date
+
+TODAY = date.today().isoformat()
+
+HEADERS = [
+    'ID', 'Codigo', 'Establecimiento', 'Ubicacion', 'Arrendador', 
+    'Arrendatario', 'Superficie_Ha', 'Cultivo', 'Modalidad', 
+    'Kg_Pactados', 'Kg_Pagados', 'Saldo_Kg', 'Precio_USD_Tn', 
+    'Total_USD_Pagar', 'Total_USD_Pagado', 'Saldo_USD', 
+    'Factura_Recibida', 'Campana', 'Porcentaje_Pagado', 'Estado', 'Observaciones', 
+    'Fecha_Modificacion', 'Fecha_Vencimiento', 'Municipio', 'Municipio_ID'
+]
+
+EXALTACION_ROWS = [
+    ['CTR-EX-001', 'AGRO-EX-01', 'Establecimiento La Negrita', 'Capilla del Señor, Exaltación de la Cruz', 'Agropecuaria Capilla S.A.', 'Administración Rural', 350, 'Soja', '14.0 qq/ha', 490000, 320000, 170000, 298, 146020, 95360, 50660, 'SI', '2024/2025', '65.3%', 'PARCIAL', 'Acopio Cooperativa Capilla del Señor', TODAY, '2026-10-15', 'Exaltación de la Cruz', '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ'],
+    ['CTR-EX-002', 'AGRO-EX-02', 'Campo Los Cardales', 'Los Cardales, Exaltación de la Cruz', 'Sucesión Cardales', 'Cresud S.A.', 280, 'Maíz', '38.0 qq/ha', 1064000, 1064000, 0, 185, 196840, 196840, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Liquidación total finalizada', TODAY, '2026-08-31', 'Exaltación de la Cruz', '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ'],
+    ['CTR-EX-003', 'AGRO-EX-03', 'Chacra El Pavón', 'Pavón, Exaltación de la Cruz', 'Fideicomiso Ruta 8 Norte', 'Cerealera del Plata', 190, 'Trigo', '24.0 qq/ha', 456000, 150000, 306000, 218, 99408, 32700, 66708, 'NO', '2025/2026', '32.9%', 'PARCIAL', 'Entrega a granel planta Pavón', TODAY, '2026-11-30', 'Exaltación de la Cruz', '14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ']
+]
+
+SALTO_ROWS = [
+    ['CTR-SA-001', 'AGRO-SA-01', 'Estancia La Invencible', 'Inés Indart, Salto', 'Agrícola Ganadera Indart S.A.', 'Los Grobo Agropecuaria', 650, 'Maíz', '42.0 qq/ha', 2730000, 1800000, 930000, 182, 496860, 327600, 169260, 'SI', '2024/2025', '65.9%', 'PARCIAL', 'Planta Silos Salto Central', TODAY, '2026-09-28', 'Salto', '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc'],
+    ['CTR-SA-002', 'AGRO-SA-02', 'Lote Arroyo Dulce', 'Arroyo Dulce, Salto', 'Familia Rossi Hnos.', 'Administración Rural', 520, 'Soja', '15.0 qq/ha', 780000, 780000, 0, 295, 230100, 230100, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Cancelado 100% campaña gruesa', TODAY, '2026-07-31', 'Salto', '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc'],
+    ['CTR-SA-003', 'AGRO-SA-03', 'Campo El Rincón de Berdier', 'Berdier, Salto', 'Don Valerio Berdier', 'Cooperativa Agrícola de Salto', 310, 'Trigo', '26.0 qq/ha', 806000, 0, 806000, 215, 173290, 0, 173290, 'NO', '2025/2026', '0.0%', 'PENDIENTE', 'Lote de fina próximo a cosecha', TODAY, '2026-12-15', 'Salto', '1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc']
+]
+
+GILES_ROWS = [
+    ['CTR-GI-001', 'AGRO-GI-01', 'Establecimiento Cucullú', 'Cucullú, San Andrés de Giles', 'Agropecuaria Cucullú S.R.L.', 'Administración Rural', 420, 'Soja', '13.5 qq/ha', 567000, 350000, 217000, 295, 167265, 103250, 64015, 'SI', '2024/2025', '61.7%', 'PARCIAL', 'Entrega en acopio Giles Ruta 7', TODAY, '2026-10-20', 'San Andrés de Giles', '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic'],
+    ['CTR-GI-002', 'AGRO-GI-02', 'Chacra Villa Ruiz', 'Villa Ruiz, San Andrés de Giles', 'Don Horacio Ruiz', 'Molinos Río de la Plata', 240, 'Girasol', '11.0 qq/ha', 264000, 264000, 0, 315, 83160, 83160, 0, 'SI', '2024/2025', '100.0%', 'PAGADO', 'Liquidado según fijación Rosario', TODAY, '2026-08-15', 'San Andrés de Giles', '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic'],
+    ['CTR-GI-003', 'AGRO-GI-03', 'Campo Don Segundo', 'Azcuénaga, San Andrés de Giles', 'Fideicomiso Azcuénaga Rural', 'Cerealera del Plata', 480, 'Maíz', '40.0 qq/ha', 1920000, 800000, 1120000, 180, 345600, 144000, 201600, 'NO', '2025/2026', '41.7%', 'PARCIAL', 'Fijación parcial con BCR', TODAY, '2026-11-10', 'San Andrés de Giles', '1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic']
+]
+
+OUT_DIR = os.path.join(os.path.dirname(__file__), 'Hojas_Drive_CSV')
+os.makedirs(OUT_DIR, exist_ok=True)
+
+def write_csv(filename, rows):
+    path = os.path.join(OUT_DIR, filename)
+    with open(path, 'w', encoding='utf-8-sig', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(HEADERS)
+        writer.writerows(rows)
+    print(f"✔ Generado: {path} ({len(rows)} contratos)")
+
+if __name__ == '__main__':
+    write_csv('1_Exaltacion_de_la_Cruz.csv', EXALTACION_ROWS)
+    write_csv('2_Salto.csv', SALTO_ROWS)
+    write_csv('3_San_Andres_de_Giles.csv', GILES_ROWS)
+    write_csv('CONSOLIDADO_TODAS_LAS_BASES.csv', EXALTACION_ROWS + SALTO_ROWS + GILES_ROWS)
+    print("\nTodos los archivos CSV se han generado con codificación UTF-8 con BOM para Google Sheets y Excel.")
