@@ -547,6 +547,168 @@ function recordPaymentToSheet(payment, optMunicipio) {
   return getAllContractsAcrossMunicipios();
 }
 
+/**
+ * Recalcula los acumulados del contrato (Kg Pagados, Saldo, Totales) en la hoja Master
+ * a partir de los movimientos reales de su solapa individual.
+ */
+function recalculateContractFromTab(contractId, optMunicipio) {
+  const munMeta = getMunicipioMeta(optMunicipio);
+  const ss = resolveSpreadsheet(munMeta.key);
+  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheets()[0];
+  const masterValues = masterSheet.getDataRange().getValues();
+
+  for (let i = 1; i < masterValues.length; i++) {
+    if (masterValues[i][0] == contractId) {
+      const codigo = masterValues[i][1] || masterValues[i][0];
+      const kgPactados = parseInt(masterValues[i][9], 10) || 0;
+      const precioTn = parseFloat(masterValues[i][12]) || 0;
+      const precioKgUSD = precioTn / 1000;
+
+      const tab = ss.getSheetByName(sanitizeSheetName(codigo));
+      let totalKgPagados = 0;
+      let totalUsdPagados = 0;
+      let lastFactura = masterValues[i][16] || 'NO';
+
+      if (tab) {
+        const tabRows = tab.getDataRange().getValues();
+        // Las filas de movimientos comienzan en la fila 6 (índice 5)
+        for (let r = 5; r < tabRows.length; r++) {
+          const rowType = String(tabRows[r][1] || '').toUpperCase();
+          if (rowType.indexOf('LIQUIDACION') !== -1 || rowType.indexOf('ENTREGA') !== -1 || rowType.indexOf('PAGO') !== -1) {
+            const kgMov = parseInt(tabRows[r][3], 10) || 0;
+            const usdMov = parseFloat(tabRows[r][7]) || 0;
+            totalKgPagados += kgMov;
+            totalUsdPagados += usdMov;
+            if (String(tabRows[r][11] || '').toUpperCase().indexOf('SI') !== -1) {
+              lastFactura = 'SI';
+            }
+            const saldoAtRow = Math.max(0, kgPactados - totalKgPagados);
+            tab.getRange(r + 1, 5).setValue(saldoAtRow);
+          }
+        }
+      }
+
+      const nuevoSaldoKg = Math.max(0, kgPactados - totalKgPagados);
+      const nuevoSaldoUSD = nuevoSaldoKg * precioKgUSD;
+      const pct = kgPactados > 0 ? ((totalKgPagados / kgPactados) * 100).toFixed(1) + '%' : '0%';
+      const estado = totalKgPagados >= kgPactados ? 'PAGADO' : (totalKgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+
+      masterSheet.getRange(i + 1, 11).setValue(totalKgPagados);
+      masterSheet.getRange(i + 1, 12).setValue(nuevoSaldoKg);
+      masterSheet.getRange(i + 1, 15).setValue(Math.round(totalUsdPagados));
+      masterSheet.getRange(i + 1, 16).setValue(Math.round(nuevoSaldoUSD));
+      masterSheet.getRange(i + 1, 17).setValue(lastFactura);
+      masterSheet.getRange(i + 1, 19).setValue(pct);
+      masterSheet.getRange(i + 1, 20).setValue(estado);
+      masterSheet.getRange(i + 1, 22).setValue(getTodayString());
+      break;
+    }
+  }
+  return getAllContractsAcrossMunicipios();
+}
+
+/**
+ * Modifica una entrega existente en la solapa del contrato y recalcula los saldos.
+ */
+function updatePaymentInSheet(paymentUpdate, optMunicipio) {
+  const munMeta = getMunicipioMeta(paymentUpdate.municipioKey || paymentUpdate.municipioId || optMunicipio);
+  const ss = resolveSpreadsheet(munMeta.key);
+  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheets()[0];
+  const masterValues = masterSheet.getDataRange().getValues();
+
+  let contractObj = null;
+  for (let i = 1; i < masterValues.length; i++) {
+    if (masterValues[i][0] == paymentUpdate.contractId) {
+      contractObj = {
+        id: masterValues[i][0],
+        codigo: masterValues[i][1],
+        establecimiento: masterValues[i][2],
+        municipioKey: munMeta.key
+      };
+      break;
+    }
+  }
+
+  if (!contractObj) {
+    throw new Error('Contrato no encontrado: ' + paymentUpdate.contractId);
+  }
+
+  const tab = ss.getSheetByName(sanitizeSheetName(contractObj.codigo || contractObj.id));
+  if (!tab) {
+    throw new Error('Solapa de movimientos no encontrada para ' + contractObj.establecimiento);
+  }
+
+  const tabRows = tab.getDataRange().getValues();
+  const movIdx = parseInt(paymentUpdate.movementIndex, 10);
+  const targetRow = movIdx + 6;
+
+  if (targetRow > tabRows.length) {
+    throw new Error('Movimiento no encontrado en la fila especificada.');
+  }
+
+  const fechaVenta = paymentUpdate.fechaVenta || paymentUpdate.fecha || getTodayString();
+  const kg = parseInt(paymentUpdate.kg, 10) || 0;
+  const precioRosario = parseFloat(paymentUpdate.precioRosarioARS) || 0;
+  const tipoCambio = parseFloat(paymentUpdate.tipoCambioARS) || 1535;
+  const totalARS = precioRosario > 0 ? Math.round((kg / 1000) * precioRosario) : (parseFloat(paymentUpdate.totalARS) || 0);
+  const totalUSD = tipoCambio > 0 ? Math.round(totalARS / tipoCambio) : Math.round(kg * (precioRosario / 1535 / 1000));
+  const factura = paymentUpdate.facturaRecibida ? 'SI' : 'NO';
+
+  tab.getRange(targetRow, 1).setValue(fechaVenta);
+  tab.getRange(targetRow, 3).setValue('Fijación Rosario BCR y entrega (' + munMeta.nombre + ') [MODIFICADO]');
+  tab.getRange(targetRow, 4).setValue(kg);
+  tab.getRange(targetRow, 6).setValue(precioRosario);
+  tab.getRange(targetRow, 7).setValue(tipoCambio);
+  tab.getRange(targetRow, 8).setValue(totalUSD);
+  tab.getRange(targetRow, 9).setValue(totalARS);
+  tab.getRange(targetRow, 10).setValue(paymentUpdate.medioPago || 'Transferencia');
+  tab.getRange(targetRow, 11).setValue(paymentUpdate.nroReferencia || paymentUpdate.nroFactura || '-');
+  tab.getRange(targetRow, 12).setValue(factura + (paymentUpdate.nroFactura ? ' (N° ' + paymentUpdate.nroFactura + ')' : ''));
+  tab.getRange(targetRow, 14).setValue(paymentUpdate.observaciones || ('Fijación Rosario a $' + precioRosario + ' ARS/Tn [Modificado]'));
+
+  return recalculateContractFromTab(paymentUpdate.contractId, munMeta.key);
+}
+
+/**
+ * Elimina una entrega de la solapa del contrato y recalcula los saldos pendientes.
+ */
+function deletePaymentFromSheet(contractId, movementIndex, optMunicipio) {
+  const munMeta = getMunicipioMeta(optMunicipio);
+  const ss = resolveSpreadsheet(munMeta.key);
+  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheets()[0];
+  const masterValues = masterSheet.getDataRange().getValues();
+
+  let contractObj = null;
+  for (let i = 1; i < masterValues.length; i++) {
+    if (masterValues[i][0] == contractId) {
+      contractObj = {
+        id: masterValues[i][0],
+        codigo: masterValues[i][1],
+        establecimiento: masterValues[i][2],
+        municipioKey: munMeta.key
+      };
+      break;
+    }
+  }
+
+  if (!contractObj) {
+    throw new Error('Contrato no encontrado: ' + contractId);
+  }
+
+  const tab = ss.getSheetByName(sanitizeSheetName(contractObj.codigo || contractObj.id));
+  if (!tab) {
+    throw new Error('Solapa no encontrada para ' + contractObj.establecimiento);
+  }
+
+  const movIdx = parseInt(movementIndex, 10);
+  const targetRow = movIdx + 6;
+  if (targetRow <= tab.getLastRow()) {
+    tab.deleteRow(targetRow);
+  }
+
+  return recalculateContractFromTab(contractId, munMeta.key);
+}
+
 function toggleInvoiceStatus(contractId, fecha, optMunicipio) {
   const munMeta = getMunicipioMeta(optMunicipio);
   const sheet = getSheet(munMeta.key);

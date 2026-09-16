@@ -254,6 +254,51 @@ Para registrar una entrega de granos y su liquidación de pago en un contrato:
      kilos entregados, monto liquidado y nuevo saldo, con su correspondiente
      botón [ ✓ Aceptar ] para volver a la terminal.
 
+3.5. MODIFICAR O ELIMINAR UNA ENTREGA DE GRANOS (POR EQUIVOCACIÓN O AJUSTE)
+Si se ingresó una cantidad errónea de kilos, una fecha incorrecta, un precio de fijación
+equivocado o se duplicó una entrega, el administrador puede corregirla o borrarla:
+
+1. DÓNDE ENCONTRAR LAS ENTREGAS:
+   - En la tarjeta del campo, haga clic en [🔍 Ver Ficha Técnica] y desplácese
+     hasta la sección "📜 Historial de Movimientos de la Solapa".
+   - O bien, en la pestaña "📊 Planilla de Cálculo", seleccione en la barra de solapas
+     la pestaña del campo deseado.
+
+2. COLUMNA DE ACCIONES (SOLO VISIBLE EN MODO ADMINISTRADOR):
+   En cada fila correspondiente a una entrega de cereal ("ENTREGA DE GRANOS" o "LIQUIDACION / PAGO"),
+   aparecerán dos botones en la columna "Acciones":
+   * [ ✏️ Modificar ]: Abre la ventana de edición.
+   * [ 🗑️ ]: Elimina directamente la entrega tras solicitar confirmación.
+
+3. MODIFICAR UNA ENTREGA [ ✏️ Modificar ]:
+   - Al hacer clic, se abre la ventana emergente "✏️ Modificar Entrega de Cereal".
+   - Muestra la capacidad máxima disponible del campo (saldo actual + kilos de esta entrega).
+   - Permite corregir:
+     * Fecha de fijación / entrega.
+     * Kilos netos entregados (valida que no superen el total pactado del contrato).
+     * Cotización Rosario BCR ($ ARS/Tn) y Dólar BNA Oficial.
+     * Recalcula en tiempo real el nuevo Total ARS y Equivalente en USD.
+     * Medio de pago, N° de cheque/transferencia y factura de alquiler.
+     * Observaciones.
+   - Haga clic en [ ✓ Aceptar y Guardar Cambios ].
+   - El sistema actualiza la fila en la solapa de Google Sheets, recalcula
+     automáticamente los Kg pagados, el saldo pendiente y los montos totales,
+     refrescando la pantalla de inmediato.
+
+4. ELIMINAR UNA ENTREGA [ 🗑️ Eliminar ]:
+   - Puede presionarse directamente el botón [ 🗑️ ] en la tabla o el botón
+     [ 🗑️ Eliminar Entrega ] dentro de la ventana de modificación.
+   - El sistema solicitará confirmación explicando que los kilos se reintegrarán
+     al saldo pendiente del contrato.
+   - Al confirmar:
+     * Se elimina la fila de la entrega en la solapa de Google Sheets.
+     * Se recalculan las sumas acumuladas y los saldos en la hoja máster.
+     * El saldo disponible del campo se restablece instantáneamente.
+
+5. SEGURIDAD Y MODO INVITADO:
+   En Modo Invitado, la columna de acciones no muestra botones editables y
+   cualquier intento de modificación o eliminación está bloqueado a nivel de sistema.
+
 
 ================================================================================
 4. BASES DE DATOS MUNICIPALES (GOOGLE SHEETS FEDERADAS)

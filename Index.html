@@ -2313,6 +2313,118 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="modal-edit-delivery">
+    <div class="modal-container modal-md" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 id="modal-edit-delivery-title">✏️ Modificar Entrega de Cereal</h2>
+          <p id="modal-edit-delivery-subtitle" style="font-size:0.8rem; color:var(--text-secondary);">Ajuste de kilos entregados, precios de fijación o forma de pago</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-edit-delivery')">✕</button>
+      </div>
+      <form id="edit-delivery-form" onsubmit="return false;">
+        <input type="hidden" id="edit-delivery-contract-id">
+        <input type="hidden" id="edit-delivery-index">
+        <div class="modal-body" style="display:flex; flex-direction:column; gap:1rem;">
+          
+          <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:0.8rem; font-size:0.85rem;">
+            <div><strong>Establecimiento:</strong> <span id="edit-delivery-contract-name" style="font-weight:700; color:var(--corp-navy);">-</span></div>
+            <div><strong>Municipio / Base:</strong> <span id="edit-delivery-contract-muni">-</span></div>
+            <div style="margin-top:0.35rem; color:#b45309; font-size:0.8rem;" id="edit-delivery-contract-limit">Saldo disponible: 0 Kg</div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Fecha de Venta / Fijación *</label>
+              <input type="date" id="edit-delivery-fecha" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Kilos Netos de la Entrega *</label>
+              <input type="number" id="edit-delivery-kg" class="form-input" required min="1">
+            </div>
+          </div>
+
+          <div style="background:#fefce8; border:1px solid #fef08a; border-radius:8px; padding:0.9rem;">
+            <div style="font-size:0.82rem; font-weight:700; color:#854d0e; margin-bottom:0.6rem;">
+              🌾 Cotización de Fijación (Rosario BCR y Dólar BNA)
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Precio Rosario ($ ARS / Tn) *</label>
+                <input type="number" step="500" id="edit-delivery-precio-rosario" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dólar BNA Oficial *</label>
+                <input type="number" step="0.5" id="edit-delivery-tipo-cambio" class="form-input" required>
+              </div>
+            </div>
+
+            <div style="margin-top:0.75rem; background:white; padding:0.75rem; border-radius:6px; border:1px solid #fef08a; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; font-size:0.82rem;">
+              <div>
+                <span style="color:#64748b;">Equivalente en Dólares:</span><br>
+                <strong id="edit-delivery-calc-usd" style="color:var(--corp-navy); font-size:0.95rem;">$0 USD</strong>
+              </div>
+              <div>
+                <span style="color:#64748b;">TOTAL A PAGAR EN PESOS:</span><br>
+                <strong id="edit-delivery-calc-ars" style="color:#15803d; font-size:1.1rem; font-weight:800;">$0 ARS</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.9rem;">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--corp-navy); margin-bottom:0.6rem;">
+              🧾 Factura y Forma de Pago
+            </div>
+            <div class="form-grid" style="margin-bottom:0.75rem;">
+              <div class="form-group">
+                <label class="form-label">Forma de Pago *</label>
+                <select id="edit-delivery-medio-pago" class="form-select" required>
+                  <option value="Transferencia">Transferencia Bancaria</option>
+                  <option value="Echeq">Echeq (Cheque Electrónico)</option>
+                  <option value="Cheque Físico">Cheque Físico</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">N° de Ref. / Cheque</label>
+                <input type="text" id="edit-delivery-referencia" class="form-input">
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; padding-top:0.5rem; border-top:1px dashed #cbd5e1;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <input type="checkbox" id="edit-delivery-factura-recibida" style="width:18px; height:18px; cursor:pointer;">
+                <label for="edit-delivery-factura-recibida" style="font-size:0.85rem; font-weight:600; cursor:pointer;">
+                  ¿Factura de alquiler recibida?
+                </label>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.4rem;">
+                <label class="form-label" style="margin:0;">N° Factura:</label>
+                <input type="text" id="edit-delivery-nro-factura" class="form-input" style="width:140px; padding:0.35rem 0.6rem;" placeholder="0001-00012345">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Observaciones</label>
+            <input type="text" id="edit-delivery-observaciones" class="form-input" placeholder="Ej: Fijación acordada, entrega parcial">
+          </div>
+
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-edit-delivery')">Cancelar</button>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button type="button" class="btn-card-delete" id="btn-edit-delivery-delete" style="background:#fee2e2; border-color:#fca5a5; color:#b91c1c; font-weight:700; padding:0.55rem 1rem; font-size:0.85rem; border-radius:6px; cursor:pointer;" title="Eliminar definitivamente esta entrega">
+              🗑️ Eliminar Entrega
+            </button>
+            <button type="submit" class="btn-primary" id="btn-edit-delivery-save" style="background:#16a34a; border-color:#15803d; font-weight:700; padding:0.6rem 1.6rem; font-size:0.95rem;">
+              ✓ Aceptar y Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="modal-login">
     <div class="modal-container modal-sm">
       <div class="modal-header">
@@ -3066,6 +3178,80 @@
                   persistData();
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 100);
+              },
+              updatePaymentInSheet: function (paymentUpdate) {
+                var cb = this._success;
+                setTimeout(function () {
+                  var target = localSampleContracts.find(function (item) { return item.id == paymentUpdate.contractId; });
+                  if (target && localMovements[target.id] && localMovements[target.id][paymentUpdate.movementIndex]) {
+                    var m = localMovements[target.id][paymentUpdate.movementIndex];
+                    var nuevosKg = parseInt(paymentUpdate.kg, 10) || 0;
+                    var precioRosario = parseFloat(paymentUpdate.precioRosarioARS) || 0;
+                    var tipoCambio = parseFloat(paymentUpdate.tipoCambioARS) || 1535;
+                    var precioChicago = parseFloat(paymentUpdate.precioChicagoUSD) || (tipoCambio > 0 && precioRosario > 0 ? (precioRosario / tipoCambio) : target.precioTn);
+                    var arsPagadoMov = precioRosario > 0 ? Math.round((nuevosKg / 1000) * precioRosario) : (parseFloat(paymentUpdate.totalARS) || 0);
+                    var usdPagadoMov = tipoCambio > 0 ? Math.round(arsPagadoMov / tipoCambio) : Math.round(nuevosKg * (precioChicago / 1000));
+
+                    m.fecha = paymentUpdate.fechaVenta || paymentUpdate.fecha || m.fecha;
+                    m.kgMov = nuevosKg;
+                    m.precioChicagoUSD = precioChicago;
+                    m.precioRosarioARS = precioRosario;
+                    m.tipoCambioARS = tipoCambio;
+                    m.arsMov = arsPagadoMov;
+                    m.usdMov = usdPagadoMov;
+                    m.medioPago = paymentUpdate.medioPago || m.medioPago;
+                    m.nroRef = paymentUpdate.nroReferencia || paymentUpdate.nroFactura || m.nroRef;
+                    m.factura = (paymentUpdate.facturaRecibida ? 'SI' : 'NO') + (paymentUpdate.nroFactura ? ' (N° ' + paymentUpdate.nroFactura + ')' : '');
+                    m.observaciones = paymentUpdate.observaciones || m.observaciones;
+
+                    var totalPagadoKg = 0;
+                    var totalPagadoUSD = 0;
+                    localMovements[target.id].forEach(function (mov) {
+                      if (mov.tipo === 'LIQUIDACION / PAGO' || mov.tipo === 'ENTREGA DE GRANOS') {
+                        totalPagadoKg += (mov.kgMov || 0);
+                        totalPagadoUSD += (mov.usdMov || 0);
+                        mov.saldoKg = Math.max(0, target.kgPactados - totalPagadoKg);
+                      }
+                    });
+                    target.kgPagados = totalPagadoKg;
+                    target.saldoKg = Math.max(0, target.kgPactados - totalPagadoKg);
+                    target.pagadoUSD = Math.round(totalPagadoUSD);
+                    var precioKgUSD = target.precioTn / 1000;
+                    target.saldoUSD = target.saldoKg * precioKgUSD;
+                    target.porcentajeCumplimiento = target.kgPactados > 0 ? parseFloat(((target.kgPagados / target.kgPactados) * 100).toFixed(1)) : 0;
+                    target.estado = target.kgPagados >= target.kgPactados ? 'PAGADO' : (target.kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+                    target.fechaModificacion = m.fecha;
+                  }
+                  persistData();
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 120);
+              },
+              deletePaymentFromSheet: function (contractId, movementIndex) {
+                var cb = this._success;
+                setTimeout(function () {
+                  var target = localSampleContracts.find(function (item) { return item.id == contractId; });
+                  if (target && localMovements[target.id]) {
+                    localMovements[target.id].splice(movementIndex, 1);
+                    var totalPagadoKg = 0;
+                    var totalPagadoUSD = 0;
+                    localMovements[target.id].forEach(function (mov) {
+                      if (mov.tipo === 'LIQUIDACION / PAGO' || mov.tipo === 'ENTREGA DE GRANOS') {
+                        totalPagadoKg += (mov.kgMov || 0);
+                        totalPagadoUSD += (mov.usdMov || 0);
+                        mov.saldoKg = Math.max(0, target.kgPactados - totalPagadoKg);
+                      }
+                    });
+                    target.kgPagados = totalPagadoKg;
+                    target.saldoKg = Math.max(0, target.kgPactados - totalPagadoKg);
+                    target.pagadoUSD = Math.round(totalPagadoUSD);
+                    var precioKgUSD = target.precioTn / 1000;
+                    target.saldoUSD = target.saldoKg * precioKgUSD;
+                    target.porcentajeCumplimiento = target.kgPactados > 0 ? parseFloat(((target.kgPagados / target.kgPactados) * 100).toFixed(1)) : 0;
+                    target.estado = target.kgPagados >= target.kgPactados ? 'PAGADO' : (target.kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+                  }
+                  persistData();
+                  if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
+                }, 120);
               },
               getMarketRates: function () {
                 var cb = this._success;
@@ -3968,16 +4154,27 @@
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function (movements) {
-              renderMovementsTable('contract-tab-movements-container', movements);
+              renderMovementsTable('contract-tab-movements-container', movements, c.id);
             })
             .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey);
         }
       }
     }
 
-    function renderMovementsTable(containerId, movements) {
+    window.lastLoadedMovementsByContract = window.lastLoadedMovementsByContract || {};
+
+    function renderMovementsTable(containerId, movements, contractId) {
       var cont = document.getElementById(containerId);
       if (!cont) return;
+
+      if (contractId) {
+        window.lastLoadedMovementsByContract[contractId] = movements || [];
+        var targetC = (state.contracts || []).find(function (it) { return it.id == contractId || it.codigo == contractId; });
+        if (targetC) {
+          window.lastLoadedMovementsByContract[targetC.id] = movements || [];
+          if (targetC.codigo) window.lastLoadedMovementsByContract[targetC.codigo] = movements || [];
+        }
+      }
 
       if (!movements || movements.length === 0) {
         cont.innerHTML = '<div style="background:white; padding:2rem; text-align:center; border-radius:8px; color:var(--text-muted); border:1px solid #e2e8f0;">No hay movimientos registrados en esta solapa todavía.</div>';
@@ -3985,7 +4182,7 @@
       }
 
       var html = '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid #e2e8f0; border-radius:8px;">';
-      html += '<table class="movements-table" style="margin-top:0; min-width:1250px;">';
+      html += '<table class="movements-table" style="margin-top:0; min-width:1320px;">';
       html += '<thead><tr>' +
         '<th>Fecha Venta/Fijación</th>' +
         '<th>Tipo Movimiento</th>' +
@@ -4001,8 +4198,9 @@
         '<th>Factura Alquiler</th>' +
         '<th>Comprobante</th>' +
         '<th>Observaciones</th>' +
+        '<th style="text-align:center; min-width:140px;">Acciones</th>' +
         '</tr></thead><tbody>';
-      movements.forEach(function (m) {
+      movements.forEach(function (m, idx) {
         var badgeClass = 'badge-mov-alta';
         if (m.tipo === 'ENTREGA DE GRANOS' || m.tipo === 'LIQUIDACION / PAGO') badgeClass = 'badge-mov-pago';
         else if (m.tipo === 'MODIFICACION') badgeClass = 'badge-mov-mod';
@@ -4014,6 +4212,14 @@
         }
 
         var medioPagoHtml = m.medioPago && m.medioPago !== '-' ? '<span class="badge-medio-pago">' + escapeHtml(m.medioPago) + '</span>' : '<span style="color:#94a3b8;">-</span>';
+
+        var accionesHtml = '<span style="color:#94a3b8; font-size:0.8rem;">-</span>';
+        if ((m.tipo === 'ENTREGA DE GRANOS' || m.tipo === 'LIQUIDACION / PAGO') && contractId) {
+          accionesHtml = '<div style="display:inline-flex; gap:0.35rem; align-items:center; justify-content:center;">' +
+            '<button type="button" class="btn-card-edit" onclick="openEditDeliveryModal(\'' + escapeHtml(contractId) + '\', ' + idx + ')" style="padding:0.3rem 0.55rem; font-size:0.75rem; border-radius:5px; background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; font-weight:600; cursor:pointer;" title="Modificar esta entrega">✏️ Modificar</button>' +
+            '<button type="button" class="btn-card-delete" onclick="confirmDeleteDelivery(\'' + escapeHtml(contractId) + '\', ' + idx + ')" style="padding:0.3rem 0.5rem; font-size:0.75rem; border-radius:5px; background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; font-weight:700; cursor:pointer;" title="Eliminar entrega">🗑️</button>' +
+            '</div>';
+        }
 
         html += '<tr>';
         html += '<td><strong>' + (m.fecha || '-') + '</strong></td>';
@@ -4030,6 +4236,7 @@
         html += '<td>' + (m.factura && m.factura.indexOf('SI') !== -1 ? '✅ ' + escapeHtml(m.factura) : '⏳ ' + escapeHtml(m.factura || 'NO')) + '</td>';
         html += '<td>' + comprobanteHtml + '</td>';
         html += '<td><small>' + escapeHtml(m.observaciones || '') + '</small></td>';
+        html += '<td style="text-align:center;">' + accionesHtml + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -4079,7 +4286,7 @@
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(function (movements) {
-            renderMovementsTable('detail-modal-movements-container', movements);
+            renderMovementsTable('detail-modal-movements-container', movements, c.id);
           })
           .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey);
       }
@@ -4887,6 +5094,329 @@
             alert('Error al guardar la entrega: ' + (err.message || err));
           })
           .recordPaymentToSheet(paymentData);
+      });
+
+      /* =========================================================================
+         GESTIÓN DE ENTREGAS: MODIFICAR Y ELIMINAR (SOLO ADMINISTRADOR)
+         ========================================================================= */
+      window.openEditDeliveryModal = function (contractId, movementIdx) {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para modificar entregas');
+          return;
+        }
+        var c = (state.contracts || []).find(function (it) { return it.id == contractId || it.codigo == contractId; });
+        if (!c) {
+          showToast('⚠️ No se encontró el contrato especificado');
+          return;
+        }
+
+        var movements = (window.lastLoadedMovementsByContract && (window.lastLoadedMovementsByContract[contractId] || (c.codigo && window.lastLoadedMovementsByContract[c.codigo]) || (c.id && window.lastLoadedMovementsByContract[c.id]))) || [];
+        var m = movements[movementIdx];
+        if (!m) {
+          showToast('⚠️ No se encontró la entrega seleccionada');
+          return;
+        }
+
+        var oldKg = parseInt(m.kgMov, 10) || 0;
+        var currentSaldo = parseInt(c.saldoKg, 10) || 0;
+        var maxAvailableKg = currentSaldo + oldKg;
+
+        window._currentEditingDelivery = {
+          contractId: c.id,
+          contractCodigo: c.codigo,
+          movementIndex: movementIdx,
+          municipioKey: c.municipioKey,
+          oldKg: oldKg,
+          maxAvailableKg: maxAvailableKg,
+          c: c,
+          m: m
+        };
+
+        document.getElementById('edit-delivery-contract-id').value = c.id;
+        document.getElementById('edit-delivery-index').value = movementIdx;
+        document.getElementById('edit-delivery-contract-name').textContent = c.establecimiento + ' (' + (c.codigo || c.id) + ')';
+        document.getElementById('edit-delivery-contract-muni').textContent = (c.municipio || 'Municipio') + ' - ' + (c.cultivoPactado || 'Cereal');
+        document.getElementById('edit-delivery-contract-limit').textContent =
+          'Capacidad máxima para esta entrega: ' + formatNum(maxAvailableKg) + ' Kg (Actualmente registrados: ' + formatNum(oldKg) + ' Kg | Saldo restante en campo: ' + formatNum(currentSaldo) + ' Kg)';
+
+        // Formato fecha para input date
+        var rawDate = m.fecha || '';
+        var formattedDate = '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+          formattedDate = rawDate;
+        } else {
+          var dp = String(rawDate).trim().split('T')[0].split('/');
+          if (dp.length === 3) {
+            formattedDate = dp[2] + '-' + (dp[1].length === 1 ? '0' + dp[1] : dp[1]) + '-' + (dp[0].length === 1 ? '0' + dp[0] : dp[0]);
+          } else {
+            formattedDate = new Date().toISOString().split('T')[0];
+          }
+        }
+        document.getElementById('edit-delivery-fecha').value = formattedDate;
+        document.getElementById('edit-delivery-kg').value = oldKg;
+
+        // Precio Rosario
+        var crop = (c.cultivoPactado || '').toLowerCase();
+        if (crop === 'maíz') crop = 'maiz';
+        var rosarioPrice = m.precioRosarioARS;
+        if (!rosarioPrice || rosarioPrice <= 0) {
+          if (m.arsMov && m.kgMov && m.kgMov > 0) {
+            rosarioPrice = Math.round((m.arsMov / m.kgMov) * 1000);
+          } else if (marketRates.rosario && marketRates.rosario[crop]) {
+            rosarioPrice = marketRates.rosario[crop];
+          } else if (c.precioTn && m.tipoCambioARS) {
+            rosarioPrice = Math.round(c.precioTn * m.tipoCambioARS);
+          } else {
+            rosarioPrice = 280000;
+          }
+        }
+        document.getElementById('edit-delivery-precio-rosario').value = rosarioPrice;
+
+        // Tipo de cambio
+        var tc = m.tipoCambioARS || (marketRates.dolarBNA && marketRates.dolarBNA.venta ? marketRates.dolarBNA.venta : 1150);
+        document.getElementById('edit-delivery-tipo-cambio').value = tc;
+
+        // Forma de pago
+        document.getElementById('edit-delivery-medio-pago').value = m.medioPago || 'Transferencia';
+
+        // Referencia
+        document.getElementById('edit-delivery-referencia').value = (m.nroRef && m.nroRef !== '-') ? m.nroRef : '';
+
+        // Factura
+        var hasFactura = (m.factura && String(m.factura).toUpperCase().indexOf('SI') !== -1);
+        document.getElementById('edit-delivery-factura-recibida').checked = hasFactura;
+        var nroFactura = '';
+        if (m.factura && m.factura.indexOf('N°') !== -1) {
+          nroFactura = m.factura.split('N°')[1].replace(/[\(\)]/g, '').trim();
+        } else if (m.factura && m.factura.indexOf(':') !== -1) {
+          nroFactura = m.factura.split(':')[1].replace(/[\(\)]/g, '').trim();
+        }
+        document.getElementById('edit-delivery-nro-factura').value = nroFactura;
+
+        // Observaciones
+        document.getElementById('edit-delivery-observaciones').value = m.observaciones || '';
+
+        window.updateEditDeliveryCalculations();
+        openModal('modal-edit-delivery');
+      };
+
+      window.updateEditDeliveryCalculations = function () {
+        var kgInput = document.getElementById('edit-delivery-kg');
+        var rosarioInput = document.getElementById('edit-delivery-precio-rosario');
+        var tcInput = document.getElementById('edit-delivery-tipo-cambio');
+        var calcUsd = document.getElementById('edit-delivery-calc-usd');
+        var calcArs = document.getElementById('edit-delivery-calc-ars');
+
+        var kg = parseInt(kgInput ? kgInput.value : 0, 10) || 0;
+        var precioRosario = parseFloat(rosarioInput ? rosarioInput.value : 0) || 0;
+        var tc = parseFloat(tcInput ? tcInput.value : 0) || 0;
+
+        var totalARS = Math.round((kg / 1000) * precioRosario);
+        var totalUSD = tc > 0 ? Math.round(totalARS / tc) : 0;
+
+        if (calcUsd) calcUsd.textContent = 'USD $' + formatNum(totalUSD);
+        if (calcArs) calcArs.textContent = '$' + formatNum(totalARS) + ' ARS';
+      };
+
+      window.handleEditDeliverySave = function () {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para modificar entregas');
+          return;
+        }
+        var info = window._currentEditingDelivery;
+        if (!info) {
+          showToast('⚠️ No hay datos de entrega en edición');
+          return;
+        }
+
+        var fechaVal = document.getElementById('edit-delivery-fecha').value;
+        var kg = parseInt(document.getElementById('edit-delivery-kg').value, 10) || 0;
+        var precioRosario = parseFloat(document.getElementById('edit-delivery-precio-rosario').value) || 0;
+        var tipoCambio = parseFloat(document.getElementById('edit-delivery-tipo-cambio').value) || 0;
+        var medioPago = document.getElementById('edit-delivery-medio-pago').value;
+        var nroRef = document.getElementById('edit-delivery-referencia').value.trim();
+        var facturaRecibida = document.getElementById('edit-delivery-factura-recibida').checked;
+        var nroFactura = document.getElementById('edit-delivery-nro-factura').value.trim();
+        var observaciones = document.getElementById('edit-delivery-observaciones').value.trim();
+
+        if (!fechaVal) {
+          alert('⚠️ La fecha de venta o fijación es obligatoria.');
+          document.getElementById('edit-delivery-fecha').focus();
+          return;
+        }
+
+        if (kg <= 0) {
+          alert('⚠️ Ingrese los kilos modificados (mayor a 0).');
+          document.getElementById('edit-delivery-kg').focus();
+          return;
+        }
+
+        if (info.maxAvailableKg && kg > info.maxAvailableKg) {
+          alert('⚠️ Error: Los kilos ingresados (' + formatNum(kg) + ' Kg) superan el saldo disponible del contrato (' + formatNum(info.maxAvailableKg) + ' Kg).');
+          document.getElementById('edit-delivery-kg').focus();
+          return;
+        }
+
+        if (precioRosario <= 0) {
+          alert('⚠️ Ingrese un precio válido de la Bolsa de Comercio de Rosario ($ ARS/Tn).');
+          document.getElementById('edit-delivery-precio-rosario').focus();
+          return;
+        }
+
+        if (tipoCambio <= 0) {
+          alert('⚠️ Ingrese un tipo de cambio BNA válido.');
+          document.getElementById('edit-delivery-tipo-cambio').focus();
+          return;
+        }
+
+        var totalARS = Math.round((kg / 1000) * precioRosario);
+        var totalUSD = Math.round(tipoCambio > 0 ? (totalARS / tipoCambio) : 0);
+
+        var updatePayload = {
+          contractId: info.contractId,
+          movementIndex: info.movementIndex,
+          municipioKey: info.municipioKey,
+          fecha: fechaVal,
+          fechaVenta: fechaVal,
+          kg: kg,
+          precioRosarioARS: precioRosario,
+          tipoCambioARS: tipoCambio,
+          totalARS: totalARS,
+          totalUSD: totalUSD,
+          medioPago: medioPago,
+          nroReferencia: nroRef,
+          facturaRecibida: facturaRecibida,
+          nroFactura: nroFactura,
+          observaciones: observaciones || ('Fijación Rosario a $' + formatNum(precioRosario) + ' ARS/Tn [Modificado]')
+        };
+
+        var btnSave = document.getElementById('btn-edit-delivery-save');
+        var origText = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.innerHTML = '⏳ Guardando cambios...';
+
+        showToast('Actualizando entrega y recalculando saldos...');
+        google.script.run
+          .withSuccessHandler(function (updatedContracts) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = origText;
+            state.contracts = updatedContracts || [];
+            closeModal('modal-edit-delivery');
+            renderAll();
+            showToast('✓ Entrega modificada y saldos actualizados correctamente');
+            window.refreshContractMovements(info.contractId, info.contractCodigo, info.municipioKey);
+          })
+          .withFailureHandler(function (err) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = origText;
+            alert('Error al modificar la entrega: ' + (err.message || err));
+          })
+          .updatePaymentInSheet(updatePayload, info.municipioKey);
+      };
+
+      window.confirmDeleteDelivery = function (contractId, movementIdx) {
+        if (!state.isAdmin) {
+          openModal('modal-login');
+          showToast('🔒 Inicie sesión como Administrador para eliminar entregas');
+          return;
+        }
+        var c = (state.contracts || []).find(function (it) { return it.id == contractId || it.codigo == contractId; });
+        var movements = (window.lastLoadedMovementsByContract && (window.lastLoadedMovementsByContract[contractId] || (c && window.lastLoadedMovementsByContract[c.id]) || (c && window.lastLoadedMovementsByContract[c.codigo]))) || [];
+        var m = movements[movementIdx];
+
+        var kgDesc = m && m.kgMov ? (formatNum(m.kgMov) + ' Kg') : 'esta entrega';
+        var msg = '¿Está seguro de que desea eliminar la entrega de ' + kgDesc + '?\n\n' +
+                  '• Se reintegrarán los kilos al saldo pendiente del contrato.\n' +
+                  '• Se recalcularán los saldos en la base de datos y en la solapa del campo.';
+
+        if (confirm(msg)) {
+          showToast('Eliminando entrega y actualizando saldos...');
+          var munKey = c ? c.municipioKey : null;
+          var targetId = c ? c.id : contractId;
+          var targetCodigo = c ? c.codigo : contractId;
+          google.script.run
+            .withSuccessHandler(function (updatedContracts) {
+              state.contracts = updatedContracts || [];
+              closeModal('modal-edit-delivery');
+              renderAll();
+              showToast('🗑️ Entrega eliminada y saldo reintegrado al contrato');
+              window.refreshContractMovements(targetId, targetCodigo, munKey);
+            })
+            .withFailureHandler(function (err) {
+              alert('Error al eliminar la entrega: ' + (err.message || err));
+            })
+            .deletePaymentFromSheet(targetId, movementIdx, munKey);
+        }
+      };
+
+      window.refreshContractMovements = function (contractId, codigo, munKey) {
+        var tabCont = document.getElementById('contract-tab-movements-container');
+        if (tabCont && (state.selectedSheetTab == contractId || state.selectedSheetTab == codigo)) {
+          tabCont.innerHTML = '<div style="padding:1rem; color:#64748b;">Actualizando movimientos de la solapa...</div>';
+          if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function (movs) {
+                renderMovementsTable('contract-tab-movements-container', movs, contractId);
+              })
+              .getContractMovementsFromSheet(codigo || contractId, munKey);
+          }
+        }
+
+        var modalDetail = document.getElementById('modal-contract-detail');
+        var detailCont = document.getElementById('detail-modal-movements-container');
+        if (modalDetail && modalDetail.classList.contains('active') && (window.currentDetailContractId == contractId || window.currentDetailContractId == codigo)) {
+          if (detailCont) {
+            detailCont.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">Actualizando movimientos...</div>';
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+              google.script.run
+                .withSuccessHandler(function (movs) {
+                  renderMovementsTable('detail-modal-movements-container', movs, contractId);
+                })
+                .getContractMovementsFromSheet(codigo || contractId, munKey);
+            }
+          }
+          var c = (state.contracts || []).find(function (it) { return it.id == contractId || it.codigo == contractId; });
+          if (c) {
+            window.openDetail(c.id);
+          }
+        }
+      };
+
+      var btnEditSave = document.getElementById('btn-edit-delivery-save');
+      if (btnEditSave) {
+        btnEditSave.addEventListener('click', function (e) {
+          e.preventDefault();
+          window.handleEditDeliverySave();
+        });
+      }
+
+      var formEdit = document.getElementById('edit-delivery-form');
+      if (formEdit) {
+        formEdit.addEventListener('submit', function (e) {
+          e.preventDefault();
+          window.handleEditDeliverySave();
+        });
+      }
+
+      var btnEditDel = document.getElementById('btn-edit-delivery-delete');
+      if (btnEditDel) {
+        btnEditDel.addEventListener('click', function (e) {
+          e.preventDefault();
+          var info = window._currentEditingDelivery;
+          if (info) {
+            window.confirmDeleteDelivery(info.contractId, info.movementIndex);
+          }
+        });
+      }
+
+      ['edit-delivery-kg', 'edit-delivery-precio-rosario', 'edit-delivery-tipo-cambio'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', window.updateEditDeliveryCalculations);
+          el.addEventListener('change', window.updateEditDeliveryCalculations);
+        }
       });
 
       document.getElementById('search-contracts').addEventListener('input', function (e) {
