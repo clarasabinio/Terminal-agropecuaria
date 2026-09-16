@@ -48,7 +48,15 @@ function getTodayString() {
 }
 
 function sanitizeSheetName(name) {
-  return (name || 'CONTRATO').toString().replace(/[\[\]\*\?:\\\/]/g, '-').trim().slice(0, 30);
+  if (!name) return 'CAMPO';
+  let clean = name.toString()
+    .replace(/[\[\]\*\?:\\\/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (clean.length > 80) {
+    clean = clean.slice(0, 80).trim();
+  }
+  return clean || 'CAMPO';
 }
 
 function getMunicipiosConfig() {
@@ -168,54 +176,162 @@ function getSheet(municipioKeyOrId) {
   return sheet;
 }
 
+/**
+ * Busca y resuelve la solapa individual de un campo en la hoja de cálculo.
+ * Prioriza el nombre del establecimiento. Si no existe, busca por código o ID.
+ */
+function findContractTab(ss, contractObjOrId) {
+  if (!ss) return null;
+  
+  let establecimiento = '';
+  let codigo = '';
+  let id = '';
+
+  if (typeof contractObjOrId === 'object' && contractObjOrId !== null) {
+    establecimiento = contractObjOrId.establecimiento || '';
+    codigo = contractObjOrId.codigo || '';
+    id = contractObjOrId.id || '';
+  } else {
+    const str = String(contractObjOrId || '').trim();
+    establecimiento = str;
+    codigo = str;
+    id = str;
+
+    // Intentar buscar en la hoja máster CONTRATOS para recuperar los datos completos del campo
+    try {
+      const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheetByName('Contratos') || ss.getSheets()[0];
+      if (masterSheet) {
+        const values = masterSheet.getDataRange().getValues();
+        for (let i = 1; i < values.length; i++) {
+          if (values[i][0] == str || values[i][1] == str || String(values[i][2]).toLowerCase() === str.toLowerCase()) {
+            id = values[i][0];
+            codigo = values[i][1];
+            establecimiento = values[i][2];
+            break;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 1. Buscar por nombre de establecimiento
+  if (establecimiento) {
+    const tabByEst = ss.getSheetByName(sanitizeSheetName(establecimiento));
+    if (tabByEst) return tabByEst;
+  }
+
+  // 2. Buscar por código
+  if (codigo) {
+    const tabByCod = ss.getSheetByName(sanitizeSheetName(codigo));
+    if (tabByCod) return tabByCod;
+  }
+
+  // 3. Buscar por ID
+  if (id) {
+    const tabById = ss.getSheetByName(sanitizeSheetName(id));
+    if (tabById) return tabById;
+  }
+
+  // 4. Búsqueda flexible entre todas las hojas del libro
+  const allSheets = ss.getSheets();
+  const cleanEst = sanitizeSheetName(establecimiento).toLowerCase();
+  const cleanCod = sanitizeSheetName(codigo).toLowerCase();
+  for (let s = 0; s < allSheets.length; s++) {
+    const sName = allSheets[s].getName().toLowerCase();
+    if (sName === 'contratos') continue;
+    if (cleanEst && (sName === cleanEst || sName.indexOf(cleanEst) !== -1 || cleanEst.indexOf(sName) !== -1)) {
+      return allSheets[s];
+    }
+    if (cleanCod && (sName === cleanCod || sName.indexOf(cleanCod) !== -1)) {
+      return allSheets[s];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Crea u obtiene la pestaña independiente para el campo, utilizando el nombre del establecimiento.
+ * Si ya existe, NO borra ningún dato previo ni movimientos cargados.
+ */
 function getOrCreateContractTab(c, ssOrMunicipio) {
   const ss = (ssOrMunicipio && typeof ssOrMunicipio.getSheetByName === 'function') 
     ? ssOrMunicipio 
     : resolveSpreadsheet(c.municipioKey || c.municipioId || c.municipio || ssOrMunicipio);
 
-  const sheetName = sanitizeSheetName(c.codigo || c.id || 'CONTRATO');
-  let tab = ss.getSheetByName(sheetName);
-  
-  if (!tab) {
-    tab = ss.insertSheet(sheetName);
-    const munMeta = getMunicipioMeta(c.municipioKey || c.municipioId || c.municipio);
-    tab.getRange('A1:N1').merge()
-      .setValue('SOLAPA DE MOVIMIENTOS: ' + (c.establecimiento || '') + ' (' + (c.codigo || c.id || '') + ') - ' + munMeta.nombre)
-      .setBackground('#0f2744').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11)
-      .setHorizontalAlignment('center');
+  // Intentar buscar pestaña existente por establecimiento o código
+  let tab = findContractTab(ss, c);
+  const targetName = sanitizeSheetName(c.establecimiento || c.codigo || c.id || 'CAMPO');
 
-    tab.getRange('A2:B2').setValues([['Establecimiento:', c.establecimiento || '']]).setFontWeight('bold');
-    tab.getRange('C2:D2').setValues([['Arrendador:', c.arrendador || '']]).setFontWeight('bold');
-    tab.getRange('E2:F2').setValues([['Campaña:', c.campana || '']]).setFontWeight('bold');
+  if (tab) {
+    // Si la pestaña existe pero tenía el nombre del código, renombrarla al nombre del establecimiento si está disponible
+    try {
+      if (c.establecimiento && tab.getName() !== targetName && !ss.getSheetByName(targetName)) {
+        tab.setName(targetName);
+      }
+    } catch (renameErr) {}
 
-    tab.getRange('A3:B3').setValues([['Cultivo y Has:', (c.cultivoPactado || '') + ' (' + (c.superficieHa || 0) + ' Ha)']]).setFontWeight('bold');
-    tab.getRange('C3:D3').setValues([['Precio Ref. (Tn):', 'USD ' + (c.precioTn || 0)]]).setFontWeight('bold');
-    tab.getRange('E3:F3').setValues([['Vigencia Hasta:', (c.fechaVencimiento || '-') + ' (' + (c.modalidad || '') + ')']]).setFontWeight('bold');
+    // Actualizar datos de cabecera (A2:F3) si cambiaron, sin tocar las filas de movimientos existentes
+    try {
+      if (tab.getLastRow() >= 3) {
+        tab.getRange('A2:B2').setValues([['Establecimiento:', c.establecimiento || '']]);
+        tab.getRange('C2:D2').setValues([['Arrendador:', c.arrendador || '']]);
+        tab.getRange('E2:F2').setValues([['Campaña:', c.campana || '']]);
+        tab.getRange('A3:B3').setValues([['Cultivo y Has:', (c.cultivoPactado || '') + ' (' + (c.superficieHa || 0) + ' Ha)']]);
+        tab.getRange('C3:D3').setValues([['Precio Ref. (Tn):', 'USD ' + (c.precioTn || 0)]]);
+        tab.getRange('E3:F3').setValues([['Vigencia Hasta:', (c.fechaVencimiento || '-') + ' (' + (c.modalidad || '') + ')']]);
+      }
+    } catch (metaErr) {}
 
-    tab.getRange('A2:F3').setBackground('#f8fafc');
-
-    tab.appendRow([]); // fila vacía separadora
-
-    tab.appendRow([
-      'Fecha Venta/Fijación', 
-      'Tipo Movimiento', 
-      'Detalle / Concepto', 
-      'Kg Liquidados', 
-      'Saldo Pendiente (Kg)', 
-      'Precio Rosario ($ ARS/Tn)', 
-      'Tipo Cambio (ARS)', 
-      'Total Liquidado (USD)', 
-      'Total Liquidado (ARS)', 
-      'Forma de Pago', 
-      'N° Ref / Cheque', 
-      'Factura Alquiler', 
-      'Comprobante (Drive)', 
-      'Observaciones'
-    ]);
-    const headerRow = tab.getLastRow();
-    tab.getRange(headerRow, 1, 1, 14).setBackground('#1e3a8a').setFontColor('#ffffff').setFontWeight('bold');
-    tab.setFrozenRows(headerRow);
+    return tab;
   }
+  
+  // Si no existe la pestaña, crearla con el nombre del establecimiento
+  let finalSheetName = targetName;
+  if (ss.getSheetByName(finalSheetName)) {
+    finalSheetName = sanitizeSheetName((c.establecimiento || 'CAMPO') + ' (' + (c.codigo || c.id || '') + ')');
+  }
+
+  tab = ss.insertSheet(finalSheetName);
+  const munMeta = getMunicipioMeta(c.municipioKey || c.municipioId || c.municipio);
+  
+  tab.getRange('A1:N1').merge()
+    .setValue('SOLAPA DE MOVIMIENTOS: ' + (c.establecimiento || '') + ' (' + (c.codigo || c.id || '') + ') - ' + munMeta.nombre)
+    .setBackground('#0f2744').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11)
+    .setHorizontalAlignment('center');
+
+  tab.getRange('A2:B2').setValues([['Establecimiento:', c.establecimiento || '']]).setFontWeight('bold');
+  tab.getRange('C2:D2').setValues([['Arrendador:', c.arrendador || '']]).setFontWeight('bold');
+  tab.getRange('E2:F2').setValues([['Campaña:', c.campana || '']]).setFontWeight('bold');
+
+  tab.getRange('A3:B3').setValues([['Cultivo y Has:', (c.cultivoPactado || '') + ' (' + (c.superficieHa || 0) + ' Ha)']]).setFontWeight('bold');
+  tab.getRange('C3:D3').setValues([['Precio Ref. (Tn):', 'USD ' + (c.precioTn || 0)]]).setFontWeight('bold');
+  tab.getRange('E3:F3').setValues([['Vigencia Hasta:', (c.fechaVencimiento || '-') + ' (' + (c.modalidad || '') + ')']]).setFontWeight('bold');
+
+  tab.getRange('A2:F3').setBackground('#f8fafc');
+
+  tab.appendRow([]); // fila 4 vacía separadora
+
+  tab.appendRow([
+    'Fecha Venta/Fijación', 
+    'Tipo Movimiento', 
+    'Detalle / Concepto', 
+    'Kg Liquidados', 
+    'Saldo Pendiente (Kg)', 
+    'Precio Rosario ($ ARS/Tn)', 
+    'Tipo Cambio (ARS)', 
+    'Total Liquidado (USD)', 
+    'Total Liquidado (ARS)', 
+    'Forma de Pago', 
+    'N° Ref / Cheque', 
+    'Factura Alquiler', 
+    'Comprobante (Drive)', 
+    'Observaciones'
+  ]);
+  const headerRow = tab.getLastRow();
+  tab.getRange(headerRow, 1, 1, 14).setBackground('#1e3a8a').setFontColor('#ffffff').setFontWeight('bold');
+  tab.setFrozenRows(headerRow);
+
   return tab;
 }
 
@@ -223,12 +339,14 @@ function logContractMovement(c, mov, ssOrMunicipio) {
   try {
     const tab = getOrCreateContractTab(c, ssOrMunicipio);
     const dateStr = mov.fecha || getTodayString();
+    
+    // Los nuevos movimientos se agregan a continuación de los datos existentes (sin borrar la información previa)
     tab.appendRow([
       dateStr,
       mov.tipo || 'MOVIMIENTO',
       mov.detalle || '',
       mov.kg || 0,
-      c.saldoKg || 0,
+      c.saldoKg !== undefined ? c.saldoKg : (mov.saldoKg || 0),
       mov.precioRosarioARS || mov.precioChicagoUSD || c.precioTn || 0,
       mov.tipoCambioARS || 0,
       mov.totalUSD || 0,
@@ -240,7 +358,7 @@ function logContractMovement(c, mov, ssOrMunicipio) {
       mov.observaciones || ''
     ]);
   } catch (err) {
-    Logger.log('Error al registrar movimiento en solapa: ' + err.message);
+    Logger.log('Error al registrar movimiento en solapa de ' + (c.establecimiento || c.codigo) + ': ' + err.message);
   }
 }
 
@@ -554,17 +672,18 @@ function recordPaymentToSheet(payment, optMunicipio) {
 function recalculateContractFromTab(contractId, optMunicipio) {
   const munMeta = getMunicipioMeta(optMunicipio);
   const ss = resolveSpreadsheet(munMeta.key);
-  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheets()[0];
+  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheetByName('Contratos') || ss.getSheets()[0];
   const masterValues = masterSheet.getDataRange().getValues();
 
   for (let i = 1; i < masterValues.length; i++) {
     if (masterValues[i][0] == contractId) {
       const codigo = masterValues[i][1] || masterValues[i][0];
+      const establecimiento = masterValues[i][2] || '';
       const kgPactados = parseInt(masterValues[i][9], 10) || 0;
       const precioTn = parseFloat(masterValues[i][12]) || 0;
       const precioKgUSD = precioTn / 1000;
 
-      const tab = ss.getSheetByName(sanitizeSheetName(codigo));
+      const tab = findContractTab(ss, { id: contractId, codigo: codigo, establecimiento: establecimiento });
       let totalKgPagados = 0;
       let totalUsdPagados = 0;
       let lastFactura = masterValues[i][16] || 'NO';
@@ -613,7 +732,7 @@ function recalculateContractFromTab(contractId, optMunicipio) {
 function updatePaymentInSheet(paymentUpdate, optMunicipio) {
   const munMeta = getMunicipioMeta(paymentUpdate.municipioKey || paymentUpdate.municipioId || optMunicipio);
   const ss = resolveSpreadsheet(munMeta.key);
-  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheets()[0];
+  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheetByName('Contratos') || ss.getSheets()[0];
   const masterValues = masterSheet.getDataRange().getValues();
 
   let contractObj = null;
@@ -633,7 +752,7 @@ function updatePaymentInSheet(paymentUpdate, optMunicipio) {
     throw new Error('Contrato no encontrado: ' + paymentUpdate.contractId);
   }
 
-  const tab = ss.getSheetByName(sanitizeSheetName(contractObj.codigo || contractObj.id));
+  const tab = findContractTab(ss, contractObj);
   if (!tab) {
     throw new Error('Solapa de movimientos no encontrada para ' + contractObj.establecimiento);
   }
@@ -675,7 +794,7 @@ function updatePaymentInSheet(paymentUpdate, optMunicipio) {
 function deletePaymentFromSheet(contractId, movementIndex, optMunicipio) {
   const munMeta = getMunicipioMeta(optMunicipio);
   const ss = resolveSpreadsheet(munMeta.key);
-  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheets()[0];
+  const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheetByName('Contratos') || ss.getSheets()[0];
   const masterValues = masterSheet.getDataRange().getValues();
 
   let contractObj = null;
@@ -695,7 +814,7 @@ function deletePaymentFromSheet(contractId, movementIndex, optMunicipio) {
     throw new Error('Contrato no encontrado: ' + contractId);
   }
 
-  const tab = ss.getSheetByName(sanitizeSheetName(contractObj.codigo || contractObj.id));
+  const tab = findContractTab(ss, contractObj);
   if (!tab) {
     throw new Error('Solapa no encontrada para ' + contractObj.establecimiento);
   }
@@ -769,13 +888,14 @@ function deleteContractFromSheet(contractId, optMunicipio) {
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] == contractId) {
       const codigo = values[i][1] || values[i][0];
+      const establecimiento = values[i][2] || '';
       sheet.deleteRow(i + 1);
       
       try {
         const ss = resolveSpreadsheet(munMeta.key);
-        const tab = ss.getSheetByName(sanitizeSheetName(codigo));
+        const tab = findContractTab(ss, { id: contractId, codigo: codigo, establecimiento: establecimiento });
         if (tab) {
-          tab.setName(sanitizeSheetName('ARCH-' + codigo));
+          tab.setName(sanitizeSheetName('ARCH-' + (establecimiento || codigo)));
         }
       } catch (e) {}
       break;
@@ -784,9 +904,9 @@ function deleteContractFromSheet(contractId, optMunicipio) {
   return getAllContractsAcrossMunicipios();
 }
 
-function getContractMovementsFromSheet(codigoOrId, optMunicipio) {
+function getContractMovementsFromSheet(codigoOrId, optMunicipio, optEstablecimiento) {
   const ss = resolveSpreadsheet(optMunicipio);
-  const tab = ss.getSheetByName(sanitizeSheetName(codigoOrId));
+  const tab = findContractTab(ss, optEstablecimiento ? { establecimiento: optEstablecimiento, codigo: codigoOrId, id: codigoOrId } : codigoOrId);
   if (!tab) return [];
   const rows = tab.getDataRange().getValues();
   if (rows.length < 6) return [];

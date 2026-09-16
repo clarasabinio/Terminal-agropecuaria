@@ -2962,13 +2962,17 @@
                   if (cb) cb(JSON.parse(JSON.stringify(list)));
                 }, 150);
               },
-              getContractMovementsFromSheet: function (codigoOrId) {
+              getContractMovementsFromSheet: function (codigoOrId, optMunicipio, optEstablecimiento) {
                 var cb = this._success;
                 setTimeout(function () {
-                  var list = localMovements[codigoOrId];
+                  var list = localMovements[codigoOrId] || (optEstablecimiento && localMovements[optEstablecimiento]);
                   if (!list) {
-                    var found = localSampleContracts.find(function (c) { return c.codigo === codigoOrId || c.id === codigoOrId; });
-                    if (found) list = localMovements[found.id] || localMovements[found.codigo];
+                    var found = localSampleContracts.find(function (c) { 
+                      return c.codigo === codigoOrId || c.id === codigoOrId || 
+                             (optEstablecimiento && c.establecimiento === optEstablecimiento) ||
+                             (c.establecimiento && c.establecimiento === codigoOrId); 
+                    });
+                    if (found) list = localMovements[found.id] || localMovements[found.codigo] || localMovements[found.establecimiento];
                   }
                   if (cb) cb(JSON.parse(JSON.stringify(list || [])));
                 }, 150);
@@ -3806,7 +3810,7 @@
       if (tabSelect) {
         var tabHtml = '<option value="">📂 Solapa Individual por Contrato...</option>';
         state.contracts.forEach(function (c) {
-          tabHtml += '<option value="' + c.id + '">📑 ' + escapeHtml(c.codigo) + ' - ' + escapeHtml(c.establecimiento) + '</option>';
+          tabHtml += '<option value="' + c.id + '">📑 ' + escapeHtml(c.establecimiento) + ' (' + escapeHtml(c.codigo) + ')</option>';
         });
         tabSelect.innerHTML = tabHtml;
         if (state.selectedSheetTab && state.selectedSheetTab !== 'master') {
@@ -4156,7 +4160,7 @@
             .withSuccessHandler(function (movements) {
               renderMovementsTable('contract-tab-movements-container', movements, c.id);
             })
-            .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey);
+            .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey, c.establecimiento);
         }
       }
     }
@@ -4288,7 +4292,7 @@
           .withSuccessHandler(function (movements) {
             renderMovementsTable('detail-modal-movements-container', movements, c.id);
           })
-          .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey);
+          .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey, c.establecimiento);
       }
     };
 
@@ -4356,11 +4360,11 @@
               var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
               var a = document.createElement('a');
               a.href = URL.createObjectURL(blob);
-              a.download = 'Solapa_' + c.codigo + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+              a.download = 'Solapa_' + (c.establecimiento || c.codigo).replace(/[^a-zA-Z0-9_\.-]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
               a.click();
-              showToast('Solapa descargada: ' + c.codigo);
+              showToast('Solapa descargada: ' + (c.establecimiento || c.codigo));
             })
-            .getContractMovementsFromSheet(c.codigo || c.id);
+            .getContractMovementsFromSheet(c.codigo || c.id, c.municipioKey, c.establecimiento);
         }
       }
     };
@@ -5352,15 +5356,18 @@
       };
 
       window.refreshContractMovements = function (contractId, codigo, munKey) {
+        var c = (state.contracts || []).find(function (it) { return it.id == contractId || it.codigo == contractId; });
+        var est = c ? c.establecimiento : null;
+
         var tabCont = document.getElementById('contract-tab-movements-container');
-        if (tabCont && (state.selectedSheetTab == contractId || state.selectedSheetTab == codigo)) {
+        if (tabCont && (state.selectedSheetTab == contractId || state.selectedSheetTab == codigo || (est && state.selectedSheetTab == est))) {
           tabCont.innerHTML = '<div style="padding:1rem; color:#64748b;">Actualizando movimientos de la solapa...</div>';
           if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
               .withSuccessHandler(function (movs) {
                 renderMovementsTable('contract-tab-movements-container', movs, contractId);
               })
-              .getContractMovementsFromSheet(codigo || contractId, munKey);
+              .getContractMovementsFromSheet(codigo || contractId, munKey, est);
           }
         }
 
@@ -5374,10 +5381,9 @@
                 .withSuccessHandler(function (movs) {
                   renderMovementsTable('detail-modal-movements-container', movs, contractId);
                 })
-                .getContractMovementsFromSheet(codigo || contractId, munKey);
+                .getContractMovementsFromSheet(codigo || contractId, munKey, est);
             }
           }
-          var c = (state.contracts || []).find(function (it) { return it.id == contractId || it.codigo == contractId; });
           if (c) {
             window.openDetail(c.id);
           }

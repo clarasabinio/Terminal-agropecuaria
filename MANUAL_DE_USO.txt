@@ -337,22 +337,41 @@ En la pestaña "📊 Planilla de Cálculo Consolidada (Sheet)":
 - Enlace Directo a Drive: Cada fila incluye un botón [📊 Abrir] para ir directamente
   a la planilla de cálculo en Google Drive.
 
-4.3. SOLAPAS INDIVIDUALES POR CONTRATO Y EXPORTACIÓN CSV
-- Selector de Solapas: Permite desplegar la solapa individual de cada contrato para
-  inspeccionar su historial completo de movimientos, pagos y comprobantes.
-- Botón [📥 Descargar esta Solapa (CSV)]: Permite exportar la solapa activa a Excel.
-- Botón [📥 Descargar Planilla Master (CSV)]: Exporta la base completa incluyendo
-  las columnas de Municipio, ID de Google Sheet y enlaces de Drive.
+4.3. PESTAÑAS (HOJAS) INDEPENDIENTES POR CADA CAMPO (NOMBRE DEL ESTABLECIMIENTO)
+El sistema crea y gestiona una pestaña (hoja) individual por cada campo en la planilla
+de cálculo del municipio correspondiente:
+- NOMBRE DE LA PESTAÑA:
+  El nombre de cada pestaña es exactamente el **nombre del establecimiento**
+  (por ejemplo: "Establecimiento La Negrita", "Campo Los Cardales", "Estancia La Invencible",
+  "Chacra Villa Ruiz", "Campo Don Segundo").
+- CONSERVACIÓN Y APILAMIENTO DE MOVIMIENTOS:
+  Cada nuevo movimiento (Alta inicial, Modificaciones de contrato, Entregas de cereal,
+  Liquidaciones de pago, Cambios de factura) se agrega **a continuación de los datos existentes**
+  (en filas sucesivas al final de la tabla), sin borrar ni sobrescribir bajo ninguna
+  circunstancia la información o entregas que ya estaban cargadas previamente.
+- ESTRUCTURA DE LA PESTAÑA DE CADA ESTABLECIMIENTO:
+  * Filas 1 a 3: Ficha técnica del campo (Arrendador, Campaña, Cultivo, Hectáreas, Precio y Vigencia).
+  * Fila 4: Fila separadora.
+  * Fila 5: Cabecera azul institucional con los 14 campos de auditoría.
+  * Filas 6 en adelante: Historial cronológico de todos los movimientos registrados.
+- SELECTOR Y EXPORTACIÓN:
+  * Selector de Solapas: Permite desplegar la solapa de cada establecimiento para
+    inspeccionar sus movimientos, pagos y saldos progresivos.
+  * Botón [📥 Descargar esta Solapa (CSV)]: Permite exportar la solapa activa a Excel
+    con el nombre del establecimiento.
+  * Botón [📥 Descargar Planilla Master (CSV)]: Exporta la base consolidada completa.
 
-4.4. BACKEND GOOGLE APPS SCRIPT (codigo.gs) Y ROUTER MULTI-HOJA
-El script `codigo.gs` implementa un router dinámico:
-- `MUNICIPIOS_DB`: Registro maestro con los 3 IDs y URLs de las hojas de cálculo.
-- `resolveSpreadsheet(munKeyOrId)`: Conecta automáticamente con la hoja correspondiente
-  mediante `SpreadsheetApp.openById(id)`.
-- `getAllContractsAcrossMunicipios()`: Consolida en una sola llamada los contratos de
-  las 3 hojas para alimentar la Terminal.
-- `saveContractToSheet(c)`: Guarda el contrato en la hoja de cálculo del municipio
-  seleccionado y genera su solapa de movimientos.
+4.4. BACKEND GOOGLE APPS SCRIPT (codigo.gs) Y GESTIÓN DE PESTAÑAS
+El script `codigo.gs` implementa:
+- `findContractTab(ss, contractObjOrId)`: Resuelve y localiza la pestaña de cada campo
+  priorizando el nombre del establecimiento, con soporte de búsqueda inteligente.
+- `getOrCreateContractTab(c, ss)`: Crea la pestaña con el nombre del establecimiento
+  si es nueva, o recupera la existente actualizando solo los metadatos de vigencia y
+  respetando intactas todas las filas de movimientos existentes.
+- `logContractMovement(c, mov, ss)`: Añade el nuevo movimiento al final de la pestaña
+  del establecimiento (`tab.appendRow`), acumulando el historial de forma permanente.
+- `recalculateContractFromTab(contractId)`: Audita todas las entregas acumuladas en la
+  pestaña del establecimiento y recalcula los saldos en la hoja máster `CONTRATOS`.
 
 
 ================================================================================
