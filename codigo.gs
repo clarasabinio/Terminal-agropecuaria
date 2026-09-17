@@ -127,12 +127,15 @@ function executeApiAction(action, payload) {
 /**
  * Crea específicamente el contrato del "Campo Terreri"
  * con su solapa independiente y sus movimientos en Google Sheets.
+ * Por defecto lo crea en Salto (o el municipio indicado).
  */
 function addTerreriContract(optMunicipio) {
-  const munKey = optMunicipio || 'exaltacion';
+  const munKey = (optMunicipio && String(optMunicipio).toLowerCase().indexOf('exalt') !== -1) ? 'exaltacion' : 'salto';
+  const munMeta = getMunicipioMeta(munKey);
+  
   const cData = {
     establecimiento: 'Campo Terreri',
-    ubicacion: 'Exaltación de la Cruz',
+    ubicacion: munKey === 'salto' ? 'Inés Indart, Salto' : 'Capilla del Señor, Exaltación de la Cruz',
     arrendador: 'Familia Terreri',
     arrendatario: 'Administración Rural',
     superficieHa: 220,
@@ -165,12 +168,26 @@ function addTerreriContract(optMunicipio) {
       facturaRecibida: true,
       nroFactura: 'FAC-A-0001-0000458',
       municipioKey: munKey,
-      observaciones: 'Entrega inicial registrada desde la terminal'
+      observaciones: 'Entrega inicial registrada desde la terminal en ' + munMeta.nombre
     }, munKey);
   }
   
-  Logger.log('Campo Terreri creado exitosamente con solapa y movimientos en ' + munKey);
+  Logger.log('✅ Campo Terreri creado exitosamente con solapa y movimientos en ' + munMeta.nombre);
   return getAllContractsAcrossMunicipios();
+}
+
+/**
+ * Función directa para ejecutar desde Apps Script y crear Terreri en Salto
+ */
+function crearTerreriEnSalto() {
+  return addTerreriContract('salto');
+}
+
+/**
+ * Función directa para ejecutar desde Apps Script y crear Terreri en Exaltación de la Cruz
+ */
+function crearTerreriEnExaltacion() {
+  return addTerreriContract('exaltacion');
 }
 
 function getTodayString() {
