@@ -37,10 +37,24 @@ const MUNICIPIOS_DB = {
 };
 
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Terminal Kiosco Agropecuaria')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  try {
+    return HtmlService.createHtmlOutputFromFile('Index')
+      .setTitle('Terminal Kiosco Agropecuaria')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  } catch (err) {
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:sans-serif;padding:30px;line-height:1.6;color:#1e293b;">' +
+      '<h2 style="color:#0f2744;">🚜 Terminal Agropecuaria - Backend Activo</h2>' +
+      '<p>El backend de Google Apps Script está correctamente vinculado a las hojas de cálculo.</p>' +
+      '<div style="background:#f1f5f9;border-left:4px solid #2563eb;padding:15px;margin:20px 0;">' +
+      '<b>Para generar las solapas por campo en Google Sheets:</b><br>' +
+      'En el editor de Apps Script, cambia la función seleccionada de <code>doGet</code> a <b><code>initializeSampleDataAllMunicipios</code></b> y haz clic en <b>▶ Ejecutar</b>.' +
+      '</div>' +
+      '<p>Si deseas abrir toda la interfaz visual web desde Apps Script, pulsa el botón <b>+</b> (junto a Archivos), elige <b>HTML</b>, nómbralo <b>Index</b> y pega el contenido del archivo <code>Index.html</code>.</p>' +
+      '</div>'
+    ).setTitle('Terminal Agropecuaria - Backend Activo');
+  }
 }
 
 function getTodayString() {
