@@ -54,8 +54,8 @@ function doGet(e) {
       '<div style="background:#f1f5f9;border-left:4px solid #2563eb;padding:15px;margin:20px 0;">' +
       '<b>Para generar las solapas por campo en Google Sheets:</b><br>' +
       'En el editor de Apps Script, cambia la función seleccionada de <code>doGet</code> a <b><code>initializeSampleDataAllMunicipios</code></b> y haz clic en <b>▶ Ejecutar</b>.<br><br>' +
-      '<b>Para cargar el campo Terreri con su solapa y movimientos:</b><br>' +
-      'Selecciona la función <b><code>addTerreriContract</code></b> y haz clic en <b>▶ Ejecutar</b>.' +
+      '<b>Para cargar el campo Terreri con su solapa y movimientos en Salto:</b><br>' +
+      'Selecciona la función <b><code>crearTerreriEnSalto</code></b> y haz clic en <b>▶ Ejecutar</b>.' +
       '</div>' +
       '<p>Si deseas abrir toda la interfaz visual web desde Apps Script, pulsa el botón <b>+</b> (junto a Archivos), elige <b>HTML</b>, nómbralo <b>Index</b> y pega el contenido del archivo <code>Index.html</code>.</p>' +
       '</div>'
