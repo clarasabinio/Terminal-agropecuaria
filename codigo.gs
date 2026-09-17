@@ -36,7 +36,11 @@ const MUNICIPIOS_DB = {
   }
 };
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    return handleApiRequest(e.parameter.action, e.parameter);
+  }
+
   try {
     return HtmlService.createHtmlOutputFromFile('Index')
       .setTitle('Terminal Kiosco Agropecuaria')
@@ -49,12 +53,124 @@ function doGet() {
       '<p>El backend de Google Apps Script está correctamente vinculado a las hojas de cálculo.</p>' +
       '<div style="background:#f1f5f9;border-left:4px solid #2563eb;padding:15px;margin:20px 0;">' +
       '<b>Para generar las solapas por campo en Google Sheets:</b><br>' +
-      'En el editor de Apps Script, cambia la función seleccionada de <code>doGet</code> a <b><code>initializeSampleDataAllMunicipios</code></b> y haz clic en <b>▶ Ejecutar</b>.' +
+      'En el editor de Apps Script, cambia la función seleccionada de <code>doGet</code> a <b><code>initializeSampleDataAllMunicipios</code></b> y haz clic en <b>▶ Ejecutar</b>.<br><br>' +
+      '<b>Para cargar el campo Terreri con su solapa y movimientos:</b><br>' +
+      'Selecciona la función <b><code>addTerreriContract</code></b> y haz clic en <b>▶ Ejecutar</b>.' +
       '</div>' +
       '<p>Si deseas abrir toda la interfaz visual web desde Apps Script, pulsa el botón <b>+</b> (junto a Archivos), elige <b>HTML</b>, nómbralo <b>Index</b> y pega el contenido del archivo <code>Index.html</code>.</p>' +
       '</div>'
     ).setTitle('Terminal Agropecuaria - Backend Activo');
   }
+}
+
+function doPost(e) {
+  let responseData = { success: false, error: 'No data received' };
+  try {
+    let payload = {};
+    if (e && e.postData && e.postData.contents) {
+      payload = JSON.parse(e.postData.contents);
+    } else if (e && e.parameter) {
+      payload = e.parameter;
+    }
+    
+    const action = payload.action;
+    const result = executeApiAction(action, payload);
+    responseData = { success: true, data: result };
+  } catch (err) {
+    responseData = { success: false, error: err.message, stack: err.stack };
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(responseData))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleApiRequest(action, params) {
+  try {
+    const result = executeApiAction(action, params);
+    return ContentService.createTextOutput(JSON.stringify({ success: true, data: result }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function executeApiAction(action, payload) {
+  switch (action) {
+    case 'getAllContracts':
+      return getAllContractsAcrossMunicipios();
+    case 'saveContract':
+      return saveContractToSheet(payload.contract);
+    case 'recordPayment':
+      return recordPaymentToSheet(payload.payment, payload.municipio || payload.municipioKey);
+    case 'updatePayment':
+      return updatePaymentInSheet(payload.payment, payload.municipio || payload.municipioKey);
+    case 'deletePayment':
+      return deletePaymentFromSheet(payload.contractId, payload.movementIndex, payload.municipio || payload.municipioKey);
+    case 'deleteContract':
+      return deleteContractFromSheet(payload.contractId, payload.municipio || payload.municipioKey);
+    case 'toggleInvoice':
+      return toggleInvoiceStatus(payload.contractId, payload.fecha, payload.municipio || payload.municipioKey);
+    case 'getMarketRates':
+      return getMarketRates();
+    case 'getMovements':
+      return getContractMovementsFromSheet(payload.codigoOrId, payload.municipio || payload.municipioKey, payload.establecimiento);
+    case 'initializeSampleData':
+      return initializeSampleDataAllMunicipios();
+    case 'addTerreri':
+      return addTerreriContract(payload.municipio || payload.municipioKey);
+    default:
+      throw new Error('Acción no reconocida: ' + action);
+  }
+}
+
+/**
+ * Crea específicamente el contrato del "Campo Terreri"
+ * con su solapa independiente y sus movimientos en Google Sheets.
+ */
+function addTerreriContract(optMunicipio) {
+  const munKey = optMunicipio || 'exaltacion';
+  const cData = {
+    establecimiento: 'Campo Terreri',
+    ubicacion: 'Exaltación de la Cruz',
+    arrendador: 'Familia Terreri',
+    arrendatario: 'Administración Rural',
+    superficieHa: 220,
+    cultivoPactado: 'Soja',
+    modalidad: '14.5 qq/ha',
+    precioTn: 305,
+    campana: '2024/2025',
+    fecha: getTodayString(),
+    fechaVencimiento: '2026-12-31',
+    observaciones: 'Cargado y sincronizado desde la Terminal Agropecuaria',
+    municipioKey: munKey
+  };
+  
+  const all = saveContractToSheet(cData);
+  
+  // Buscar el contrato creado para registrarle una entrega inicial
+  const created = all.find(function(item) { 
+    return item.establecimiento && item.establecimiento.toLowerCase().indexOf('terreri') !== -1; 
+  });
+
+  if (created) {
+    recordPaymentToSheet({
+      contractId: created.id,
+      fechaVenta: getTodayString(),
+      kg: 60000,
+      precioRosarioARS: 342000,
+      tipoCambioARS: 1535,
+      medioPago: 'Transferencia',
+      nroReferencia: 'TRF-TERRERI-01',
+      facturaRecibida: true,
+      nroFactura: 'FAC-A-0001-0000458',
+      municipioKey: munKey,
+      observaciones: 'Entrega inicial registrada desde la terminal'
+    }, munKey);
+  }
+  
+  Logger.log('Campo Terreri creado exitosamente con solapa y movimientos en ' + munKey);
+  return getAllContractsAcrossMunicipios();
 }
 
 function getTodayString() {
