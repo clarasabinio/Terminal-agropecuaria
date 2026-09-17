@@ -12,11 +12,12 @@ cd "$DIR"
 # Función de restauración automática al salir (Cmd+Q o cerrar)
 cleanup() {
   echo ""
-  echo "🔄 Restaurando visibilidad de la barra inferior (Dock)..."
+  echo "🔄 Restaurando visibilidad de la barra inferior (Dock) y aplicaciones..."
   osascript -e 'tell application "System Events" to set autohide of dock preferences to false' 2>/dev/null
-  echo "✅ Sistema restaurado a su estado normal."
+  osascript -e 'tell application "System Events" to set visible of every process to true' 2>/dev/null
+  echo "✅ Computadora restaurada a su estado normal."
   echo "=========================================================="
-  echo "Sesión de Kiosco finalizada."
+  echo "Sesión de Kiosco finalizada. Acceso completo habilitado."
   echo "=========================================================="
 }
 trap cleanup EXIT INT TERM

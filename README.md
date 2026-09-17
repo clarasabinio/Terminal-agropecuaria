@@ -59,7 +59,11 @@ El visualizador muestra:
 - **Gestión de Pagos y Comprobantes**: Registro de transferencias, e-cheqs y cheques físicos con carga de comprobantes adjuntos a Google Drive.
 - **Control de Facturación**: Seguimiento del estado de entrega de factura de alquiler.
 - **Fondos Fotográficos Rotativos**: Carrusel de fotos reales de campo en alta definición con rotación automática cada 5 minutos.
-- **Modo Kiosco Bloqueado**: Operación en modo tótem de pantalla completa protegida con contraseña de desbloqueo.
+- **Modo Kiosco Bloqueado Estricto**:
+  - **Bloqueo de la Computadora**: Al activar el modo kiosco, la pantalla se bloquea por completo, ocultando el Dock de macOS, la barra de menús superior y bloqueando el acceso a otras aplicaciones, pestañas y atajos de teclado (Esc, F5, F11, F12, Cmd+R, Cmd+W, Cmd+T, Cmd+Q, etc.).
+  - **Uso Exclusivo de la Terminal**: Cualquier persona solo puede interactuar con la Terminal Agropecuaria.
+  - **Desbloqueo con Contraseña de Administrador**: Para salir del Modo Kiosco y volver a usar el resto de la computadora normalmente, se debe presionar **`[ 🔒 Salir de Kiosco ]`** e ingresar la contraseña de Administrador (`admin123` o PIN `1234`). Al ingresar la clave correcta, la terminal se desbloquea o se cierra, restaurando automáticamente el escritorio y todas las aplicaciones de la Mac.
+  - **Lanzador de 1 Clic para Mac**: Ejecutable `Iniciar_Kiosco.command` con doble clic para abrir Google Chrome en modo Kiosco dedicado sin configurar nada.
 
 ---
 
