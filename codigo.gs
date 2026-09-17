@@ -95,7 +95,20 @@ function handleApiRequest(action, params) {
   }
 }
 
-function executeApiAction(action, payload) {
+function executeApiAction(action, rawPayload) {
+  let payload = rawPayload || {};
+  if (payload.data && typeof payload.data === 'string') {
+    try {
+      payload = Object.assign({}, payload, JSON.parse(payload.data));
+    } catch (e) {}
+  }
+  if (payload.contract && typeof payload.contract === 'string') {
+    try { payload.contract = JSON.parse(payload.contract); } catch (e) {}
+  }
+  if (payload.payment && typeof payload.payment === 'string') {
+    try { payload.payment = JSON.parse(payload.payment); } catch (e) {}
+  }
+
   switch (action) {
     case 'getAllContracts':
       return getAllContractsAcrossMunicipios();
