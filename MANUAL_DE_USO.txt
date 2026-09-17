@@ -41,7 +41,16 @@ Repositorio GitHub: https://github.com/clarasabinio/Terminal-agropecuaria
    6.2. Cómo Iniciar el Kiosco (Iniciar_Kiosco.command)
    6.3. Cómo Salir o Desbloquear el Modo Kiosco
    6.4. Qué hacer ante reinicio o corte de energía
-7. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+7. CHATBOT AUTÓNOMO PARA PROPIETARIOS RURALES (chatbot.html)
+   7.1. Propósito y Funcionamiento Autónomo
+   7.2. Privacidad Estricta, Búsqueda Obligatoria y Confirmación de Identidad
+   7.3. Consultas Principales del Propietario (Kg, Fechas, Monto y Simulador)
+   7.4. Ficha de Liquidación Imprimible y Botón en la Terminal
+   7.5. Cómo Iniciar el Chatbot Localmente (Iniciar_Chatbot.command)
+8. PUBLICACIÓN ONLINE Y CONSULTA REMOTA (GITHUB PAGES)
+   8.1. Enlace Oficial de Acceso Web para Docentes y Usuarios
+   8.2. Navegación Fluida entre Terminal y Chatbot
+   8.3. Respaldo y Sincronización con GitHub
 
 
 ================================================================================
@@ -449,9 +458,109 @@ Si la computadora se apaga o reinicia:
 
 
 ================================================================================
-7. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+7. CHATBOT AUTÓNOMO PARA PROPIETARIOS RURALES (chatbot.html)
 ================================================================================
-Todo el código y sus manuales se encuentran respaldados en su repositorio de GitHub:
+
+7.1. PROPÓSITO Y FUNCIONAMIENTO AUTÓNOMO
+El Chatbot de Propietarios Rurales (`chatbot.html`) es un módulo conversacional
+independiente diseñado específicamente para que los dueños de los campos
+(arrendadores) puedan consultar de forma rápida, intuitiva y amigable el estado
+financiero y físico de sus contratos de arrendamiento.
+- Funciona de forma 100% autónoma en cualquier navegador (Chrome, Safari, etc.).
+- Toma la información viva cargada en la Terminal Agropecuaria: lee los contratos,
+  saldos de kilos y las cotizaciones oficiales de la Bolsa de Comercio de Rosario
+  y del Banco Nación.
+- Posee sincronización en tiempo real: si un administrador registra un pago en la
+  Terminal, el Chatbot actualiza automáticamente los saldos sin recargar.
+
+7.2. PRIVACIDAD ESTRICTA, BÚSQUEDA OBLIGATORIA Y CONFIRMACIÓN DE IDENTIDAD
+Para garantizar la confidencialidad absoluta entre diferentes propietarios rurales:
+
+1. RESTRICCIÓN DE PRIVACIDAD ("NO VER TODOS LOS CAMPOS"):
+   - Por razones de seguridad entre arrendadores, el chatbot NO permite consultar,
+     listar ni ver todos los campos juntos.
+   - Si un usuario escribe "todos", "ver todos los campos" o "listar", el asistente
+     bloquea la solicitud recordando que debe identificarse con su propio apellido.
+
+2. ESCRITURA OBLIGATORIA DEL APELLIDO O NOMBRE DEL CAMPO:
+   - Al iniciar la conversación, el asistente formula su pregunta obligatoria:
+     👉 "¿Cuál es su apellido? (o el nombre de su establecimiento/sociedad)"
+   - El propietario debe escribir obligatoriamente su apellido (ej: Morales, Fernández,
+     Ombúes) o el nombre del campo (ej: La Posta, Los Aromos, Santa María).
+   - No se muestran botones de acceso directo a otros campos ni se sugiere información
+     de terceros ante búsquedas no encontradas.
+
+3. TOLERANCIA A VARIACIONES Y PEQUEÑOS ERRORES DE ESCRITURA (FUZZY MATCHING):
+   - El chatbot cuenta con un algoritmo de similitud difusa (Damerau-Levenshtein y
+     normalización fonética para el castellano argentino).
+   - Si el propietario comete un error tipográfico menor o pequeña variación
+     ("Moralez" en lugar de "Morales", "Fernandes" en lugar de "Fernández", etc.),
+     el sistema lo reconoce y lo toma como una coincidencia válida.
+
+4. CONFIRMACIÓN OBLIGATORIA ANTES DE DESPLEGAR LOS DATOS:
+   - Para máxima seguridad, el chatbot solicita confirmación interactiva antes de
+     desplegar los números:
+     [✅ Sí, consultar este campo]   [❌ No, escribir otro apellido]
+   - Solo al recibir la confirmación afirmativa se presentan los saldos de kilos,
+     valuaciones en pesos/dólares, fechas y opciones de simulación.
+
+5. MEMORIA Y VINCULACIÓN EXCLUSIVA POR DISPOSITIVO (BLOQUEO DE OTROS APELLIDOS):
+   - Una vez que un propietario consulta y confirma su identidad, el chatbot guarda
+     automáticamente en la memoria de ese dispositivo (`localStorage`) la vinculación
+     exclusiva con ese titular.
+   - BLOQUEO DE CONSULTAS AJENAS: Ese dispositivo queda protegido contra consultas
+     de otros apellidos ajenos.
+   - DESVINCULACIÓN ADMINISTRATIVA: Si se requiere reasignar el dispositivo, se puede
+     hacer clic en el botón verde [Desvincular] o escribir la clave admin123.
+
+7.3. CONSULTAS PRINCIPALES DEL PROPIETARIO
+1. ¿CUÁNTOS KG LE QUEDAN POR VENDER O FIJAR?
+   - Muestra el Saldo Pendiente en Kilogramos y Toneladas con barra de progreso.
+2. ¿CUÁNDO RECIBIRÁ EL PAGO?
+   - Muestra la Fecha de Vigencia / Vencimiento estipulada y estado de Factura.
+3. ¿CUÁL ES EL MONTO A COBRAR?
+   - Valuación exacta en Pesos Argentinos ($ ARS) tomando la cotización de la BCR Pizarra.
+   - Equivalente estimado en Dólares (USD) según cotización oficial BNA Venta.
+4. SIMULADOR DE VENTA POR KG ESPECÍFICO:
+   - El arrendador puede consultar: "¿Cuánto dinero recibiría si vendo 30.000 kg?"
+   - El chatbot calcula automáticamente el importe en $ ARS y USD, y el saldo remanente.
+
+7.4. FICHA DE LIQUIDACIÓN IMPRIMIBLE Y ACCESO DESDE LA TERMINAL
+- El chatbot cuenta con el botón [📄 Ficha Imprimible] para generar una constancia PDF.
+- En la Terminal Agropecuaria (`index.html`) se cuenta con el botón verde
+  [💬 Chatbot Propietarios] en la barra superior para alternar con 1 clic.
+
+7.5. CÓMO INICIAR EL CHATBOT LOCALMENTE (Iniciar_Chatbot.command)
+En su computadora Mac:
+1. Abra la carpeta `mi-proyecto-antigravity` en su Escritorio.
+2. Haga DOBLE CLIC sobre el archivo:
+   👉 Iniciar_Chatbot.command
+3. Se abrirá automáticamente su navegador en `http://localhost:8080/chatbot.html`.
+
+
+================================================================================
+8. PUBLICACIÓN ONLINE Y CONSULTA REMOTA (GITHUB PAGES)
+================================================================================
+
+8.1. ENLACE OFICIAL DE ACCESO WEB PARA DOCENTES Y USUARIOS
+La Terminal Agropecuaria y el Chatbot están publicados en internet mediante GitHub
+Pages para que cualquier profesor, directivo o evaluador pueda acceder y operar el
+sistema desde su casa o cualquier computadora/celular, sin necesidad de instalar nada:
+
+🌐 ENLACE PRINCIPAL DE LA TERMINAL:
+👉 https://clarasabinio.github.io/Terminal-agropecuaria/
+
+💬 ENLACE DIRECTO AL CHATBOT:
+👉 https://clarasabinio.github.io/Terminal-agropecuaria/chatbot.html
+
+8.2. NAVEGACIÓN FLUIDA ENTRE TERMINAL Y CHATBOT
+- Desde la Terminal (`index.html`), el botón verde superior [💬 Chatbot Propietarios]
+  lleva inmediatamente a la conversación del arrendador.
+- Desde el Chatbot (`chatbot.html`), el botón superior [🏢 Terminal Principal]
+  devuelve al usuario a la consola de administración y monitoreo de contratos.
+
+8.3. RESPALDO Y SINCRONIZACIÓN CON GITHUB
+Todo el código y sus manuales se encuentran respaldados en su repositorio:
 👉 https://github.com/clarasabinio/Terminal-agropecuaria
 
 Para enviar nuevos cambios al repositorio en cualquier momento:
@@ -459,8 +568,9 @@ Para enviar nuevos cambios al repositorio en cualquier momento:
    git add .
    git commit -m "Actualización del sistema"
    git push
-2. O simplemente solicítemelo en el chat y yo sincronizaré su repositorio al instante.
+2. O solicítemelo en el chat y sincronizaré su repositorio al instante.
 
 ================================================================================
                           FIN DEL MANUAL DE USO
 ================================================================================
+

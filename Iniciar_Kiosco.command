@@ -49,7 +49,7 @@ else
   echo "✅ Servidor local ya activo en el puerto $SERVER_PORT."
 fi
 
-URL="http://localhost:8080/Index.html?kiosk=1"
+URL="http://localhost:8080/index.html?kiosk=1"
 
 # 2. Ocultar la ventana de la Terminal para no distraer
 osascript -e 'tell application "Terminal" to set miniaturized of window 1 to true' 2>/dev/null &

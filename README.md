@@ -4,6 +4,15 @@ Sistema integral de gestión de contratos de arrendamiento agrícola, fijación 
 
 ---
 
+## 🌐 Acceso Online en Vivo (GitHub Pages)
+
+El proyecto se encuentra publicado y listo para ser probado directamente desde cualquier navegador web (computadora, tablet o celular) sin requerir instalación previa:
+
+- 🏢 **Terminal Agropecuaria Principal**: [https://clarasabinio.github.io/Terminal-agropecuaria/](https://clarasabinio.github.io/Terminal-agropecuaria/)
+- 💬 **Chatbot para Propietarios Rurales**: [https://clarasabinio.github.io/Terminal-agropecuaria/chatbot.html](https://clarasabinio.github.io/Terminal-agropecuaria/chatbot.html)
+
+---
+
 ## 🌾 Bases de Datos Municipales Integradas (Google Sheets)
 
 La Terminal se encuentra conectada a la carpeta compartida de Google Drive que contiene las 3 Hojas de Cálculo oficiales correspondientes a las zonas agropecuarias:
@@ -39,12 +48,20 @@ El visualizador muestra:
 - Subtotales métricos por municipio.
 - Resumen consolidado federando las 3 bases de datos (3.440 Ha totales).
 
-### 2. Terminal Web Kiosco Interactiva (`Index.html`)
+### 2. Terminal Web Kiosco Interactiva (`index.html`)
 - **Pestaña de Carga Directa a Google Sheets (`➕ Cargar Nuevo Contrato`)**: Accesible directamente desde la barra de navegación de la terminal. Permite seleccionar la base de datos de destino (Exaltación de la Cruz, Salto o San Andrés de Giles), autogenerar códigos, calcular en tiempo real los kilos a pagar y valorización en USD y ARS (cotización BNA), y cuenta con el **Botón de Carga `[ 🚀 CARGAR CONTRATO A HOJAS DE CÁLCULO ]`** para enviar e impactar el registro inmediatamente en la hoja de cálculo de Google Drive correspondiente.
 - **Filtro Dinámico por Municipio**: Selector en la barra de herramientas para filtrar los campos por *Todos*, *Exaltación de la Cruz*, *Salto* o *San Andrés de Giles*.
 - **Insignias / Badges Visuales**: Cada tarjeta de contrato exhibe una etiqueta distintiva con el color y escudo de su municipio (`badge-municipio-exaltacion`, `badge-municipio-salto`, `badge-municipio-giles`).
 - **Planilla Master Multi-Base**: En la solapa de Planilla de Cálculo, se puede conmutar la vista para inspeccionar cada base de datos municipal o ver la consolidación global.
 - **Acceso Directo a Drive**: Botón directo para abrir la hoja de cálculo específica de Google Sheets correspondiente al campo.
+- **Acceso Directo al Chatbot**: Botón verde superior `[ 💬 Chatbot Propietarios ]` para alternar fluidamente al asistente conversacional.
+
+### 3. Chatbot Autónomo para Propietarios Rurales (`chatbot.html`)
+- **Consulta Privada y Segura**: Identificación obligatoria por apellido o nombre de establecimiento con confirmación interactiva.
+- **Métricas Fundamentales del Arrendador**: Kilos pendientes por liquidar, fechas de cobro y valuación en Pesos Argentinos ($ ARS) y Dólares (USD).
+- **Simulador de Venta por Cantidad Específica de Kg**: Permite calcular el dinero a cobrar por cualquier volumen (ej: "¿Cuánto cobro si vendo 30.000 kg?").
+- **Vinculación Exclusiva por Dispositivo**: Protección automática para evitar consultas cruzadas no autorizadas.
+- **Ficha Imprimible de Liquidación**: Botón `[ 📄 Ficha Imprimible ]` para emitir comprobante de consulta en PDF.
 
 ---
 
@@ -71,12 +88,15 @@ El visualizador muestra:
 
 ```
 mi-proyecto-antigravity/
-├── Index.html                  # Terminal Web completa (frontend + emulación local)
+├── index.html                  # Terminal Web completa (frontend + emulación local)
+├── chatbot.html                # Chatbot interactivo para Propietarios Rurales
 ├── codigo.gs                   # Backend Apps Script con router multi-municipio
 ├── ver_campos_terminal.py      # Visor CLI en consola Python con tablas y métricas
 ├── Ver_Campos_Terminal.command # Lanzador de terminal con doble clic para macOS
 ├── Iniciar_Kiosco.command      # Lanzador de la Terminal en Modo Kiosco Chrome
+├── Iniciar_Chatbot.command     # Lanzador del Chatbot en navegador local
 ├── MANUAL_DE_USO.txt           # Manual exhaustivo de operación y administración
-├── README.md                   # Descripción general y documentación de la arquitectura
+├── README.md                   # Descripción general y enlaces a GitHub Pages
+├── .nojekyll                   # Archivo de configuración para GitHub Pages estático
 └── Fotos/                      # Banco fotográfico de alta resolución para carrusel
 ```
