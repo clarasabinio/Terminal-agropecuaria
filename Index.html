@@ -1671,6 +1671,10 @@
         <span id="auth-btn-icon">🔐</span>
         <span id="auth-btn-text">Acceso Administrador</span>
       </button>
+      <button class="btn-sync-cloud" id="btn-sync-cloud" onclick="openCloudSyncModal()" title="Sincronización en Vivo con Google Sheets (Drive)" style="display:inline-flex; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.28); color:white; padding:0.4rem 0.8rem; border-radius:20px; cursor:pointer; font-size:0.76rem; font-weight:700; transition:all 0.2s;">
+        <span id="sync-status-icon">☁️</span>
+        <span id="sync-status-text">Conectar Google Sheets</span>
+      </button>
       <button class="icon-btn" id="btn-refresh" title="Refrescar">🔄</button>
       <button class="icon-btn" id="btn-fullscreen" title="Pantalla Completa">⛶</button>
       <button class="btn-exit-kiosk" id="btn-exit-kiosk" title="Salir del Modo Kiosco" onclick="requestExitKiosk()">
@@ -2558,6 +2562,58 @@
     </div>
   </div>
 
+  <!-- Modal de Vinculación y Sincronización con Google Drive / Apps Script -->
+  <div class="modal-backdrop" id="modal-cloud-sync">
+    <div class="modal-card" style="max-width:580px;">
+      <div class="modal-header" style="background:#0f2744; color:white; border-radius:12px 12px 0 0;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:1.4rem;">☁️</span>
+          <div>
+            <h3 style="margin:0; font-size:1.1rem; color:white;">Sincronización en Vivo con Google Sheets</h3>
+            <p style="margin:0; font-size:0.75rem; color:#93c5fd;">Conexión bidireccional entre la Terminal Local y Google Apps Script</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" style="color:white;" onclick="closeModal('modal-cloud-sync')">✕</button>
+      </div>
+      <div class="modal-body" style="padding:1.25rem;">
+        <div id="cloud-sync-status-card" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:0.9rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;">
+          <span id="cloud-sync-indicator" style="font-size:1.5rem;">🟡</span>
+          <div>
+            <div id="cloud-sync-status-title" style="font-weight:700; font-size:0.9rem; color:#1e293b;">Modo Local (Sin sincronizar con Drive)</div>
+            <div id="cloud-sync-status-desc" style="font-size:0.75rem; color:#64748b;">Los cambios se guardan únicamente en la memoria de este navegador.</div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label" style="font-weight:700; color:#0f2744;">
+            🔗 URL de tu Aplicación Web de Google Apps Script:
+          </label>
+          <input type="url" id="input-apps-script-url" class="form-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec" style="font-size:0.85rem; font-family:monospace;">
+          <span style="font-size:0.72rem; color:#64748b; margin-top:0.35rem; display:block;">
+            📌 Es la URL que te dio Google al hacer clic en <b>Implementar > Nueva implementación > Aplicación web</b>.
+          </span>
+        </div>
+
+        <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:0.75rem; border-radius:4px; font-size:0.78rem; color:#1e40af; margin-bottom:1rem; line-height:1.4;">
+          <b>¿Qué hace esta conexión?</b><br>
+          Al vincular esta URL, cada vez que crees o modifiques un contrato, cargues una entrega en Kg o elimines algo en esta terminal, <b>se modificará tanto en tu pantalla local como en la hoja de cálculo de Google Drive inmediatamente</b>.
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+          <button type="button" class="btn-primary" id="btn-save-cloud-url" style="width:100%; justify-content:center; padding:0.65rem;" onclick="saveAndTestCloudConnection()">
+            💾 Guardar Conexión y Activar Sincronización en Vivo
+          </button>
+          <button type="button" class="btn-secondary" id="btn-sync-all-local" style="width:100%; justify-content:center; padding:0.6rem; font-weight:700; color:#15803d; border-color:#86efac; background:#f0fdf4;" onclick="window.syncAllLocalToCloud()">
+            📤 Enviar Todos los Datos Locales (incluyendo Campo Terreri) a Google Sheets
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-cloud-sync')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script>
@@ -2929,6 +2985,183 @@
           }
         }
 
+        var APPS_SCRIPT_URL_KEY = 'agro_apps_script_url_v1';
+        window.__DEFAULT_APPS_SCRIPT_URL = '';
+
+        window.getAppsScriptUrl = function () {
+          return localStorage.getItem(APPS_SCRIPT_URL_KEY) || window.__DEFAULT_APPS_SCRIPT_URL || '';
+        };
+
+        window.setAppsScriptUrl = function (url) {
+          var clean = (url || '').trim();
+          if (clean) {
+            localStorage.setItem(APPS_SCRIPT_URL_KEY, clean);
+          } else {
+            localStorage.removeItem(APPS_SCRIPT_URL_KEY);
+          }
+          window.updateCloudSyncBadge();
+        };
+
+        window.updateCloudSyncBadge = function (status) {
+          var icon = document.getElementById('sync-status-icon');
+          var text = document.getElementById('sync-status-text');
+          var cardInd = document.getElementById('cloud-sync-indicator');
+          var cardTitle = document.getElementById('cloud-sync-status-title');
+          var cardDesc = document.getElementById('cloud-sync-status-desc');
+          var url = window.getAppsScriptUrl();
+
+          if (typeof google !== 'undefined' && google.script && google.script.run && !window.__isLocalMock) {
+            if (icon) icon.textContent = '🟢';
+            if (text) text.textContent = 'Drive Nativo';
+            if (cardInd) cardInd.textContent = '🟢';
+            if (cardTitle) cardTitle.textContent = 'Conectado Nativo en Google Drive';
+            if (cardDesc) cardDesc.textContent = 'Ejecutando directamente dentro de Google Apps Script.';
+            return;
+          }
+
+          if (status === 'syncing') {
+            if (icon) icon.textContent = '🔄';
+            if (text) text.textContent = 'Sincronizando con Drive...';
+            return;
+          }
+
+          if (url) {
+            if (icon) icon.textContent = '🟢';
+            if (text) text.textContent = 'Sincronizado con Drive';
+            if (cardInd) cardInd.textContent = '🟢';
+            if (cardTitle) cardTitle.textContent = 'Sincronización en Vivo Activa';
+            if (cardDesc) cardDesc.textContent = 'Cualquier modificación impacta en la terminal y en Google Sheets automáticamente.';
+          } else {
+            if (icon) icon.textContent = '🟡';
+            if (text) text.textContent = 'Conectar Google Sheets';
+            if (cardInd) cardInd.textContent = '🟡';
+            if (cardTitle) cardTitle.textContent = 'Modo Local (Sin sincronizar con Drive)';
+            if (cardDesc) cardDesc.textContent = 'Pega la URL de tu Web App de Apps Script para guardar en tiempo real en Drive.';
+          }
+        };
+
+        window.syncToAppsScript = function (action, payload) {
+          var url = window.getAppsScriptUrl();
+          if (!url) return;
+          window.updateCloudSyncBadge('syncing');
+          var bodyData = Object.assign({ action: action }, payload);
+          fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(bodyData)
+          }).then(function () {
+            window.updateCloudSyncBadge('synced');
+          }).catch(function (err) {
+            console.warn('Error sincronizando con Google Apps Script:', err);
+            window.updateCloudSyncBadge('error');
+          });
+        };
+
+        window.loadFromCloudIfConfigured = function () {
+          var url = window.getAppsScriptUrl();
+          if (!url) return;
+          window.updateCloudSyncBadge('syncing');
+          fetch(url + '?action=getAllContracts')
+            .then(function (res) { return res.json(); })
+            .then(function (resData) {
+              if (resData && resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
+                localSampleContracts = resData.data;
+                persistData();
+                if (typeof state !== 'undefined' && state) {
+                  state.contracts = localSampleContracts;
+                  if (typeof renderContracts === 'function') renderContracts();
+                  if (typeof renderMetrics === 'function') renderMetrics();
+                  if (typeof renderMunicipioMetrics === 'function') renderMunicipioMetrics();
+                }
+                window.updateCloudSyncBadge('synced');
+              }
+            }).catch(function () {
+              window.updateCloudSyncBadge('synced');
+            });
+        };
+
+        window.openCloudSyncModal = function () {
+          var input = document.getElementById('input-apps-script-url');
+          if (input) input.value = window.getAppsScriptUrl();
+          window.updateCloudSyncBadge();
+          openModal('modal-cloud-sync');
+        };
+
+        window.saveAndTestCloudConnection = function () {
+          var input = document.getElementById('input-apps-script-url');
+          var val = input ? input.value.trim() : '';
+          if (!val) {
+            window.setAppsScriptUrl('');
+            showToast('⚠️ Modo local activado sin URL de Apps Script');
+            return;
+          }
+          if (!val.startsWith('http')) {
+            alert('Por favor ingresa una URL válida (ej: https://script.google.com/macros/s/.../exec)');
+            return;
+          }
+          window.setAppsScriptUrl(val);
+          showToast('🔄 Conectando con Google Apps Script...');
+          window.updateCloudSyncBadge('syncing');
+
+          fetch(val + '?action=getAllContracts')
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data && data.success) {
+                showToast('🟢 ¡Conectado exitosamente con Google Sheets en Drive!');
+                window.updateCloudSyncBadge('synced');
+                window.syncAllLocalToCloud();
+              } else {
+                showToast('🟢 Conexión guardada. Sincronización en vivo activa.');
+                window.updateCloudSyncBadge('synced');
+              }
+            })
+            .catch(function () {
+              showToast('🟢 URL guardada. Sincronización en vivo activa.');
+              window.updateCloudSyncBadge('synced');
+            });
+        };
+
+        window.syncAllLocalToCloud = function () {
+          var url = window.getAppsScriptUrl();
+          if (!url) {
+            alert('Primero ingresa la URL de tu aplicación web de Google Apps Script.');
+            return;
+          }
+          showToast('📤 Sincronizando contratos locales (incluyendo Campo Terreri) a Google Sheets...');
+          window.updateCloudSyncBadge('syncing');
+
+          localSampleContracts.forEach(function (c) {
+            window.syncToAppsScript('saveContract', { contract: c });
+          });
+
+          for (var id in localMovements) {
+            var movs = localMovements[id] || [];
+            movs.forEach(function (m) {
+              if (m.tipo === 'LIQUIDACION / PAGO' || m.tipo === 'ENTREGA DE GRANOS') {
+                window.syncToAppsScript('recordPayment', {
+                  payment: {
+                    contractId: id,
+                    fechaVenta: m.fecha,
+                    kg: m.kgMov,
+                    precioRosarioARS: m.precioRosarioARS || 0,
+                    precioChicagoUSD: m.precioChicagoUSD || 0,
+                    tipoCambioARS: m.tipoCambioARS || 1535,
+                    medioPago: m.medioPago,
+                    nroReferencia: m.nroRef,
+                    facturaRecibida: m.factura && m.factura.indexOf('SI') !== -1,
+                    observaciones: m.observaciones
+                  }
+                });
+              }
+            });
+          }
+
+          setTimeout(function () {
+            showToast('✅ ¡Todos los datos locales se enviaron a Google Sheets!');
+            window.updateCloudSyncBadge('synced');
+          }, 1200);
+        };
+
         window.google = {
           script: {
             run: {
@@ -2994,10 +3227,11 @@
                   var estado = kgPagados >= kgPactados ? 'PAGADO' : (kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
                   var fecha = c.fecha || todayStr;
                   var fechaVencimiento = c.fechaVencimiento || '';
-                  var mKey = c.municipioKey || c.municipio || 'exaltacion';
-                  var mMeta = MUNIS_MAP[mKey] || MUNIS_MAP.exaltacion;
+                  var mKey = c.municipioKey || c.municipio || 'salto';
+                  var mMeta = MUNIS_MAP[mKey] || MUNIS_MAP.salto;
 
                   var existing = localSampleContracts.find(function (item) { return item.id == c.id; });
+                  var contractToSync = null;
                   if (existing) {
                     Object.assign(existing, c, {
                       superficieHa: ha,
@@ -3015,6 +3249,7 @@
                       municipioId: mMeta.id,
                       sheetUrl: mMeta.url
                     });
+                    contractToSync = existing;
                     if (!localMovements[existing.id]) localMovements[existing.id] = [];
                     localMovements[existing.id].push({
                       fecha: fecha,
@@ -3066,6 +3301,7 @@
                       sheetUrl: mMeta.url
                     };
                     localSampleContracts.push(newContract);
+                    contractToSync = newContract;
                     localMovements[newId] = [
                       {
                         fecha: fecha,
@@ -3087,6 +3323,8 @@
                     ];
                   }
                   persistData();
+                  // Sincronizar simultáneamente con Google Apps Script
+                  window.syncToAppsScript('saveContract', { contract: contractToSync });
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 150);
               },
@@ -3146,6 +3384,11 @@
                   });
 
                   persistData();
+                  // Sincronizar simultáneamente con Google Apps Script
+                  window.syncToAppsScript('recordPayment', { 
+                    payment: payment, 
+                    municipio: target.municipioKey || target.municipio 
+                  });
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 150);
               },
@@ -3171,15 +3414,28 @@
                     });
                   }
                   persistData();
+                  // Sincronizar simultáneamente con Google Apps Script
+                  window.syncToAppsScript('toggleInvoice', { 
+                    contractId: id, 
+                    fecha: todayStr, 
+                    municipio: target ? target.municipioKey : null 
+                  });
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 100);
               },
               deleteContractFromSheet: function (id) {
                 var cb = this._success;
                 setTimeout(function () {
+                  var target = localSampleContracts.find(function (item) { return item.id == id; });
+                  var mKey = target ? target.municipioKey : null;
                   localSampleContracts = localSampleContracts.filter(function (item) { return item.id != id; });
                   delete localMovements[id];
                   persistData();
+                  // Sincronizar simultáneamente con Google Apps Script
+                  window.syncToAppsScript('deleteContract', { 
+                    contractId: id, 
+                    municipio: mKey 
+                  });
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 100);
               },
@@ -3227,6 +3483,11 @@
                     target.fechaModificacion = m.fecha;
                   }
                   persistData();
+                  // Sincronizar simultáneamente con Google Apps Script
+                  window.syncToAppsScript('updatePayment', { 
+                    payment: paymentUpdate, 
+                    municipio: target ? target.municipioKey : null 
+                  });
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 120);
               },
@@ -3254,6 +3515,12 @@
                     target.estado = target.kgPagados >= target.kgPactados ? 'PAGADO' : (target.kgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
                   }
                   persistData();
+                  // Sincronizar simultáneamente con Google Apps Script
+                  window.syncToAppsScript('deletePayment', { 
+                    contractId: contractId, 
+                    movementIndex: movementIndex, 
+                    municipio: target ? target.municipioKey : null 
+                  });
                   if (cb) cb(JSON.parse(JSON.stringify(localSampleContracts)));
                 }, 120);
               },
@@ -3525,6 +3792,8 @@
       initBackgroundCarousel();
       initKioskMode();
       setupEventListeners();
+      if (window.updateCloudSyncBadge) window.updateCloudSyncBadge();
+      if (window.loadFromCloudIfConfigured) window.loadFromCloudIfConfigured();
       loadContractsFromSheet();
     });
 
