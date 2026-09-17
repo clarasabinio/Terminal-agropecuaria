@@ -52,8 +52,10 @@ function doGet(e) {
       '<h2 style="color:#0f2744;">🚜 Terminal Agropecuaria - Backend Activo</h2>' +
       '<p>El backend de Google Apps Script está correctamente vinculado a las hojas de cálculo.</p>' +
       '<div style="background:#f1f5f9;border-left:4px solid #2563eb;padding:15px;margin:20px 0;">' +
+      '<b>Para actualizar y recalcular todas las entregas en Google Sheets ahora:</b><br>' +
+      'Selecciona la función <b><code>actualizarTodasLasEntregasEnDrive</code></b> y haz clic en <b>▶ Ejecutar</b>.<br><br>' +
       '<b>Para generar las solapas por campo en Google Sheets:</b><br>' +
-      'En el editor de Apps Script, cambia la función seleccionada de <code>doGet</code> a <b><code>initializeSampleDataAllMunicipios</code></b> y haz clic en <b>▶ Ejecutar</b>.<br><br>' +
+      'En el editor de Apps Script, cambia la función seleccionada a <b><code>initializeSampleDataAllMunicipios</code></b> y haz clic en <b>▶ Ejecutar</b>.<br><br>' +
       '<b>Para cargar el campo Terreri con su solapa y movimientos en Salto:</b><br>' +
       'Selecciona la función <b><code>crearTerreriEnSalto</code></b> y haz clic en <b>▶ Ejecutar</b>.' +
       '</div>' +
@@ -108,6 +110,15 @@ function executeApiAction(action, rawPayload) {
   if (payload.payment && typeof payload.payment === 'string') {
     try { payload.payment = JSON.parse(payload.payment); } catch (e) {}
   }
+  if (payload.contracts && typeof payload.contracts === 'string') {
+    try { payload.contracts = JSON.parse(payload.contracts); } catch (e) {}
+  }
+  if (payload.movements && typeof payload.movements === 'string') {
+    try { payload.movements = JSON.parse(payload.movements); } catch (e) {}
+  }
+  if (payload.movementsMap && typeof payload.movementsMap === 'string') {
+    try { payload.movements = JSON.parse(payload.movementsMap); } catch (e) {}
+  }
 
   switch (action) {
     case 'getAllContracts':
@@ -132,9 +143,210 @@ function executeApiAction(action, rawPayload) {
       return initializeSampleDataAllMunicipios();
     case 'addTerreri':
       return addTerreriContract(payload.municipio || payload.municipioKey);
+    case 'syncAllTabs':
+      return syncFullContractTabsFromClient(payload.contracts, payload.movements);
+    case 'actualizarTodasEntregas':
+      return actualizarTodasLasEntregasEnDrive();
     default:
       throw new Error('Acción no reconocida: ' + action);
   }
+}
+
+/**
+ * Sincroniza y actualiza completamente todas las solapas y entregas en Drive
+ * tomando la lista de movimientos y contratos enviada por la terminal.
+ * Elimina registros desactualizados y sobrescribe con los valores modificados exactos.
+ */
+function syncFullContractTabsFromClient(contracts, movementsMap) {
+  if (typeof contracts === 'string') {
+    try { contracts = JSON.parse(contracts); } catch (e) {}
+  }
+  if (typeof movementsMap === 'string') {
+    try { movementsMap = JSON.parse(movementsMap); } catch (e) {}
+  }
+  if (!contracts || !Array.isArray(contracts)) {
+    contracts = getAllContractsAcrossMunicipios();
+  }
+
+  const results = [];
+
+  contracts.forEach(function (c) {
+    try {
+      const munMeta = getMunicipioMeta(c.municipioKey || c.municipioId || c.municipio);
+      const ss = resolveSpreadsheet(munMeta.key);
+      const tab = getOrCreateContractTab(c, ss);
+
+      // Limpiar filas de movimientos anteriores (de la fila 6 en adelante)
+      const lastRow = tab.getLastRow();
+      if (lastRow > 5) {
+        tab.deleteRows(6, lastRow - 5);
+      }
+
+      // Obtener los movimientos de este contrato buscando por id, codigo o nombre
+      let movs = [];
+      if (movementsMap && typeof movementsMap === 'object') {
+        if (c.id && movementsMap[c.id]) {
+          movs = movementsMap[c.id];
+        } else if (c.codigo && movementsMap[c.codigo]) {
+          movs = movementsMap[c.codigo];
+        } else if (c.establecimiento && movementsMap[c.establecimiento]) {
+          movs = movementsMap[c.establecimiento];
+        } else {
+          for (var k in movementsMap) {
+            if (k && c.establecimiento && String(k).toLowerCase().trim() === String(c.establecimiento).toLowerCase().trim()) {
+              movs = movementsMap[k];
+              break;
+            }
+          }
+        }
+      }
+      
+      let totalKgPagados = 0;
+      let totalUsdPagados = 0;
+      const kgPactados = parseInt(c.kgPactados, 10) || Math.round((parseFloat(c.superficieHa) || 0) * (parseFloat(c.modalidad) || 12) * 100);
+
+      movs.forEach(function (m) {
+        const kgMov = parseInt(m.kgMov || m.kg, 10) || 0;
+        const usdMov = parseFloat(m.usdMov || m.totalUSD) || 0;
+        const arsMov = parseFloat(m.arsMov || m.totalARS) || 0;
+        const precioRos = parseFloat(m.precioRosarioARS) || 0;
+        const tipoCambio = parseFloat(m.tipoCambioARS) || 1535;
+        const precioChi = parseFloat(m.precioChicagoUSD) || (tipoCambio > 0 && precioRos > 0 ? (precioRos / tipoCambio) : (c.precioTn || 0));
+
+        if (String(m.tipo || '').toUpperCase().indexOf('LIQUIDACION') !== -1 || String(m.tipo || '').toUpperCase().indexOf('ENTREGA') !== -1 || String(m.tipo || '').toUpperCase().indexOf('PAGO') !== -1) {
+          totalKgPagados += kgMov;
+          totalUsdPagados += usdMov;
+        }
+
+        const saldoAtRow = Math.max(0, kgPactados - totalKgPagados);
+
+        tab.appendRow([
+          m.fecha || getTodayString(),
+          m.tipo || 'ENTREGA DE GRANOS',
+          m.detalle || '',
+          kgMov,
+          saldoAtRow,
+          precioRos || precioChi || 0,
+          tipoCambio,
+          usdMov,
+          arsMov,
+          m.medioPago || 'Transferencia',
+          m.nroRef || m.nroReferencia || '-',
+          m.factura || (c.facturaRecibida ? 'SI' : 'NO'),
+          m.comprobanteUrl || '',
+          m.observaciones || ''
+        ]);
+      });
+
+      // Recalcular fila máster en la hoja Contratos
+      const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheetByName('Contratos') || ss.getSheets()[0];
+      const masterValues = masterSheet.getDataRange().getValues();
+      for (let i = 1; i < masterValues.length; i++) {
+        const rowId = String(masterValues[i][0] || '').trim();
+        const rowCod = String(masterValues[i][1] || '').trim();
+        const rowEst = String(masterValues[i][2] || '').trim().toLowerCase();
+        const targetId = String(c.id || '').trim();
+        const targetCod = String(c.codigo || '').trim();
+        const targetEst = String(c.establecimiento || '').trim().toLowerCase();
+
+        if (rowId === targetId || (targetCod && rowCod === targetCod) || (targetEst && rowEst === targetEst)) {
+          const nuevoSaldoKg = Math.max(0, kgPactados - totalKgPagados);
+          const precioTn = parseFloat(masterValues[i][12]) || c.precioTn || 0;
+          const precioKgUSD = precioTn / 1000;
+          const nuevoSaldoUSD = nuevoSaldoKg * precioKgUSD;
+          const pct = kgPactados > 0 ? ((totalKgPagados / kgPactados) * 100).toFixed(1) + '%' : '0%';
+          const estado = totalKgPagados >= kgPactados ? 'PAGADO' : (totalKgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+
+          masterSheet.getRange(i + 1, 11).setValue(totalKgPagados);
+          masterSheet.getRange(i + 1, 12).setValue(nuevoSaldoKg);
+          masterSheet.getRange(i + 1, 15).setValue(Math.round(totalUsdPagados));
+          masterSheet.getRange(i + 1, 16).setValue(Math.round(nuevoSaldoUSD));
+          masterSheet.getRange(i + 1, 19).setValue(pct);
+          masterSheet.getRange(i + 1, 20).setValue(estado);
+          masterSheet.getRange(i + 1, 22).setValue(getTodayString());
+          break;
+        }
+      }
+
+      results.push({ id: c.id, establecimiento: c.establecimiento, movsCount: movs.length });
+    } catch (err) {
+      Logger.log('Error sincronizando solapa para ' + c.establecimiento + ': ' + err.message);
+    }
+  });
+
+  return { success: true, count: results.length, details: results };
+}
+
+/**
+ * Función directa para ejecutar desde Google Apps Script (botón ▶ Ejecutar)
+ * que revisa todas las solapas de campos existentes en Drive, recalcula
+ * los saldos de cada entrega y actualiza las filas del máster CONTRATOS.
+ */
+function actualizarTodasLasEntregasEnDrive() {
+  const municipios = ['exaltacion', 'salto', 'giles'];
+  let totalTabsUpdated = 0;
+
+  municipios.forEach(function (munKey) {
+    try {
+      const ss = resolveSpreadsheet(munKey);
+      const masterSheet = ss.getSheetByName('CONTRATOS') || ss.getSheetByName('Contratos') || ss.getSheets()[0];
+      const masterValues = masterSheet.getDataRange().getValues();
+
+      for (let i = 1; i < masterValues.length; i++) {
+        const cId = masterValues[i][0];
+        const cCodigo = masterValues[i][1];
+        const cEstablecimiento = masterValues[i][2];
+        const kgPactados = parseInt(masterValues[i][9], 10) || 0;
+        const precioTn = parseFloat(masterValues[i][12]) || 0;
+        const precioKgUSD = precioTn / 1000;
+
+        const cObj = { id: cId, codigo: cCodigo, establecimiento: cEstablecimiento, municipioKey: munKey };
+        const tab = findContractTab(ss, cObj);
+        if (!tab) continue;
+
+        const tabRows = tab.getDataRange().getValues();
+        if (tabRows.length <= 5) continue; // Solo encabezados
+
+        let totalKgPagados = 0;
+        let totalUsdPagados = 0;
+
+        for (let r = 5; r < tabRows.length; r++) {
+          const rowNum = r + 1;
+          const tipo = String(tabRows[r][1] || '').toUpperCase();
+          const kgMov = parseInt(tabRows[r][3], 10) || 0;
+          const usdMov = parseFloat(tabRows[r][7]) || 0;
+
+          if (tipo.indexOf('ENTREGA') !== -1 || tipo.indexOf('LIQUIDACION') !== -1 || tipo.indexOf('PAGO') !== -1) {
+            totalKgPagados += kgMov;
+            totalUsdPagados += usdMov;
+          }
+
+          const saldoAtRow = Math.max(0, kgPactados - totalKgPagados);
+          tab.getRange(rowNum, 5).setValue(saldoAtRow);
+        }
+
+        const nuevoSaldoKg = Math.max(0, kgPactados - totalKgPagados);
+        const nuevoSaldoUSD = nuevoSaldoKg * precioKgUSD;
+        const pct = kgPactados > 0 ? ((totalKgPagados / kgPactados) * 100).toFixed(1) + '%' : '0%';
+        const estado = totalKgPagados >= kgPactados ? 'PAGADO' : (totalKgPagados > 0 ? 'PARCIAL' : 'PENDIENTE');
+
+        masterSheet.getRange(i + 1, 11).setValue(totalKgPagados);
+        masterSheet.getRange(i + 1, 12).setValue(nuevoSaldoKg);
+        masterSheet.getRange(i + 1, 15).setValue(Math.round(totalUsdPagados));
+        masterSheet.getRange(i + 1, 16).setValue(Math.round(nuevoSaldoUSD));
+        masterSheet.getRange(i + 1, 19).setValue(pct);
+        masterSheet.getRange(i + 1, 20).setValue(estado);
+        masterSheet.getRange(i + 1, 22).setValue(getTodayString());
+
+        totalTabsUpdated++;
+      }
+    } catch (e) {
+      Logger.log('Error en actualizarTodasLasEntregasEnDrive (' + munKey + '): ' + e.message);
+    }
+  });
+
+  Logger.log('✅ Se actualizaron ' + totalTabsUpdated + ' solapas y contratos en Drive.');
+  return { success: true, updatedTabs: totalTabsUpdated };
 }
 
 /**
@@ -897,7 +1109,14 @@ function updatePaymentInSheet(paymentUpdate, optMunicipio) {
 
   let contractObj = null;
   for (let i = 1; i < masterValues.length; i++) {
-    if (masterValues[i][0] == paymentUpdate.contractId) {
+    const rowId = String(masterValues[i][0] || '').trim();
+    const rowCod = String(masterValues[i][1] || '').trim();
+    const rowEst = String(masterValues[i][2] || '').trim().toLowerCase();
+    const searchId = String(paymentUpdate.contractId || '').trim();
+    const searchCod = String(paymentUpdate.contractCodigo || '').trim();
+    const searchEst = String(paymentUpdate.establecimiento || '').trim().toLowerCase();
+
+    if (rowId === searchId || (searchCod && rowCod === searchCod) || (searchEst && rowEst === searchEst) || rowEst === searchId.toLowerCase()) {
       contractObj = {
         id: masterValues[i][0],
         codigo: masterValues[i][1],
@@ -921,10 +1140,6 @@ function updatePaymentInSheet(paymentUpdate, optMunicipio) {
   const movIdx = parseInt(paymentUpdate.movementIndex, 10);
   const targetRow = movIdx + 6;
 
-  if (targetRow > tabRows.length) {
-    throw new Error('Movimiento no encontrado en la fila especificada.');
-  }
-
   const fechaVenta = paymentUpdate.fechaVenta || paymentUpdate.fecha || getTodayString();
   const kg = parseInt(paymentUpdate.kg, 10) || 0;
   const precioRosario = parseFloat(paymentUpdate.precioRosarioARS) || 0;
@@ -933,19 +1148,38 @@ function updatePaymentInSheet(paymentUpdate, optMunicipio) {
   const totalUSD = tipoCambio > 0 ? Math.round(totalARS / tipoCambio) : Math.round(kg * (precioRosario / 1535 / 1000));
   const factura = paymentUpdate.facturaRecibida ? 'SI' : 'NO';
 
-  tab.getRange(targetRow, 1).setValue(fechaVenta);
-  tab.getRange(targetRow, 3).setValue('Fijación Rosario BCR y entrega (' + munMeta.nombre + ') [MODIFICADO]');
-  tab.getRange(targetRow, 4).setValue(kg);
-  tab.getRange(targetRow, 6).setValue(precioRosario);
-  tab.getRange(targetRow, 7).setValue(tipoCambio);
-  tab.getRange(targetRow, 8).setValue(totalUSD);
-  tab.getRange(targetRow, 9).setValue(totalARS);
-  tab.getRange(targetRow, 10).setValue(paymentUpdate.medioPago || 'Transferencia');
-  tab.getRange(targetRow, 11).setValue(paymentUpdate.nroReferencia || paymentUpdate.nroFactura || '-');
-  tab.getRange(targetRow, 12).setValue(factura + (paymentUpdate.nroFactura ? ' (N° ' + paymentUpdate.nroFactura + ')' : ''));
-  tab.getRange(targetRow, 14).setValue(paymentUpdate.observaciones || ('Fijación Rosario a $' + precioRosario + ' ARS/Tn [Modificado]'));
+  if (targetRow > tabRows.length) {
+    tab.appendRow([
+      fechaVenta,
+      'ENTREGA DE GRANOS',
+      'Fijación Rosario BCR y entrega (' + munMeta.nombre + ') [MODIFICADO]',
+      kg,
+      0,
+      precioRosario,
+      tipoCambio,
+      totalUSD,
+      totalARS,
+      paymentUpdate.medioPago || 'Transferencia',
+      paymentUpdate.nroReferencia || paymentUpdate.nroFactura || '-',
+      factura + (paymentUpdate.nroFactura ? ' (N° ' + paymentUpdate.nroFactura + ')' : ''),
+      '',
+      paymentUpdate.observaciones || ('Fijación Rosario a $' + precioRosario + ' ARS/Tn [Modificado]')
+    ]);
+  } else {
+    tab.getRange(targetRow, 1).setValue(fechaVenta);
+    tab.getRange(targetRow, 3).setValue('Fijación Rosario BCR y entrega (' + munMeta.nombre + ') [MODIFICADO]');
+    tab.getRange(targetRow, 4).setValue(kg);
+    tab.getRange(targetRow, 6).setValue(precioRosario);
+    tab.getRange(targetRow, 7).setValue(tipoCambio);
+    tab.getRange(targetRow, 8).setValue(totalUSD);
+    tab.getRange(targetRow, 9).setValue(totalARS);
+    tab.getRange(targetRow, 10).setValue(paymentUpdate.medioPago || 'Transferencia');
+    tab.getRange(targetRow, 11).setValue(paymentUpdate.nroReferencia || paymentUpdate.nroFactura || '-');
+    tab.getRange(targetRow, 12).setValue(factura + (paymentUpdate.nroFactura ? ' (N° ' + paymentUpdate.nroFactura + ')' : ''));
+    tab.getRange(targetRow, 14).setValue(paymentUpdate.observaciones || ('Fijación Rosario a $' + precioRosario + ' ARS/Tn [Modificado]'));
+  }
 
-  return recalculateContractFromTab(paymentUpdate.contractId, munMeta.key);
+  return recalculateContractFromTab(contractObj.id, munMeta.key);
 }
 
 /**
@@ -959,7 +1193,12 @@ function deletePaymentFromSheet(contractId, movementIndex, optMunicipio) {
 
   let contractObj = null;
   for (let i = 1; i < masterValues.length; i++) {
-    if (masterValues[i][0] == contractId) {
+    const rowId = String(masterValues[i][0] || '').trim();
+    const rowCod = String(masterValues[i][1] || '').trim();
+    const rowEst = String(masterValues[i][2] || '').trim().toLowerCase();
+    const searchId = String(contractId || '').trim();
+
+    if (rowId === searchId || rowCod === searchId || rowEst === searchId.toLowerCase()) {
       contractObj = {
         id: masterValues[i][0],
         codigo: masterValues[i][1],
@@ -985,7 +1224,7 @@ function deletePaymentFromSheet(contractId, movementIndex, optMunicipio) {
     tab.deleteRow(targetRow);
   }
 
-  return recalculateContractFromTab(contractId, munMeta.key);
+  return recalculateContractFromTab(contractObj.id, munMeta.key);
 }
 
 function toggleInvoiceStatus(contractId, fecha, optMunicipio) {
