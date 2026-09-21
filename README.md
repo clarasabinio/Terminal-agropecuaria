@@ -1,102 +1,54 @@
-# Terminal Agropecuaria de Consulta y Gestión de Contratos
+# Sistema Agropecuario (Django + Base de Datos Docker)
 
-Sistema integral de gestión de contratos de arrendamiento agrícola, fijación de granos con cotizaciones de la **Bolsa de Comercio de Rosario (BCR Pizarra)** y del **Mercado de Chicago (CBOT)**, tipos de cambio oficiales del **Banco Nación (BNA)** y federación de múltiples bases de datos en **Google Sheets** organizadas por Municipio.
-
----
-
-## 🌐 Acceso Online en Vivo (GitHub Pages)
-
-El proyecto se encuentra publicado y listo para ser probado directamente desde cualquier navegador web (computadora, tablet o celular) sin requerir instalación previa:
-
-- 🏢 **Terminal Agropecuaria Principal**: [https://clarasabinio.github.io/Terminal-agropecuaria/](https://clarasabinio.github.io/Terminal-agropecuaria/)
-- 💬 **Chatbot para Propietarios Rurales**: [https://clarasabinio.github.io/Terminal-agropecuaria/chatbot.html](https://clarasabinio.github.io/Terminal-agropecuaria/chatbot.html)
+## 📌 Qué se hizo (Resumen simple)
+1. **Migración a Django**: El sistema ahora corre sobre un backend en Django con arquitectura MVC y modelos de datos.
+2. **Base de Datos Dockerizada**: Base de datos relacional PostgreSQL lista para levantar con Docker Compose (`docker-compose.yml`).
+3. **Panel de Administración**: Acceso a `/admin/` para crear, editar y consultar municipios, contratos y entregas.
+4. **Terminal y Chatbot Conectados**: La Terminal Web (`/`) y el Chatbot (`/chatbot/`) consumen la información en vivo desde la base de datos y consultan las cotizaciones del Dólar y Cereales.
+5. **Línea de trabajo intacta**: Se conservaron todos los archivos previos (`codigo.gs`, planillas CSV, scripts de consola y fotos) en el proyecto para que el profesor pueda revisar todo el historial.
 
 ---
 
-## 🌾 Bases de Datos Municipales Integradas (Google Sheets)
+## 🚀 Cómo levantarlo (Paso a Paso)
 
-La Terminal se encuentra conectada a la carpeta compartida de Google Drive que contiene las 3 Hojas de Cálculo oficiales correspondientes a las zonas agropecuarias:
-
-| Municipio / Zona | Google Sheet ID | Enlace Directo | Cabecera / Localidades |
-| :--- | :--- | :--- | :--- |
-| 🏛️ **Exaltación de la Cruz** | `14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ` | [Abrir Planilla](https://docs.google.com/spreadsheets/d/14TDx506Vqy2urOyiyn6mtHx7vcc170snJpEozqm4FDQ/edit) | Capilla del Señor, Los Cardales, Pavón |
-| 🌾 **Salto** | `1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc` | [Abrir Planilla](https://docs.google.com/spreadsheets/d/1i1uAaXBAnjpr8ryUNqeEreix02lcJp70RbwhKbyJIWc/edit) | Salto, Inés Indart, Arroyo Dulce, Berdier |
-| 🌻 **San Andrés de Giles** | `1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic` | [Abrir Planilla](https://docs.google.com/spreadsheets/d/1herQyCsr6fpyNxjroY74EMw4R-G3v0JfOAWJz3s46ic/edit) | San Andrés de Giles, Cucullú, Villa Ruiz, Azcuénaga |
-
-*Carpeta contenedora en Google Drive:* `https://drive.google.com/drive/u/0/folders/1gXI7vPM-fuukfDzZcf6ot9urGgU4xxbc`
+### ⚠️ Regla de Oro: ¿Dónde ejecutar los comandos?
+> **MUY IMPORTANTE**: Abrí la terminal **dentro de la carpeta del proyecto** (`mi-proyecto-antigravity`), que es donde está el archivo `docker-compose.yml`.  
+> Si ejecutás `docker compose up -d` en otro lugar (como tu carpeta de inicio o el Escritorio sin entrar a la carpeta), Docker dará error diciendo que no encuentra el archivo `docker-compose.yml`.
 
 ---
 
-## 💻 Visualización en Terminal (CLI y Web)
+### Opción 1: Con 1 solo clic (Mac)
+Hacé doble clic en el archivo:
+👉 **`Iniciar_Django.command`**
 
-El sistema ofrece una doble modalidad de visualización:
+---
 
-### 1. Visualizador en Consola / Terminal macOS
-Para inspeccionar rápidamente los campos, hectáreas y saldos diferenciados por municipio directamente en la línea de comandos:
+### Opción 2: Desde la Terminal (2 comandos)
 
+#### 1. Iniciar la Base de Datos con Docker
+Parado dentro de la carpeta del proyecto:
 ```bash
-# Opción A: Ejecutar script de Python
-python3 ver_campos_terminal.py
-
-# Opción B: Doble clic en el archivo ejecutable de macOS
-./Ver_Campos_Terminal.command
+docker compose up -d db
 ```
+*(Levanta PostgreSQL en segundo plano. Si tu máquina no tiene Docker instalado, el sistema funciona automáticamente con la base local SQLite).*
 
-El visualizador muestra:
-- Tablas con formato ANSI enriquecido para cada uno de los 3 municipios.
-- Desglose por campo: código, cultivo, hectáreas, quintales/kilos pactados, kilos liquidados, saldo en USD, factura y estado.
-- Subtotales métricos por municipio.
-- Resumen consolidado federando las 3 bases de datos (3.440 Ha totales).
-
-### 2. Terminal Web Kiosco Interactiva (`index.html`)
-- **Pestaña de Carga Directa a Google Sheets (`➕ Cargar Nuevo Contrato`)**: Accesible directamente desde la barra de navegación de la terminal. Permite seleccionar la base de datos de destino (Exaltación de la Cruz, Salto o San Andrés de Giles), autogenerar códigos, calcular en tiempo real los kilos a pagar y valorización en USD y ARS (cotización BNA), y cuenta con el **Botón de Carga `[ 🚀 CARGAR CONTRATO A HOJAS DE CÁLCULO ]`** para enviar e impactar el registro inmediatamente en la hoja de cálculo de Google Drive correspondiente.
-- **Filtro Dinámico por Municipio**: Selector en la barra de herramientas para filtrar los campos por *Todos*, *Exaltación de la Cruz*, *Salto* o *San Andrés de Giles*.
-- **Insignias / Badges Visuales**: Cada tarjeta de contrato exhibe una etiqueta distintiva con el color y escudo de su municipio (`badge-municipio-exaltacion`, `badge-municipio-salto`, `badge-municipio-giles`).
-- **Planilla Master Multi-Base**: En la solapa de Planilla de Cálculo, se puede conmutar la vista para inspeccionar cada base de datos municipal o ver la consolidación global.
-- **Acceso Directo a Drive**: Botón directo para abrir la hoja de cálculo específica de Google Sheets correspondiente al campo.
-- **Acceso Directo al Chatbot**: Botón verde superior `[ 💬 Chatbot Propietarios ]` para alternar fluidamente al asistente conversacional.
-
-### 3. Chatbot Autónomo para Propietarios Rurales (`chatbot.html`)
-- **Consulta Privada y Segura**: Identificación obligatoria por apellido o nombre de establecimiento con confirmación interactiva.
-- **Métricas Fundamentales del Arrendador**: Kilos pendientes por liquidar, fechas de cobro y valuación en Pesos Argentinos ($ ARS) y Dólares (USD).
-- **Simulador de Venta por Cantidad Específica de Kg**: Permite calcular el dinero a cobrar por cualquier volumen (ej: "¿Cuánto cobro si vendo 30.000 kg?").
-- **Vinculación Exclusiva por Dispositivo**: Protección automática para evitar consultas cruzadas no autorizadas.
-- **Ficha Imprimible de Liquidación**: Botón `[ 📄 Ficha Imprimible ]` para emitir comprobante de consulta en PDF.
+#### 2. Iniciar el servidor Django
+```bash
+.venv/bin/python manage.py runserver
+```
 
 ---
 
-## 📊 Características y Funcionalidades
-
-- **Cotizaciones en Tiempo Real**:
-  - Pizarra de la Bolsa de Comercio de Rosario ($ ARS/Tn).
-  - Mercado de Chicago CBOT (USD/Tn) para Soja, Maíz, Trigo y Girasol.
-  - Dólar Banco Nación (Venta, Mayorista y Compra).
-- **Cálculo de Liquidación Automatizado**: Fijación según precio de pizarra Rosario, cálculo de equivalencia en dólares y conversión de quintales/kilos a dinero.
-- **Alertas de Vencimiento de Contratos**: Semáforos visuales (Vigente, Próximo, Advertencia, Crítico, Vencido) para control preventivo de renovaciones.
-- **Gestión de Pagos y Comprobantes**: Registro de transferencias, e-cheqs y cheques físicos con carga de comprobantes adjuntos a Google Drive.
-- **Control de Facturación**: Seguimiento del estado de entrega de factura de alquiler.
-- **Fondos Fotográficos Rotativos**: Carrusel de fotos reales de campo en alta definición con rotación automática cada 5 minutos.
-- **Modo Kiosco Bloqueado Estricto**:
-  - **Bloqueo de la Computadora**: Al activar el modo kiosco, la pantalla se bloquea por completo, ocultando el Dock de macOS, la barra de menús superior y bloqueando el acceso a otras aplicaciones, pestañas y atajos de teclado (Esc, F5, F11, F12, Cmd+R, Cmd+W, Cmd+T, Cmd+Q, etc.).
-  - **Uso Exclusivo de la Terminal**: Cualquier persona solo puede interactuar con la Terminal Agropecuaria.
-  - **Desbloqueo con Contraseña de Administrador**: Para salir del Modo Kiosco y volver a usar el resto de la computadora normalmente, se debe presionar **`[ 🔒 Salir de Kiosco ]`** e ingresar la contraseña de Administrador (`admin123` o PIN `1234`). Al ingresar la clave correcta, la terminal se desbloquea o se cierra, restaurando automáticamente el escritorio y todas las aplicaciones de la Mac.
-  - **Lanzador de 1 Clic para Mac**: Ejecutable `Iniciar_Kiosco.command` con doble clic para abrir Google Chrome en modo Kiosco dedicado sin configurar nada.
+## 🌐 Enlaces del Sistema
+Una vez iniciado, abrí tu navegador en:
+- **🏢 Terminal Agropecuaria**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **💬 Chatbot para Propietarios**: [http://127.0.0.1:8000/chatbot/](http://127.0.0.1:8000/chatbot/)
+- **⚙️ Panel de Administración Django**: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+  - **Usuario**: `admin`
+  - **Contraseña**: `admin123`
 
 ---
 
-## 🚀 Estructura de Archivos
-
-```
-mi-proyecto-antigravity/
-├── index.html                  # Terminal Web completa (frontend + emulación local)
-├── chatbot.html                # Chatbot interactivo para Propietarios Rurales
-├── codigo.gs                   # Backend Apps Script con router multi-municipio
-├── ver_campos_terminal.py      # Visor CLI en consola Python con tablas y métricas
-├── Ver_Campos_Terminal.command # Lanzador de terminal con doble clic para macOS
-├── Iniciar_Kiosco.command      # Lanzador de la Terminal en Modo Kiosco Chrome
-├── Iniciar_Chatbot.command     # Lanzador del Chatbot en navegador local
-├── MANUAL_DE_USO.txt           # Manual exhaustivo de operación y administración
-├── README.md                   # Descripción general y enlaces a GitHub Pages
-├── .nojekyll                   # Archivo de configuración para GitHub Pages estático
-└── Fotos/                      # Banco fotográfico de alta resolución para carrusel
-```
+## 🌾 APIs de Mercado Implementadas
+- **Dólar BNA (Oficial y Mayorista)**: Consulta en vivo a la API REST de DolarApi.
+- **Pizarra Rosario (BCR) y Chicago (CBOT)**: Cotizaciones de Soja, Maíz, Trigo y Girasol con cálculo en tiempo real de equivalencia en dólares.

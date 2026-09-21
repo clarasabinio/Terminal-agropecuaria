@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Base de Datos Relacional PostgreSQL Dockerizada
+  db:
+    image: postgres:16-alpine
+    container_name: agro_postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: agro_db
+      POSTGRES_USER: agro_user
+      POSTGRES_PASSWORD: agro_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agro_user -d agro_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Aplicación Django (Opcional: para levantar todo el proyecto en contenedor)
+  web:
+    build: .
+    container_name: agro_django_web
+    restart: always
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_ENGINE=postgresql
+      - DB_NAME=agro_db
+      - DB_USER=agro_user
+      - DB_PASSWORD=agro_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DEBUG=1
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
